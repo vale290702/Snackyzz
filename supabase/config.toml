@@ -1,0 +1,9 @@
+project_id = "snackyzz"
+
+[functions.create-order]
+verify_jwt = false
+
+[functions.manage-orders]
+# Handler validates the user JWT via Auth.getUser and checks admin_users.
+# This also supports projects using asymmetric JWT signing keys.
+verify_jwt = false

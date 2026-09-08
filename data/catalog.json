@@ -1,0 +1,9 @@
+{
+  "demoCatalog": true,
+  "products": [
+    {"id":"choco-cloud","name":"Choco Cloud","price":2500,"description":"Una galleta de referencia con chispas de chocolate y un centro suave. Sabor y precio de muestra.","tag":"La clásica","image":"/assets/choco-cloud.webp","accent":"#ED781A"},
+    {"id":"double-choco","name":"Double Choco","price":2800,"description":"Una propuesta de cacao y chocolate para los antojos intensos. Sabor y precio de muestra.","tag":"Doble antojo","image":"/assets/double-choco.webp","accent":"#3C1907"},
+    {"id":"vanilla-crunch","name":"Vanilla Crunch","price":2500,"description":"Una propuesta de vainilla con bordes crujientes. Sabor y precio de muestra.","tag":"Un toque suave","image":"/assets/vanilla-crunch.webp","accent":"#D95907"}
+  ],
+  "salesPoints": []
+}

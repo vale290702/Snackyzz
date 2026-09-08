@@ -1,0 +1,74 @@
+{
+  "produce": [
+    {
+      "id": "hero-cookies",
+      "source_crop": null,
+      "output_path": "assets/hero-cookies.webp",
+      "strategy": "Built-in image_gen original illustrative commercial food photograph; format conversion and downscale",
+      "prompt_used": "Create a clean reusable production photograph for an illustrative cookie storefront. Editorial commercial food photography, appetizing tactile crisp detail, warm directional side light, softly extending natural shadows, no text, logos, watermarks, UI, borders or card chrome. Square 1024x1024 full bleed composition: sculptural stack of four thick golden chocolate-chip cookies at center with one broken cookie leaning in the foreground and a few crumbs, rich uniform #ED781A orange studio ground and seamless background. Low three-quarter camera angle. Cookies fill about 75 percent of frame, stack entirely visible. No props.",
+      "dimensions": "1024x1024",
+      "format": "webp",
+      "transparency": false,
+      "deviations": "No approved crop supplied; followed parent-authored image brief. Helper records WebP provenance as adjacent JSON sidecar. Slight natural background illumination varies from exact hex.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "choco-cloud",
+      "source_crop": null,
+      "output_path": "assets/choco-cloud.webp",
+      "strategy": "Built-in image_gen original illustrative commercial food photograph; format conversion and downscale",
+      "prompt_used": "Create a clean reusable production photograph for an illustrative cookie storefront. Editorial commercial food photography, appetizing tactile crisp detail, warm directional side light, softly extending natural shadows, no text, logos, watermarks, UI, borders or card chrome. Square 1024x1024 product image, two thick golden chocolate-chip cookies, one gently leaning against the other, centered close-up occupying 75 percent of the frame, warm pale cream #F9EDE0 seamless studio ground and background. Three-quarter camera angle. Entire cookies visible. A few crumbs, no props.",
+      "dimensions": "640x640",
+      "format": "webp",
+      "transparency": false,
+      "deviations": "No approved crop supplied; followed parent-authored image brief. Helper records WebP provenance as adjacent JSON sidecar. Slight natural background illumination varies from exact hex.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "double-choco",
+      "source_crop": null,
+      "output_path": "assets/double-choco.webp",
+      "strategy": "Built-in image_gen original illustrative commercial food photograph; format conversion and downscale",
+      "prompt_used": "Create a clean reusable production photograph for an illustrative cookie storefront. Editorial commercial food photography, appetizing tactile crisp detail, warm directional side light, softly extending natural shadows, no text, logos, watermarks, UI, borders or card chrome. Square 1024x1024 product image, two thick rich dark chocolate cookies with irregular dark chocolate chunks, one gently leaning against the other, centered close-up occupying 75 percent of the frame, warm pale cream #F9EDE0 seamless studio ground and background. Three-quarter camera angle. Entire cookies visible. A few crumbs, no props.",
+      "dimensions": "640x640",
+      "format": "webp",
+      "transparency": false,
+      "deviations": "No approved crop supplied; followed parent-authored image brief. Helper records WebP provenance as adjacent JSON sidecar. Slight natural background illumination varies from exact hex.",
+      "qa_status": "accepted"
+    },
+    {
+      "id": "vanilla-crunch",
+      "source_crop": null,
+      "output_path": "assets/vanilla-crunch.webp",
+      "strategy": "Built-in image_gen original illustrative commercial food photograph; format conversion and downscale",
+      "prompt_used": "Create a clean reusable production photograph for an illustrative cookie storefront. Editorial commercial food photography, appetizing tactile crisp detail, warm directional side light, softly extending natural shadows, no text, logos, watermarks, UI, borders or card chrome. Square 1024x1024 product image, two thick golden vanilla cookies with irregular creamy white chocolate pieces, one gently leaning against the other, centered close-up occupying 75 percent of the frame, warm pale cream #F9EDE0 seamless studio ground and background. Three-quarter camera angle. Entire cookies visible. A few crumbs, no props.",
+      "dimensions": "640x640",
+      "format": "webp",
+      "transparency": false,
+      "deviations": "No approved crop supplied; followed parent-authored image brief. Helper records WebP provenance as adjacent JSON sidecar. Slight natural background illumination varies from exact hex.",
+      "qa_status": "accepted"
+    }
+  ],
+  "direct": [],
+  "semantic": [
+    {
+      "id": "storefront-composition",
+      "implementation": "Parent owns semantic heading, body, nav, buttons and product dialogs. Render img elements with natural square ratio, responsive width and object-fit:cover only with restrained crop; CSS owns card rounding, hero clipping and circular brand seal overlay. Use self-hosted Fraunces 700-800 normal/italic display and DM Sans 400-700 normal UI. Product descriptions and labels remain text.",
+      "notes": "Images illustrative until real product photographs provided; preserve whole hero stack. Font sources and licenses included in assets.",
+      "qa_status": "accepted"
+    }
+  ],
+  "execution_order": [
+    "hero-cookies",
+    "choco-cloud",
+    "double-choco",
+    "vanilla-crunch",
+    "official-fonts"
+  ],
+  "blockers": [],
+  "assumptions": [
+    "Parent's code-first direction authorizes new production photographs without a comp.",
+    "Opaque images; all backgrounds intrinsic studio surfaces; no baked UI.",
+    "Latin font subset supports Spanish; DM Sans latin-ext adds colón currency glyph."
+  ]
+}

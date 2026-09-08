@@ -1,0 +1,8 @@
+{
+  "nodeModulesDir": "auto",
+  "compilerOptions": {"strict": true},
+  "tasks": {
+    "check": "deno check create-order/index.ts manage-orders/index.ts",
+    "test": "deno test --allow-read --allow-env --allow-net=deno.land _shared/*_test.ts ../tests/database_test.ts"
+  }
+}
