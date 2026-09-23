@@ -27,7 +27,12 @@ const order = {
   confirmedAt: null,
   emailStatus: "not_sent",
   receiptUrl: "/assets/choco-cloud.webp",
+  fulfillmentType: "pickup",
+  fulfillmentLabel: "Tienda Central",
+  fulfillmentAddress: "Avenida 1, San José",
 };
+const location = { id:"00000000-0000-0000-0000-000000000010", name:"Tienda Central", city:"San José", address:"Avenida 1", hours:"L-V 9 a 5", map_url:"", position:1, active:true };
+const settings = { id:1,demo_catalog:true,sinpe_number:"",sinpe_recipient:"",whatsapp:"+506 8888 8888",public_email:"Snackyzz.cookies@gmail.com",instagram:"Snackyzz.cookies",uber_delivery_enabled:true,uber_disclaimer:"El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado." };
 async function mockSupabase(
   page,
   { orderFailure = false, emailFailure = false } = {},
@@ -44,14 +49,9 @@ async function mockSupabase(
         body: JSON.stringify(body),
       });
     if (path === "/rest/v1/products") return reply(products);
-    if (path === "/rest/v1/sales_points") return reply([]);
+    if (path === "/rest/v1/sales_points") return reply([location]);
     if (path === "/rest/v1/store_settings")
-      return reply({
-        id: 1,
-        demo_catalog: true,
-        sinpe_number: "",
-        sinpe_recipient: "",
-      });
+      return reply(settings);
     if (path === "/functions/v1/create-order") {
       calls.push({
         kind: "create",
@@ -108,6 +108,33 @@ async function mockSupabase(
         },
       });
     }
+    if (path === "/functions/v1/manage-products") {
+      if (request.method() === "GET") return reply({ products });
+      const contentType = request.headers()["content-type"] || "";
+      if (contentType.includes("application/json")) {
+        const body = request.postDataJSON();
+        calls.push({ kind: "product-action", ...body });
+        const product = products.find((item) => item.id === body.productId);
+        return reply({
+          product: { ...product, active: body.action === "restore" },
+        });
+      }
+      calls.push({ kind: "product-save", body: request.postData() });
+      return reply({
+        product: {
+          ...products[0],
+          id: "caramel-dream-test",
+          name: "Caramel Dream",
+          price: 3100,
+          position: 4,
+          active: true,
+        },
+      });
+    }
+    if (path === "/functions/v1/manage-store") {
+      if (request.method() === "GET") return reply({ settings, locations:[location], emailConfigured:false });
+      return reply({ settings });
+    }
     if (path === "/auth/v1/logout") return reply({});
     return reply({ error: "Unmocked endpoint: " + path }, 404);
   });
@@ -125,6 +152,7 @@ async function startCheckout(page) {
   await page
     .getByLabel("Correo electrónico", { exact: true })
     .fill("customer@example.invalid");
+  await page.getByLabel("Punto de retiro").selectOption(location.id);
 }
 async function attachReceipt(page) {
   // Valid PNG fixture encoded locally; no real payment or customer information.
@@ -213,6 +241,11 @@ test("admin reviews the receipt, confirms an order, and can retry a failed email
 }) => {
   const calls = await mockSupabase(page, { emailFailure: true });
   await page.goto("/#admin");
+  await expect(
+    page.getByRole("navigation", { name: "Navegación principal" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /carrito/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Las cookies" })).toHaveCount(0);
   await page
     .getByLabel("Correo de administración")
     .fill("admin@example.invalid");
@@ -237,6 +270,40 @@ test("admin reviews the receipt, confirms an order, and can retry a failed email
   await expect(
     page.getByRole("heading", { name: "Hola, equipo Snackyzz." }),
   ).toBeVisible();
+});
+
+test("admin creates and archives database products", async ({ page }) => {
+  const calls = await mockSupabase(page);
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await page.getByRole("button", { name: "Productos" }).click();
+  await expect(page.getByRole("heading", { name: "Productos." })).toBeVisible();
+  await expect(page.locator(".admin-product-row")).toHaveCount(3);
+  await page.getByRole("button", { name: /Nuevo producto/ }).click();
+  await page.getByLabel("Nombre").fill("Caramel Dream");
+  await page.getByLabel("Precio (₡)").fill("3100");
+  await page.getByLabel("Posición").fill("4");
+  await page.getByLabel("Etiqueta corta").fill("Edición dulce");
+  await page.getByLabel("Descripción").fill("Cookie suave con caramelo.");
+  await page.getByLabel("Imagen").setInputFiles("tests/fixtures/receipt.png");
+  await page.getByRole("button", { name: "Guardar producto" }).click();
+  await expect(page.getByText("Caramel Dream", { exact: true })).toBeVisible();
+  await page
+    .locator('.admin-product-row:has-text("Caramel Dream")')
+    .getByRole("button", { name: "Archivar" })
+    .click();
+  expect(calls.some((call) => call.kind === "product-save")).toBe(true);
+  expect(
+    calls.some(
+      (call) => call.kind === "product-action" && call.action === "archive",
+    ),
+  ).toBe(true);
 });
 test("checkout waits for replacement image validation instead of sending a stale receipt", async ({
   page,

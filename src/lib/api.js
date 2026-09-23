@@ -13,6 +13,28 @@ function requireClient() {
     );
   return supabase;
 }
+function storeSettings(row = {}) {
+  return {
+    demoCatalog: Boolean(row.demo_catalog),
+    payment: {
+      number: row.sinpe_number ?? "",
+      recipient: row.sinpe_recipient ?? "",
+      configured: Boolean(row.sinpe_number && row.sinpe_recipient),
+    },
+    contact: {
+      whatsapp: row.whatsapp ?? "",
+      email: row.public_email ?? "Snackyzz.cookies@gmail.com",
+      instagram: row.instagram ?? "Snackyzz.cookies",
+    },
+    delivery: {
+      uberEnabled: row.uber_delivery_enabled !== false,
+      disclaimer: row.uber_disclaimer ?? "El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado.",
+      leadHours: row.delivery_lead_hours ?? 6,
+      slotHours: row.delivery_slot_hours ?? 3,
+      schedule: row.delivery_schedule ?? {},
+    },
+  };
+}
 async function invoke(name, options) {
   const { data, error } = await requireClient().functions.invoke(name, options);
   if (error) {
@@ -43,12 +65,7 @@ export async function api(path, { body, headers = {} } = {}) {
     return {
       products: results[0].data,
       salesPoints: results[1].data,
-      demoCatalog: settings.demo_catalog,
-      payment: {
-        number: settings.sinpe_number,
-        recipient: settings.sinpe_recipient,
-        configured: Boolean(settings.sinpe_number && settings.sinpe_recipient),
-      },
+      ...storeSettings(settings),
     };
   }
   if (path === "/orders") return invoke("create-order", { body, headers });
@@ -86,6 +103,22 @@ export async function api(path, { body, headers = {} } = {}) {
   }
   if (path === "/admin/orders")
     return invoke("manage-orders", { method: "GET" });
+  if (path === "/admin/products")
+    return invoke("manage-products", { method: "GET" });
+  if (path === "/admin/products/save")
+    return invoke("manage-products", { body });
+  if (path === "/admin/store") return invoke("manage-store", { method: "GET" });
+  if (path === "/admin/store/action") return invoke("manage-store", { body });
+  const productAction = path.match(
+    /^\/admin\/products\/([^/]+)\/(archive|restore)$/,
+  );
+  if (productAction)
+    return invoke("manage-products", {
+      body: {
+        productId: decodeURIComponent(productAction[1]),
+        action: productAction[2],
+      },
+    });
   const action = path.match(
     /^\/admin\/orders\/([^/]+)\/(confirm|retry-email)$/,
   );

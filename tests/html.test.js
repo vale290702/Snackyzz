@@ -49,3 +49,49 @@ test("admin exposes a safe retry for a confirmed email left sending", () => {
   assert.match(markup, /data-retry-email="order-1"/);
   assert.match(markup, /bloqueo de seguridad/);
 });
+
+test("admin product view exposes database product controls and archive state", () => {
+  const markup = renderAdmin({
+    authenticated: true,
+    loading: false,
+    busy: false,
+    error: "",
+    view: "products",
+    productFilter: "all",
+    editingProduct: null,
+    filter: "pending",
+    search: "",
+    selected: null,
+    orders: [],
+    products: [
+      {
+        id: "choco-cloud",
+        name: "Choco Cloud",
+        price: 2500,
+        description: "Cookie suave",
+        tag: "La clásica",
+        image: "/assets/choco-cloud.webp",
+        accent: "#ED781A",
+        position: 1,
+        active: false,
+      },
+    ],
+  });
+  assert.match(markup, /data-admin-view="products"/);
+  assert.match(markup, /Nuevo producto/);
+  assert.match(markup, /Archivado/);
+  assert.match(markup, /data-restore-product="choco-cloud"/);
+});
+
+test("safe image accepts only Snackyzz assets and hosted product images", () => {
+  assert.equal(
+    safeImage(
+      "https://skncqvywmionhtfipixt.supabase.co/storage/v1/object/public/product-images/cookie.webp",
+    ),
+    "https://skncqvywmionhtfipixt.supabase.co/storage/v1/object/public/product-images/cookie.webp",
+  );
+  assert.equal(
+    safeImage("https://attacker.example/cookie.webp"),
+    "/assets/choco-cloud.webp",
+  );
+});
