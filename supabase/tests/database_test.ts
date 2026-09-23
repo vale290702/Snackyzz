@@ -36,10 +36,24 @@ Deno.test(
         new URL("../migrations/202609080001_snackyzz.sql", import.meta.url),
       );
       await db.exec(migration);
+      const productMigration = await Deno.readTextFile(
+        new URL(
+          "../migrations/202609090001_product_management.sql",
+          import.meta.url,
+        ),
+      );
+      await db.exec(productMigration);
       const { rows: seed } = await db.query<{ count: number }>(
         "select count(*)::integer count from public.products",
       );
       assert(seed[0].count === 3, "Three initial products required");
+      const { rows: productBuckets } = await db.query<{ public: boolean }>(
+        "select public from storage.buckets where id='product-images'",
+      );
+      assert(
+        productBuckets[0].public,
+        "Product images must be publicly readable",
+      );
       await db.exec(
         "insert into public.sales_points(name,city,address) values('Punto de prueba','San José','Dirección de prueba')",
       );

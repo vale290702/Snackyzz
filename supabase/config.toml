@@ -7,3 +7,11 @@ verify_jwt = false
 # Handler validates the user JWT via Auth.getUser and checks admin_users.
 # This also supports projects using asymmetric JWT signing keys.
 verify_jwt = false
+
+[functions.manage-products]
+# Handler validates the JWT and checks immutable admin membership.
+verify_jwt = false
+
+[functions.manage-store]
+# Handler validates the JWT and checks immutable admin membership.
+verify_jwt = false

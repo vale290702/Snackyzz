@@ -28,6 +28,9 @@ const state = {
   selectedCity: "Todos",
   demoCatalog: true,
   payment: { configured: false, number: "", recipient: "" },
+  contact: { whatsapp: "", email: "Snackyzz.cookies@gmail.com", instagram: "Snackyzz.cookies" },
+  delivery: { uberEnabled: true, disclaimer: "El costo del servicio de mensajería corre por cuenta del cliente y se paga por separado.", leadHours: 6, slotHours: 3, schedule: {} },
+  fulfillment: { type: "pickup", pickupLocationId: "", deliveryAddress: "", deliveryDate: "", deliverySlotStart: "" },
   catalogReady: false,
   catalogError: "",
   activePage: getRouteFromHash(),
@@ -76,10 +79,15 @@ function renderPage() {
       ? '<div class="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div>'
       : "";
   app.innerHTML =
-    renderNav({ activePage: state.activePage, cartCount: cart.getCount() }) +
-    notice +
-    views[state.activePage]() +
-    renderFooter();
+    state.activePage === "admin"
+      ? views.admin()
+      : renderNav({
+          activePage: state.activePage,
+          cartCount: cart.getCount(),
+        }) +
+        notice +
+        views[state.activePage]() +
+        renderFooter(state.contact);
   document.title =
     {
       home: "Un antojo. Tres formas de caer.",
@@ -109,6 +117,7 @@ async function loadCatalog() {
   try {
     const catalog = await api("/catalog");
     Object.assign(state, catalog, { catalogReady: true });
+    if (!catalog.salesPoints.length && catalog.delivery.uberEnabled) state.fulfillment.type = "uber";
     cart = createCartStore({ products: catalog.products });
   } catch (error) {
     state.catalogReady = false;
@@ -121,7 +130,7 @@ function routeChanged() {
   renderPage();
   window.scrollTo({ top: 0, behavior: "instant" });
   document.querySelector("#main")?.focus({ preventScroll: true });
-  if (state.activePage === "admin" && !admin.state.loading) void admin.load();
+  if (state.activePage === "admin" && !admin.state.loaded) void admin.load();
 }
 function renderProductDialog(id) {
   const p = state.products.find((p) => p.id === id);
@@ -204,6 +213,48 @@ document.addEventListener("click", async (event) => {
   }
   if (target.matches("[data-admin-refresh]")) await admin.load();
   if (target.matches("[data-admin-logout]")) await admin.logout();
+  if (target.matches("[data-admin-view]")) {
+    admin.state.view = target.dataset.adminView;
+    admin.state.selected = null;
+    admin.state.editingProduct = null;
+    renderPage();
+  }
+  if (target.matches("[data-product-filter]")) {
+    admin.state.productFilter = target.dataset.productFilter;
+    renderPage();
+  }
+  if (target.matches("[data-new-product]")) {
+    admin.state.editingProduct = "new";
+    renderPage();
+  }
+  if (target.matches("[data-new-location]")) {
+    admin.state.editingLocation = "new";
+    renderPage();
+  }
+  if (target.matches("[data-edit-location]")) {
+    admin.state.editingLocation = target.dataset.editLocation;
+    renderPage();
+  }
+  if (target.matches("[data-close-location]")) {
+    admin.state.editingLocation = null;
+    renderPage();
+  }
+  if (target.matches("[data-location-action]")) {
+    await admin.storeAction({ action: `${target.dataset.locationAction}-location`, id: target.dataset.locationId }, target.dataset.locationAction === "archive" ? "Punto archivado." : "Punto restaurado.");
+    await loadCatalog();
+  }
+  if (target.matches("[data-edit-product]")) {
+    admin.state.editingProduct = target.dataset.editProduct;
+    renderPage();
+  }
+  if (target.matches("[data-close-product]")) {
+    admin.state.editingProduct = null;
+    renderPage();
+  }
+  if (target.matches("[data-archive-product]"))
+    await admin.productAction(target.dataset.archiveProduct, "archive");
+  if (target.matches("[data-restore-product]"))
+    await admin.productAction(target.dataset.restoreProduct, "restore");
   if (target.matches("[data-order-filter]")) {
     admin.state.filter = target.dataset.orderFilter;
     admin.state.selected = null;
@@ -252,8 +303,36 @@ document.addEventListener("input", (event) => {
     admin.state.search = event.target.value;
     renderPage();
   }
+  if (event.target.id === "delivery-address") {
+    state.fulfillment.deliveryAddress = event.target.value;
+    state.idempotencyKey = "";
+  }
+  if (event.target.id === "delivery-date") {
+    state.fulfillment.deliveryDate = event.target.value;
+    state.fulfillment.deliverySlotStart = "";
+    state.idempotencyKey = "";
+    renderPage();
+  }
 });
 document.addEventListener("change", async (event) => {
+  if (event.target.name === "fulfillmentType") {
+    state.fulfillment.type = event.target.value;
+    state.idempotencyKey = "";
+    renderPage();
+    return;
+  }
+  if (event.target.id === "pickup-location") {
+    state.fulfillment.pickupLocationId = event.target.value;
+    state.idempotencyKey = "";
+    renderPage();
+    return;
+  }
+  if (event.target.id === "delivery-slot") {
+    state.fulfillment.deliverySlotStart = event.target.value;
+    state.idempotencyKey = "";
+    renderPage();
+    return;
+  }
   if (event.target.id !== "receipt") return;
   const file = event.target.files?.[0];
   if (!file) return;
@@ -304,6 +383,33 @@ document.addEventListener("submit", async (event) => {
     await admin.login(fields.get("email"), fields.get("password"));
     return;
   }
+  if (event.target.matches("#product-form")) {
+    event.preventDefault();
+    await admin.saveProduct(new FormData(event.target));
+    await loadCatalog();
+    return;
+  }
+  if (event.target.id === "store-settings-form") {
+    event.preventDefault();
+    const fields = new FormData(event.target);
+    const schedule = Object.fromEntries(["mon","tue","wed","thu","fri","sat","sun"].map((day) => [day, { enabled: fields.has(`delivery_${day}_enabled`), start: fields.get(`delivery_${day}_start`), end: fields.get(`delivery_${day}_end`) }]));
+    await admin.storeAction({
+      action: "save-settings",
+      sinpeNumber: fields.get("sinpeNumber"), sinpeRecipient: fields.get("sinpeRecipient"),
+      whatsapp: fields.get("whatsapp"), publicEmail: fields.get("publicEmail"), instagram: fields.get("instagram"),
+      uberDeliveryEnabled: fields.has("uberDeliveryEnabled"), uberDisclaimer: fields.get("uberDisclaimer"),
+      deliveryLeadHours: Number(fields.get("deliveryLeadHours")), deliverySlotHours: Number(fields.get("deliverySlotHours")), deliverySchedule: schedule,
+    }, "Configuración guardada.");
+    await loadCatalog();
+    return;
+  }
+  if (event.target.id === "location-form") {
+    event.preventDefault();
+    const fields = Object.fromEntries(new FormData(event.target));
+    await admin.storeAction({ action: "save-location", ...fields, position: Number(fields.position) }, "Punto de retiro guardado.");
+    await loadCatalog();
+    return;
+  }
   if (event.target.id !== "checkout-form") return;
   event.preventDefault();
   if (state.submitting || state.validatingReceipt) return;
@@ -330,6 +436,11 @@ document.addEventListener("submit", async (event) => {
     ),
   );
   body.set("receipt", state.receipt);
+  body.set("fulfillmentType", state.fulfillment.type);
+  body.set("pickupLocationId", state.fulfillment.pickupLocationId);
+  body.set("deliveryAddress", state.fulfillment.deliveryAddress.trim());
+  body.set("deliveryDate", state.fulfillment.deliveryDate);
+  body.set("deliverySlotStart", state.fulfillment.deliverySlotStart);
   state.idempotencyKey ||= crypto.randomUUID();
   state.submitting = true;
   state.checkoutError = "";
@@ -351,6 +462,7 @@ document.addEventListener("submit", async (event) => {
     };
     cart.clear();
     state.draft = { name: "", email: "", phone: "" };
+    state.fulfillment = { type: state.salesPoints.length ? "pickup" : "uber", pickupLocationId: "", deliveryAddress: "", deliveryDate: "", deliverySlotStart: "" };
     state.receipt = null;
     URL.revokeObjectURL(state.receiptPreview);
     state.receiptPreview = "";

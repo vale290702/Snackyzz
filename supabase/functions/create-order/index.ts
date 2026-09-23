@@ -12,11 +12,19 @@ Deno.serve(async (request: Request) => {
     if (!/^[A-Za-z0-9_-]{8,128}$/.test(key)) throw new InputError('Falta la clave del pedido. Recarga la página.');
     const form = await boundedForm(request);
     const fields = validateFields(form);
+    const fulfillmentType = String(form.get('fulfillmentType') ?? '');
+    const pickupLocationId = String(form.get('pickupLocationId') ?? '') || null;
+    const deliveryAddress = String(form.get('deliveryAddress') ?? '').trim();
+    const deliveryDate = String(form.get('deliveryDate') ?? '');
+    const deliverySlotStart = String(form.get('deliverySlotStart') ?? '');
+    if (!['pickup','uber'].includes(fulfillmentType)) throw new InputError('Selecciona retiro o entrega por Uber.');
+    if (deliveryAddress.length > 300) throw new InputError('La dirección es demasiado larga.');
     const receipt = form.get('receipt');
     if (!(receipt instanceof File) || !receipt.size) throw new InputError('Adjunta una imagen del comprobante SINPE.');
     if (receipt.size > MAX_BYTES) throw new InputError('El comprobante debe pesar como máximo 5 MB.');
     const original = new Uint8Array(await receipt.arrayBuffer());
-    const hash = await fingerprint(fields,original);
+    if (fulfillmentType === 'uber' && (!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate) || !/^\d{2}:\d{2}$/.test(deliverySlotStart))) throw new InputError('Selecciona la fecha y el horario de entrega.');
+    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart},original);
     const bytes = await normalizeReceipt(original);
     const db = serviceClient();
     const path = `${crypto.randomUUID()}.jpg`;
@@ -25,6 +33,8 @@ Deno.serve(async (request: Request) => {
     const {data,error} = await db.rpc('create_order',{
       p_key:key,p_fingerprint:hash,p_name:fields.name,p_email:fields.email,p_phone:fields.phone,
       p_items:fields.items,p_receipt_path:path,
+      p_fulfillment_type:fulfillmentType,p_pickup_location_id:pickupLocationId,p_delivery_address:deliveryAddress,
+      p_delivery_date:deliveryDate || null,p_delivery_slot_start:deliverySlotStart || null,
     });
     if (error) {
       // Only delete on a definite transaction rejection. A transport failure can
