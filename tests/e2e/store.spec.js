@@ -6,6 +6,7 @@ async function capture(page, name) {
   if (process.env.CAPTURE_REVIEW) {
     fs.mkdirSync(".impeccable/review", { recursive: true });
     await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path:
         ".impeccable/review/" + name + "-" + test.info().project.name + ".png",
@@ -174,7 +175,7 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
     .getByRole("button", { name: "Ver detalles de Choco Cloud" })
     .click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("button", { name: "Agregar una cookie" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Agregar al carrito", exact: true }).click();
   await expect(page.locator("#dialog-quantity output")).toHaveText("1");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
@@ -245,7 +246,7 @@ test("admin reviews the receipt, confirms an order, and can retry a failed email
     page.getByRole("navigation", { name: "Navegación principal" }),
   ).toHaveCount(0);
   await expect(page.getByRole("link", { name: /carrito/i })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Las cookies" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Snackyzz" })).toHaveCount(0);
   await page
     .getByLabel("Correo de administración")
     .fill("admin@example.invalid");
@@ -284,9 +285,21 @@ test("admin creates and archives database products", async ({ page }) => {
   await page.getByRole("button", { name: "Entrar al panel" }).click();
   await page.getByRole("button", { name: "Productos" }).click();
   await expect(page.getByRole("heading", { name: "Productos." })).toBeVisible();
+  await expect(page.locator(".admin-product-row")).toHaveCount(6);
+  await page.getByRole("button", { name: "Baking Stereo", exact: true }).click();
   await expect(page.locator(".admin-product-row")).toHaveCount(3);
+  await expect(page.locator(".admin-product-list")).not.toContainText("Choco Cloud");
+  await expect(page.getByRole("button", { name: "Baking Stereo", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await capture(page, "admin-brand-filter");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: "Snackyzz", exact: true }).click();
+  await expect(page.locator(".admin-product-row")).toHaveCount(3);
+  await expect(page.locator(".admin-product-list")).not.toContainText("Chocolate Chip");
+  await page.getByRole("button", { name: "Todas las marcas", exact: true }).click();
+  await expect(page.locator(".admin-product-row")).toHaveCount(6);
   await page.getByRole("button", { name: /Nuevo producto/ }).click();
   await page.getByLabel("Nombre").fill("Caramel Dream");
+  await page.getByLabel("Sección del catálogo").selectOption("baking-stereo");
   await page.getByLabel("Precio (₡)").fill("3100");
   await page.getByLabel("Posición").fill("4");
   await page.getByLabel("Etiqueta corta").fill("Edición dulce");
@@ -298,7 +311,7 @@ test("admin creates and archives database products", async ({ page }) => {
     .locator('.admin-product-row:has-text("Caramel Dream")')
     .getByRole("button", { name: "Archivar" })
     .click();
-  expect(calls.some((call) => call.kind === "product-save")).toBe(true);
+  expect(calls.find((call) => call.kind === "product-save").body).toMatch(/name="brand"\r\n\r\nbaking-stereo/);
   expect(
     calls.some(
       (call) => call.kind === "product-action" && call.action === "archive",
@@ -326,4 +339,29 @@ test("checkout waits for replacement image validation instead of sending a stale
   await expect(
     page.getByRole("button", { name: "Registrar pedido de prueba" }),
   ).toBeEnabled();
+});
+
+test('separate cookie collections share quantities and checkout', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/#shop');
+  await expect(page.getByRole('heading', { name: 'Snackyzz', exact: true })).toBeVisible();
+  await expect(page.locator('.product-card')).toHaveCount(3);
+  await page.locator('[data-product="choco-cloud"][data-qty="1"]').first().click();
+  await page.locator('.collection-switch a').click();
+  await expect(page).toHaveURL(/#baking-stereo$/);
+  await expect(page.locator('.product-card')).toHaveCount(3);
+  await expect(page.locator('.product-card').first()).toContainText('Baking Stereo · Recién horneadas');
+  await page.locator('[data-product="bs-chocolate-chip"][data-qty="1"]').first().click();
+  await expect(page.locator('[data-cart-count]')).toHaveText('2');
+  await expect(page.locator('.cart-lines')).toContainText('Choco Cloud');
+  await expect(page.locator('.cart-lines')).toContainText('Chocolate Chip');
+  await page.reload();
+  await expect(page.locator('[data-cart-count]')).toHaveText('2');
+  await capture(page, 'baking-stereo');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator('.collection-switch a').click();
+  await expect(page.locator('[data-cart-count]')).toHaveText('2');
+  await capture(page, 'snackyzz-collection');
+  await page.getByRole('link', { name: 'Comprar', exact: true }).click();
+  await expect(page.locator('.cart-brand')).toContainText(['Snackyzz · Selladas', 'Baking Stereo · Recién horneadas']);
 });

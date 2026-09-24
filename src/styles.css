@@ -2772,3 +2772,73 @@ small#receipt-help {
   .admin-location-row .product-row-actions { grid-column:1/-1; }
   .schedule-row { grid-template-columns:1fr 1fr auto 1fr; }
 }
+
+/* Separate collections, one shared purchase flow. */
+.collection-heading {
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.collection-heading p { max-width: 54ch; }
+.collection-fresh .collection-heading {
+  background: var(--chocolate);
+  color: var(--cream);
+  padding: clamp(24px, 4vw, 48px);
+  border: 0;
+  border-radius: var(--radius);
+}
+.collection-fresh .collection-heading p { color: var(--cream); }
+.collab-cross { color: var(--orange); font-style: italic; }
+.product-card > .product-brand {
+  color: var(--chocolate);
+  font-size: 12px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+}
+.cart-brand { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 9px; }
+.collection-empty { padding: 42px 0 50px; }
+.collection-empty > .icon { width: 40px; height: 40px; margin-bottom: 24px; }
+.collection-empty h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.collection-empty p { max-width: 42ch; margin: 16px 0 24px; color: var(--muted); }
+.collection-switch { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 24px; }
+.collection-switch p { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+.mobile-nav a[aria-current="page"] { font-weight: 700; text-decoration: underline; }
+@media (min-width: 801px) and (max-width: 1100px) {
+  .nav { display: none; }
+  .menu-button { display: grid; }
+}
+@media (max-width: 560px) {
+  .collection-fresh .collection-heading h1 { font-size: clamp(2rem, 8vw, 2.8rem); }
+}
+
+/* Baking Stereo alone pairs strawberry pink with the existing chocolate. */
+.collection-fresh {
+  --baking-pink: #f3abc5;
+}
+.collection-fresh .collection-heading h1,
+.collection-fresh .collab-cross {
+  color: var(--baking-pink);
+}
+.collection-fresh .product-tag {
+  background: var(--baking-pink);
+  color: var(--chocolate);
+}
+.collection-fresh .product-purchase .add-button:hover {
+  background: var(--baking-pink);
+  border-color: var(--baking-pink);
+}
+.collection-fresh .product-purchase .stepper button:hover:not(:disabled) {
+  background: var(--baking-pink);
+}
+
+.collection-fresh .collab-snackyzz {
+  color: var(--orange);
+}
+
+.product-filters {
+  display: grid;
+  gap: 12px;
+}
+.product-filters .filter-row {
+  flex-wrap: wrap;
+  margin: 0;
+}
