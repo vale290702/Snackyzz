@@ -1,4 +1,5 @@
 import "./styles.css";
+import { productBrandLabel } from "./lib/collections.js";
 import { products as previewProducts } from "./data/products.js";
 import { createCartStore } from "./lib/cart.js";
 import { api } from "./lib/api.js";
@@ -67,6 +68,7 @@ function renderPage() {
   const views = {
     home: () => renderHome(props),
     shop: () => renderShop(props),
+    "baking-stereo": () => renderShop({ ...props, collection: "baking-stereo" }),
     sales: () => renderSales(props),
     about: renderAbout,
     checkout: () => renderCheckout(props),
@@ -91,7 +93,8 @@ function renderPage() {
   document.title =
     {
       home: "Un antojo. Tres formas de caer.",
-      shop: "Las cookies",
+      shop: "Snackyzz",
+      "baking-stereo": "Snackyzz X Baking Stereo",
       sales: "Dónde encontrarnos",
       checkout: "Completa tu pedido",
       success: "Pedido recibido",
@@ -136,7 +139,7 @@ function renderProductDialog(id) {
   const p = state.products.find((p) => p.id === id);
   if (!p) return;
   state.detailId = id;
-  dialog.innerHTML = `<div class="dialog-layout"><button class="icon-button dialog-close" data-close-dialog aria-label="Cerrar detalles">${icon("close")}</button><img class="dialog-photo" src="${e(safeImage(p.image))}" alt="${e(p.name)}, imagen de referencia" width="640" height="640"><div class="dialog-copy"><h2 id="dialog-title">${e(p.name)}</h2><p>${e(p.description)}</p><p class="dialog-price">${new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(p.price)}</p><div id="dialog-quantity">${quantityControl(p, cart.getQuantity(id))}</div><button class="button button-dark wide" data-dialog-add="${e(id)}">Agregar una cookie ${icon("plus")}</button><a href="#shop" class="button button-outline wide" data-close-dialog>Ver mi carrito ${icon("bag")}</a>${state.demoCatalog ? '<p class="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p>' : ""}</div></div>`;
+  dialog.innerHTML = `<div class="dialog-layout"><button class="icon-button dialog-close" data-close-dialog aria-label="Cerrar detalles">${icon("close")}</button><img class="dialog-photo" src="${e(safeImage(p.image))}" alt="${e(p.name)}, imagen de referencia" width="640" height="640"><div class="dialog-copy"><h2 id="dialog-title">${e(p.name)}</h2><p class="product-brand">${e(productBrandLabel(p))}</p><p>${e(p.description)}</p><p class="dialog-price">${new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(p.price)}</p><div id="dialog-quantity">${quantityControl(p, cart.getQuantity(id))}</div><button class="button button-dark wide" data-dialog-add="${e(id)}">Agregar al carrito ${icon("plus")}</button><a href="#shop" class="button button-outline wide" data-close-dialog>Ver mi carrito ${icon("bag")}</a>${state.demoCatalog ? '<p class="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p>' : ""}</div></div>`;
   if (!dialog.open) dialog.showModal();
 }
 function quantityChanged(button) {
@@ -216,6 +219,11 @@ document.addEventListener("click", async (event) => {
   if (target.matches("[data-admin-view]")) {
     admin.state.view = target.dataset.adminView;
     admin.state.selected = null;
+    admin.state.editingProduct = null;
+    renderPage();
+  }
+  if (target.matches("[data-product-brand-filter]")) {
+    admin.state.productBrandFilter = target.dataset.productBrandFilter;
     admin.state.editingProduct = null;
     renderPage();
   }

@@ -5,6 +5,7 @@ import { normalizeReceipt } from "../_shared/receipt.ts";
 type Product = {
   id: string;
   name: string;
+  brand: "snackyzz" | "baking-stereo";
   price: number;
   description: string;
   tag: string;
@@ -108,7 +109,12 @@ Deno.serve(async (request: Request) => {
       throw new InputError("Producto inválido.");
     }
     const name = text(form, "name", 80, 2);
+    const brand = String(form.get("brand") ?? "snackyzz");
+    if (!["snackyzz", "baking-stereo"].includes(brand)) {
+      throw new InputError("Selecciona una sección del catálogo válida.");
+    }
     const values = {
+      brand,
       name,
       price: integer(form, "price", 1, 1_000_000),
       position: integer(form, "position", 0, 999),

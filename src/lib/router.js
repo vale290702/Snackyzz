@@ -1,6 +1,7 @@
 export const routes = [
   "home",
   "shop",
+  "baking-stereo",
   "sales",
   "about",
   "checkout",

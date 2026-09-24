@@ -1,3 +1,4 @@
+import { productBrand, productBrandLabel } from "../lib/collections.js";
 import { api } from "../lib/api.js";
 import { escapeHtml as e, safeImage } from "../lib/html.js";
 import { formatMoney } from "../lib/cart.js";
@@ -32,6 +33,7 @@ export function createAdminController({ render, notify }) {
     editingLocation: null,
     view: "orders",
     productFilter: "all",
+    productBrandFilter: "all",
     editingProduct: null,
     filter: "pending",
     search: "",
@@ -279,15 +281,19 @@ function renderProducts(state) {
   const products = state.products ?? [];
   const visible = products.filter(
     (product) =>
-      state.productFilter === "all" ||
-      (state.productFilter === "active" ? product.active : !product.active),
+      (state.productFilter === "all" ||
+        (state.productFilter === "active" ? product.active : !product.active)) &&
+      (!state.productBrandFilter || state.productBrandFilter === "all" ||
+        productBrand(product) === state.productBrandFilter),
   );
   const editing =
     state.editingProduct === "new"
       ? null
       : products.find((product) => product.id === state.editingProduct);
   const showForm = state.editingProduct === "new" || editing;
-  return `${adminNav(state)}<main id="main" class="page-width inner-page admin-page" tabindex="-1"><div class="section-heading"><div><h1>Productos.</h1><p>El catálogo que ven tus clientes.</p></div><div class="button-row"><button class="button button-dark" data-new-product>Nuevo producto ${icon("plus")}</button></div></div>${state.error ? `<p class="checkout-message" role="alert">${e(state.error)}</p>` : ""}<div class="admin-toolbar"><div class="filter-row" aria-label="Estado del producto">${[
+  return `${adminNav(state)}<main id="main" class="page-width inner-page admin-page" tabindex="-1"><div class="section-heading"><div><h1>Productos.</h1><p>El catálogo que ven tus clientes.</p></div><div class="button-row"><button class="button button-dark" data-new-product>Nuevo producto ${icon("plus")}</button></div></div>${state.error ? `<p class="checkout-message" role="alert">${e(state.error)}</p>` : ""}<div class="admin-toolbar"><div class="product-filters"><div class="filter-row" role="group" aria-label="Marca del producto">${[
+    ["all", "Todas las marcas"], ["snackyzz", "Snackyzz"], ["baking-stereo", "Baking Stereo"],
+  ].map(([value, label]) => `<button id="brand-filter-${value}" class="filter-button ${(state.productBrandFilter || "all") === value ? "is-active" : ""}" data-product-brand-filter="${value}" aria-pressed="${(state.productBrandFilter || "all") === value}">${label}</button>`).join("")}</div><div class="filter-row" role="group" aria-label="Estado del producto">${[
     ["all", "Todos"],
     ["active", "Activos"],
     ["archived", "Archivados"],
@@ -298,11 +304,11 @@ function renderProducts(state) {
     )
     .join(
       "",
-    )}</div><button class="text-button" data-admin-refresh ${state.loading ? "disabled" : ""}>${state.loading ? "Actualizando…" : "Actualizar"}</button></div><div class="product-admin-layout ${showForm ? "has-selection" : ""}"><section class="admin-product-list" aria-label="Productos">${visible.length ? visible.map(renderProductRow).join("") : `<div class="admin-empty">${icon("bag")}<h2>Sin productos.</h2><p>Crea un producto para comenzar.</p></div>`}</section>${showForm ? renderProductForm(editing, state.busy) : ""}</div></main>`;
+    )}</div></div><button class="text-button" data-admin-refresh ${state.loading ? "disabled" : ""}>${state.loading ? "Actualizando…" : "Actualizar"}</button></div><div class="product-admin-layout ${showForm ? "has-selection" : ""}"><section class="admin-product-list" aria-label="Productos">${visible.length ? visible.map(renderProductRow).join("") : `<div class="admin-empty">${icon("bag")}<h2>${products.length ? "Sin coincidencias." : "Sin productos."}</h2><p>${products.length ? "Prueba otra marca o estado para ver más productos." : "Crea un producto para comenzar."}</p></div>`}</section>${showForm ? renderProductForm(editing, state.busy) : ""}</div></main>`;
 }
 
 function renderProductRow(product) {
-  return `<article class="admin-product-row"><img src="${e(safeImage(product.image))}" alt=""><div><strong>${e(product.name)}</strong><span>${e(product.tag)} · ${formatMoney(product.price)}</span><small>Posición ${product.position}</small></div><span class="status ${product.active ? "confirmed" : "pending"}">${product.active ? "Activo" : "Archivado"}</span><div class="product-row-actions"><button class="text-button" data-edit-product="${e(product.id)}">Editar</button>${product.active ? `<button class="text-button danger" data-archive-product="${e(product.id)}">Archivar</button>` : `<button class="text-button" data-restore-product="${e(product.id)}">Restaurar</button>`}</div></article>`;
+  return `<article class="admin-product-row"><img src="${e(safeImage(product.image))}" alt=""><div><strong>${e(product.name)}</strong><span>${e(product.tag)} · ${formatMoney(product.price)}</span><small>${e(productBrandLabel(product))} · Posición ${product.position}</small></div><span class="status ${product.active ? "confirmed" : "pending"}">${product.active ? "Activo" : "Archivado"}</span><div class="product-row-actions"><button class="text-button" data-edit-product="${e(product.id)}">Editar</button>${product.active ? `<button class="text-button danger" data-archive-product="${e(product.id)}">Archivar</button>` : `<button class="text-button" data-restore-product="${e(product.id)}">Restaurar</button>`}</div></article>`;
 }
 
 function renderProductForm(product, busy) {
@@ -317,7 +323,7 @@ function renderProductForm(product, busy) {
     position: 1,
     active: true,
   };
-  return `<form id="product-form" class="product-editor"><div class="cart-title"><h2>${product ? "Editar producto" : "Nuevo producto"}</h2><button type="button" class="icon-button" data-close-product aria-label="Cerrar editor">${icon("close")}</button></div><input type="hidden" name="id" value="${e(item.id)}"><input type="hidden" name="existingImage" value="${e(item.image)}"><div class="field"><label for="product-name">Nombre</label><input id="product-name" name="name" required maxlength="80" value="${e(item.name)}"></div><div class="product-form-grid"><div class="field"><label for="product-price">Precio (₡)</label><input id="product-price" name="price" type="number" required min="1" max="1000000" step="1" value="${e(item.price)}"></div><div class="field"><label for="product-position">Posición</label><input id="product-position" name="position" type="number" required min="0" max="999" step="1" value="${e(item.position)}"></div></div><div class="field"><label for="product-tag">Etiqueta corta</label><input id="product-tag" name="tag" required maxlength="40" value="${e(item.tag)}"></div><div class="field"><label for="product-description">Descripción</label><textarea id="product-description" name="description" required maxlength="500" rows="4">${e(item.description)}</textarea></div><div class="product-form-grid"><div class="field"><label for="product-accent">Color</label><input id="product-accent" name="accent" type="color" value="${e(item.accent)}"></div><div class="field"><label for="product-image">Imagen ${product ? "(opcional)" : ""}</label><input id="product-image" name="image" type="file" accept="image/jpeg,image/png" ${product ? "" : "required"}></div></div><small>JPG o PNG · Máximo 5 MB.</small><div class="button-row"><button class="button button-dark wide" ${busy ? "disabled" : ""}>${busy ? "Guardando…" : "Guardar producto"}</button></div></form>`;
+  return `<form id="product-form" class="product-editor"><div class="cart-title"><h2>${product ? "Editar producto" : "Nuevo producto"}</h2><button type="button" class="icon-button" data-close-product aria-label="Cerrar editor">${icon("close")}</button></div><input type="hidden" name="id" value="${e(item.id)}"><input type="hidden" name="existingImage" value="${e(item.image)}"><div class="field"><label for="product-brand">Sección del catálogo</label><select id="product-brand" name="brand"><option value="snackyzz" ${(item.brand || "snackyzz") === "snackyzz" ? "selected" : ""}>Snackyzz · Cookies selladas</option><option value="baking-stereo" ${item.brand === "baking-stereo" ? "selected" : ""}>Snackyzz X Baking Stereo · Recién horneadas</option></select></div><div class="field"><label for="product-name">Nombre</label><input id="product-name" name="name" required maxlength="80" value="${e(item.name)}"></div><div class="product-form-grid"><div class="field"><label for="product-price">Precio (₡)</label><input id="product-price" name="price" type="number" required min="1" max="1000000" step="1" value="${e(item.price)}"></div><div class="field"><label for="product-position">Posición</label><input id="product-position" name="position" type="number" required min="0" max="999" step="1" value="${e(item.position)}"></div></div><div class="field"><label for="product-tag">Etiqueta corta</label><input id="product-tag" name="tag" required maxlength="40" value="${e(item.tag)}"></div><div class="field"><label for="product-description">Descripción</label><textarea id="product-description" name="description" required maxlength="500" rows="4">${e(item.description)}</textarea></div><div class="product-form-grid"><div class="field"><label for="product-accent">Color</label><input id="product-accent" name="accent" type="color" value="${e(item.accent)}"></div><div class="field"><label for="product-image">Imagen ${product ? "(opcional)" : ""}</label><input id="product-image" name="image" type="file" accept="image/jpeg,image/png" ${product ? "" : "required"}></div></div><small>JPG o PNG · Máximo 5 MB.</small><div class="button-row"><button class="button button-dark wide" ${busy ? "disabled" : ""}>${busy ? "Guardando…" : "Guardar producto"}</button></div></form>`;
 }
 
 function renderSettings(state) {
