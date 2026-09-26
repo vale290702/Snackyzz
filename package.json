@@ -1,27 +1,40 @@
 {
   "name": "snackyzz",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5174",
-    "start": "npm run dev",
-    "test": "node --test tests/*.test.js",
+    "dev": "next dev --hostname 127.0.0.1 --port 5174",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 5174",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "test": "vitest run",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests index.html *.js *.json",
-    "format:check": "prettier --check src tests index.html *.js *.json",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4174"
+    "format": "prettier --write src tests *.ts *.json",
+    "format:check": "prettier --check src tests *.ts *.json"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0"
+    "@supabase/supabase-js": "^2.116.0",
+    "next": "^16.3.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.6",
+    "jsdom": "^30.1.1",
     "prettier": "^3.9.6",
-    "vite": "^8.2.2"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
   }
 }

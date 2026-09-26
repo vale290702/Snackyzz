@@ -1,13 +1,13 @@
 # Snackyzz
 
-Responsive cookie storefront for Snackyzz. Customers can explore three products, manage a persistent cart, upload a required SINPE receipt, and submit an order. Administrators review private receipts, confirm orders, and monitor or retry confirmation email delivery.
+Responsive cookie storefront for Snackyzz. Customers can explore the Snackyzz and Baking Stereo catalogs, manage a persistent cart, upload a required SINPE receipt, and submit an order. Administrators review private receipts, confirm orders, and monitor or retry confirmation email delivery.
 
 ## Stack
 
-- Vite and modular browser JavaScript
+- Next.js App Router, React, and strict TypeScript (existing hash routes preserved)
 - Supabase PostgreSQL, Auth, private Storage, and Edge Functions
 - Resend for transactional confirmation email
-- Node tests, Playwright browser flows, Deno function tests, and PostgreSQL-compatible migration tests
+- Vitest component/unit tests, Playwright browser flows, Deno function tests, and PostgreSQL-compatible migration tests
 
 ## Run locally
 
@@ -23,11 +23,11 @@ npm run dev
 Open `http://127.0.0.1:5174`. Add these public values to `.env.local`:
 
 ```dotenv
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLIC_PUBLISHABLE_KEY
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLIC_PUBLISHABLE_KEY
 ```
 
-Never expose the Supabase service-role key, database password, or Resend key through a `VITE_` variable. `.env.local` is ignored by Git.
+Never expose the Supabase service-role key, database password, or Resend key through a `NEXT_PUBLIC_` variable. `.env.local` is ignored by Git.
 
 ## Supabase setup
 
@@ -48,6 +48,8 @@ The migration starts with three clearly labeled sample products, blank SINPE det
 ## Test and build
 
 ```sh
+npm run typecheck
+npm run lint
 npm test
 npm run build
 npm run test:e2e
@@ -62,9 +64,12 @@ deno task test
 
 ## Project map
 
-- `src/pages/`: storefront, checkout, locations, information, and admin views
+- `src/app/`: Next.js document and application entry
+- `src/components/`: React application state, navigation, cart and product dialog
+- `src/features/`: storefront, checkout and administration components
 - `src/lib/`: Supabase client/API adapter, cart persistence, routing, and safe HTML helpers
-- `assets/`: authored product imagery, self-hosted fonts, source prompts, and licenses
+- `public/assets/`: runtime imagery, self-hosted fonts and licenses (same URLs)
+- `assets/`: original asset provenance, source prompts and licenses
 - `supabase/migrations/`: database schema, row-level security, and transactional RPCs
 - `supabase/functions/`: public order creation and authenticated order management
 - `tests/`: unit and responsive browser tests
@@ -72,3 +77,28 @@ deno task test
 ## Production checklist
 
 Deploy the frontend over HTTPS, apply the migration and Edge Functions, configure a verified email sender and exact allowed origins, enter the real SINPE recipient and sales locations, create the administrator membership, and run a controlled end-to-end order using an address you own. Add monitoring, retention/backup decisions, and public checkout abuse controls before accepting real traffic.
+
+## Frontend migration and deployment
+
+The migration lives on `migration/nextjs-typescript`. Hash URLs, the `snackyzz-cart`
+localStorage format, Supabase browser auth, and all Edge Function contracts are
+preserved. No backend deployment or database migration is needed for this frontend
+replacement. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a fallback for
+projects using a legacy public anon key.
+
+For a production-mode local check, run `npm run build` then `npm start`.
+The browser suite defaults to port 5175; to test a production server use:
+
+```sh
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 \
+PLAYWRIGHT_SERVER_COMMAND="npm run start -- --port 5176" npm run test:e2e
+```
+
+Vercel should use the Next.js preset, Node 22 or newer, and the two public
+`NEXT_PUBLIC_` environment values above. Preview mutation tests require a staging
+Supabase project and that preview's exact origin in the Edge Functions'
+`ALLOWED_ORIGINS`. Production cutover requires review of the preview first.
+
+Rollback: restore the previous frontend deployment built from `6396184` with its
+original Vite environment names. Keep the same public origin to retain browser
+cart and login storage. Do not roll back or reseed customer database data.
