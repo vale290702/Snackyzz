@@ -83,7 +83,8 @@ Deploy the frontend over HTTPS, apply the migration and Edge Functions, configur
 The migration lives on `migration/nextjs-typescript`. Hash URLs, the `snackyzz-cart`
 localStorage format, Supabase browser auth, and all Edge Function contracts are
 preserved. No backend deployment or database migration is needed for this frontend
-replacement. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a fallback for
+replacement. During deployment, `next.config.ts` also accepts the existing public
+`VITE_SUPABASE_*` names. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a fallback for
 projects using a legacy public anon key.
 
 For a production-mode local check, run `npm run build` then `npm start`.
