@@ -1,15 +1,25 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import { products } from "../../src/data/products.js";
+import { products as catalogProducts } from "../../src/data/products.ts";
+const products = catalogProducts.map((product, index) => ({
+  ...product,
+  active: true,
+  position: index + 1,
+}));
 
 async function capture(page, name) {
   if (process.env.CAPTURE_REVIEW) {
-    fs.mkdirSync(".impeccable/review", { recursive: true });
+    const directory = process.env.CAPTURE_DIR || ".impeccable/review";
+    fs.mkdirSync(directory, { recursive: true });
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => window.scrollTo(0, 0));
+    await page
+      .locator("img")
+      .evaluateAll((images) =>
+        Promise.all(images.map((image) => image.decode().catch(() => {}))),
+      );
     await page.screenshot({
-      path:
-        ".impeccable/review/" + name + "-" + test.info().project.name + ".png",
+      path: directory + "/" + name + "-" + test.info().project.name + ".png",
       fullPage: true,
     });
   }
@@ -32,11 +42,31 @@ const order = {
   fulfillmentLabel: "Tienda Central",
   fulfillmentAddress: "Avenida 1, San José",
 };
-const location = { id:"00000000-0000-0000-0000-000000000010", name:"Tienda Central", city:"San José", address:"Avenida 1", hours:"L-V 9 a 5", map_url:"", position:1, active:true };
-const settings = { id:1,demo_catalog:true,sinpe_number:"",sinpe_recipient:"",whatsapp:"+506 8888 8888",public_email:"Snackyzz.cookies@gmail.com",instagram:"Snackyzz.cookies",uber_delivery_enabled:true,uber_disclaimer:"El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado." };
+const location = {
+  id: "00000000-0000-0000-0000-000000000010",
+  name: "Tienda Central",
+  city: "San José",
+  address: "Avenida 1",
+  hours: "L-V 9 a 5",
+  map_url: "",
+  position: 1,
+  active: true,
+};
+const settings = {
+  id: 1,
+  demo_catalog: true,
+  sinpe_number: "",
+  sinpe_recipient: "",
+  whatsapp: "+506 8888 8888",
+  public_email: "Snackyzz.cookies@gmail.com",
+  instagram: "Snackyzz.cookies",
+  uber_delivery_enabled: true,
+  uber_disclaimer:
+    "El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado.",
+};
 async function mockSupabase(
   page,
-  { orderFailure = false, emailFailure = false } = {},
+  { orderFailure = false, emailFailure = false, isAdmin = true } = {},
 ) {
   const calls = [];
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -51,8 +81,7 @@ async function mockSupabase(
       });
     if (path === "/rest/v1/products") return reply(products);
     if (path === "/rest/v1/sales_points") return reply([location]);
-    if (path === "/rest/v1/store_settings")
-      return reply(settings);
+    if (path === "/rest/v1/store_settings") return reply(settings);
     if (path === "/functions/v1/create-order") {
       calls.push({
         kind: "create",
@@ -94,7 +123,7 @@ async function mockSupabase(
         },
       });
     }
-    if (path === "/rest/v1/rpc/is_admin") return reply(true);
+    if (path === "/rest/v1/rpc/is_admin") return reply(isAdmin);
     if (path === "/functions/v1/manage-orders") {
       if (request.method() === "GET") return reply({ orders: [order] });
       const body = request.postDataJSON();
@@ -133,7 +162,12 @@ async function mockSupabase(
       });
     }
     if (path === "/functions/v1/manage-store") {
-      if (request.method() === "GET") return reply({ settings, locations:[location], emailConfigured:false });
+      if (request.method() === "GET")
+        return reply({
+          settings,
+          locations: [location],
+          emailConfigured: false,
+        });
       return reply({ settings });
     }
     if (path === "/auth/v1/logout") return reply({});
@@ -171,11 +205,15 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
     page.getByRole("heading", { name: "Un antojo. Tres formas de caer." }),
   ).toBeVisible();
   await expect(page.locator(".product-card")).toHaveCount(3);
+  await capture(page, "home");
   await page
     .getByRole("button", { name: "Ver detalles de Choco Cloud" })
     .click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Agregar al carrito", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Agregar al carrito", exact: true })
+    .click();
   await expect(page.locator("#dialog-quantity output")).toHaveText("1");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
@@ -184,6 +222,7 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   for (const hash of ["shop", "sales", "about", "checkout", "admin"]) {
     await page.goto("/#" + hash);
     await page.locator("#main").waitFor();
+    await capture(page, "route-" + hash);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -229,11 +268,11 @@ test("failed order preserves the receipt/cart and reuses its idempotency key", a
     name: "Registrar pedido de prueba",
   });
   await submit.click();
-  await expect(page.getByRole("alert")).toContainText("No pudimos guardar");
+  await expect(page.locator("#checkout-error")).toContainText("No pudimos guardar");
   await expect(page.getByText("receipt.png", { exact: true })).toBeVisible();
   await expect(page.locator("[data-cart-count]")).toHaveText("1");
   await submit.click();
-  await expect(page.getByRole("alert")).toContainText("No pudimos guardar");
+  await expect(page.locator("#checkout-error")).toContainText("No pudimos guardar");
   expect(calls).toHaveLength(2);
   expect(calls[0].key).toEqual(calls[1].key);
 });
@@ -286,16 +325,30 @@ test("admin creates and archives database products", async ({ page }) => {
   await page.getByRole("button", { name: "Productos" }).click();
   await expect(page.getByRole("heading", { name: "Productos." })).toBeVisible();
   await expect(page.locator(".admin-product-row")).toHaveCount(6);
-  await page.getByRole("button", { name: "Baking Stereo", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Baking Stereo", exact: true })
+    .click();
   await expect(page.locator(".admin-product-row")).toHaveCount(3);
-  await expect(page.locator(".admin-product-list")).not.toContainText("Choco Cloud");
-  await expect(page.getByRole("button", { name: "Baking Stereo", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".admin-product-list")).not.toContainText(
+    "Choco Cloud",
+  );
+  await expect(
+    page.getByRole("button", { name: "Baking Stereo", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await capture(page, "admin-brand-filter");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   await page.getByRole("button", { name: "Snackyzz", exact: true }).click();
   await expect(page.locator(".admin-product-row")).toHaveCount(3);
-  await expect(page.locator(".admin-product-list")).not.toContainText("Chocolate Chip");
-  await page.getByRole("button", { name: "Todas las marcas", exact: true }).click();
+  await expect(page.locator(".admin-product-list")).not.toContainText(
+    "Chocolate Chip",
+  );
+  await page
+    .getByRole("button", { name: "Todas las marcas", exact: true })
+    .click();
   await expect(page.locator(".admin-product-row")).toHaveCount(6);
   await page.getByRole("button", { name: /Nuevo producto/ }).click();
   await page.getByLabel("Nombre").fill("Caramel Dream");
@@ -311,7 +364,9 @@ test("admin creates and archives database products", async ({ page }) => {
     .locator('.admin-product-row:has-text("Caramel Dream")')
     .getByRole("button", { name: "Archivar" })
     .click();
-  expect(calls.find((call) => call.kind === "product-save").body).toMatch(/name="brand"\r\n\r\nbaking-stereo/);
+  expect(calls.find((call) => call.kind === "product-save").body).toMatch(
+    /name="brand"\r\n\r\nbaking-stereo/,
+  );
   expect(
     calls.some(
       (call) => call.kind === "product-action" && call.action === "archive",
@@ -341,27 +396,168 @@ test("checkout waits for replacement image validation instead of sending a stale
   ).toBeEnabled();
 });
 
-test('separate cookie collections share quantities and checkout', async ({ page }) => {
+test("separate cookie collections share quantities and checkout", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+  await page.goto("/#shop");
+  await expect(
+    page.getByRole("heading", { name: "Snackyzz", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".product-card")).toHaveCount(3);
+  await page
+    .locator('[data-product="choco-cloud"][data-qty="1"]')
+    .first()
+    .click();
+  await page.locator(".collection-switch a").click();
+  await expect(page).toHaveURL(/#baking-stereo$/);
+  await expect(page.locator(".product-card")).toHaveCount(3);
+  await expect(page.locator(".product-card").first()).toContainText(
+    "Baking Stereo · Recién horneadas",
+  );
+  await page
+    .locator('[data-product="bs-chocolate-chip"][data-qty="1"]')
+    .first()
+    .click();
+  await expect(page.locator("[data-cart-count]")).toHaveText("2");
+  await expect(page.locator(".cart-lines")).toContainText("Choco Cloud");
+  await expect(page.locator(".cart-lines")).toContainText("Chocolate Chip");
+  await page.reload();
+  await expect(page.locator("[data-cart-count]")).toHaveText("2");
+  await capture(page, "baking-stereo");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.locator(".collection-switch a").click();
+  await expect(page.locator("[data-cart-count]")).toHaveText("2");
+  await capture(page, "snackyzz-collection");
+  await page.getByRole("link", { name: "Comprar", exact: true }).click();
+  await expect(page.locator(".cart-brand")).toContainText([
+    "Snackyzz · Selladas",
+    "Baking Stereo · Recién horneadas",
+  ]);
+});
+
+test("hash variants, unknown routes, and browser history preserve navigation", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+  await page.goto("/#/shop");
+  await expect(
+    page.getByRole("heading", { name: "Snackyzz", exact: true }),
+  ).toBeVisible();
+  await page.locator(".collection-switch a").click();
+  await expect(page).toHaveURL(/#baking-stereo$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Snackyzz X Baking Stereo",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/#\/shop$/);
+  await expect(
+    page.getByRole("heading", { name: "Snackyzz", exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(
+    page.getByRole("heading", {
+      name: "Snackyzz X Baking Stereo",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.goto("/#not-a-route");
+  await expect(
+    page.getByRole("heading", { name: "Un antojo. Tres formas de caer." }),
+  ).toBeVisible();
+});
+
+test("stored cart hydrates on a direct checkout visit", async ({ page }) => {
+  await mockSupabase(page);
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "snackyzz-cart",
+      JSON.stringify({ "choco-cloud": 2, "bs-chocolate-chip": 1, ghost: 9 }),
+    ),
+  );
+  await page.goto("/#checkout");
+  await expect(page.locator("[data-cart-count]")).toHaveText("3");
+  await expect(page.locator(".cart-lines")).toContainText("Choco Cloud");
+  await expect(page.locator(".cart-lines")).toContainText("Chocolate Chip");
+  await expect(page.locator(".cart-lines")).not.toContainText("ghost");
+});
+
+
+test("admin session survives reload without changing login flow", async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', { name: 'Entrar al panel' }).click();
+  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+  await capture(page, 'admin-settings');
+  await page.getByRole('button', { name: 'Productos', exact: true }).click();
+  await page.locator('.admin-product-row').first().getByRole('button', { name: 'Editar' }).click();
+  await capture(page, 'admin-editor');
+  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Hola, equipo Snackyzz.' })).toBeVisible();
+});
+
+test("authenticated non-admin cannot access management", async ({ page }) => {
+  await mockSupabase(page, { isAdmin: false });
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('customer@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', { name: 'Entrar al panel' }).click();
+  await expect(page.getByText('Esta cuenta no tiene acceso de administración.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toHaveCount(0);
+});
+
+test("keyboard cart controls retain focus and dialog appearance", async ({ page }) => {
   await mockSupabase(page);
   await page.goto('/#shop');
-  await expect(page.getByRole('heading', { name: 'Snackyzz', exact: true })).toBeVisible();
-  await expect(page.locator('.product-card')).toHaveCount(3);
-  await page.locator('[data-product="choco-cloud"][data-qty="1"]').first().click();
-  await page.locator('.collection-switch a').click();
-  await expect(page).toHaveURL(/#baking-stereo$/);
-  await expect(page.locator('.product-card')).toHaveCount(3);
-  await expect(page.locator('.product-card').first()).toContainText('Baking Stereo · Recién horneadas');
-  await page.locator('[data-product="bs-chocolate-chip"][data-qty="1"]').first().click();
-  await expect(page.locator('[data-cart-count]')).toHaveText('2');
-  await expect(page.locator('.cart-lines')).toContainText('Choco Cloud');
-  await expect(page.locator('.cart-lines')).toContainText('Chocolate Chip');
+  const add = page.locator('.product-card [data-product="choco-cloud"][data-qty="1"]');
+  await add.focus();
+  await page.keyboard.press('Enter');
+  await expect(add).toBeFocused();
+  await page.getByRole('button', {name: 'Ver detalles de Choco Cloud'}).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await capture(page, 'product-dialog');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+});
+
+test("catalog failure displays the existing error and retries", async ({ page }) => {
+  await mockSupabase(page);
+  await page.route(/\/rest\/v1\/products\?/, route => route.fulfill({status:400, contentType:'application/json', body:JSON.stringify({message:'unavailable'})}));
+  await page.goto('/#shop');
+  await expect(page.getByRole('button', {name:'Reintentar'})).toBeVisible();
+  await page.unroute(/\/rest\/v1\/products\?/);
+  await page.getByRole('button', {name:'Reintentar'}).click();
+  await expect(page.getByRole('button', {name:'Reintentar'})).toHaveCount(0);
+  await expect(page.getByRole('button', {name:'Agregar al carrito'}).first()).toBeVisible();
+});
+
+test("expired admin session with a rejected refresh returns to login", async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', {name:'Entrar al panel'}).click();
+  await expect(page.getByRole('heading', {name:'Órdenes.'})).toBeVisible();
+  await page.evaluate(() => {
+    const key=Object.keys(localStorage).find(key=>key.startsWith('sb-') && key.endsWith('-auth-token'));
+    const session=JSON.parse(localStorage.getItem(key));
+    session.expires_at=1;
+    localStorage.setItem(key,JSON.stringify(session));
+  });
+  await page.route(/\/auth\/v1\/token\?/, route=>route.fulfill({status:400, contentType:'application/json',body:JSON.stringify({code:'refresh_token_not_found',message:'Invalid Refresh Token: Refresh Token Not Found'})}));
   await page.reload();
-  await expect(page.locator('[data-cart-count]')).toHaveText('2');
-  await capture(page, 'baking-stereo');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.collection-switch a').click();
-  await expect(page.locator('[data-cart-count]')).toHaveText('2');
-  await capture(page, 'snackyzz-collection');
-  await page.getByRole('link', { name: 'Comprar', exact: true }).click();
-  await expect(page.locator('.cart-brand')).toContainText(['Snackyzz · Selladas', 'Baking Stereo · Recién horneadas']);
+  await expect(page.getByRole('heading', {name:'Hola, equipo Snackyzz.'})).toBeVisible();
 });

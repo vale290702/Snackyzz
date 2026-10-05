@@ -14,3 +14,8 @@ instance/
 .superpowers/
 test-results/
 dist/
+.next/
+out/
+*.tsbuildinfo
+playwright-report/
+.vercel/

@@ -1,0 +1,242 @@
+[
+  {
+    "file": "admin-brand-filter-desktop.png",
+    "size": [
+      1440,
+      1000
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-brand-filter-mobile.png",
+    "size": [
+      390,
+      1086
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-desktop.png",
+    "size": [
+      1440,
+      1527
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-editor-desktop.png",
+    "size": [
+      1440,
+      1250
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-editor-mobile.png",
+    "size": [
+      441,
+      2489
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-mobile.png",
+    "size": [
+      390,
+      1788
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-settings-desktop.png",
+    "size": [
+      1440,
+      1571
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "admin-settings-mobile.png",
+    "size": [
+      427,
+      2142
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "baking-stereo-desktop.png",
+    "size": [
+      1440,
+      2349
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "baking-stereo-mobile.png",
+    "size": [
+      390,
+      3278
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "checkout-desktop.png",
+    "size": [
+      1440,
+      2216
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "checkout-mobile.png",
+    "size": [
+      390,
+      2827
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "home-desktop.png",
+    "size": [
+      1440,
+      2658
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "home-mobile.png",
+    "size": [
+      390,
+      3849
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "product-dialog-desktop.png",
+    "size": [
+      1440,
+      2261
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "product-dialog-mobile.png",
+    "size": [
+      390,
+      3115
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-about-desktop.png",
+    "size": [
+      1440,
+      1593
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-about-mobile.png",
+    "size": [
+      390,
+      1831
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-admin-desktop.png",
+    "size": [
+      1440,
+      1000
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-admin-mobile.png",
+    "size": [
+      390,
+      844
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-checkout-desktop.png",
+    "size": [
+      1440,
+      2125
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-checkout-mobile.png",
+    "size": [
+      390,
+      2735
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-sales-desktop.png",
+    "size": [
+      1440,
+      1092
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-sales-mobile.png",
+    "size": [
+      390,
+      1112
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-shop-desktop.png",
+    "size": [
+      1440,
+      2261
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "route-shop-mobile.png",
+    "size": [
+      390,
+      3115
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "snackyzz-collection-desktop.png",
+    "size": [
+      1440,
+      2261
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "snackyzz-collection-mobile.png",
+    "size": [
+      390,
+      3240
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "success-desktop.png",
+    "size": [
+      1440,
+      1360
+    ],
+    "changed_pixels": 0
+  },
+  {
+    "file": "success-mobile.png",
+    "size": [
+      390,
+      1418
+    ],
+    "changed_pixels": 0
+  }
+]
