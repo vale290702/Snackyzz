@@ -1,3 +1,5 @@
+import { BakingHero } from "./baking-hero";
+import "./baking-stereo.css";
 import { ProductCard, Cart, DemoNotice, Icon } from "../../components/store/ui";
 import { collections, productBrand } from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
@@ -18,21 +20,21 @@ export function Shop({
       className={`page-width inner-page collection-page ${fresh ? "collection-fresh" : "collection-sealed"}`}
       tabIndex={-1}
     >
-      <div className="page-heading collection-heading">
-        <h1>
-          {fresh ? (
-            <>
-              <span className="collab-snackyzz">Snackyzz</span>{" "}
-              <span className="collab-cross">X</span>
-              <br />
-              Baking Stereo
-            </>
-          ) : (
-            info.title
-          )}
-        </h1>
-        <p>{info.description}</p>
-      </div>
+      {fresh ? (
+        <BakingHero />
+      ) : (
+        <div className="page-heading collection-heading">
+          <h1>{info.title}</h1>
+          <p>{info.description}</p>
+        </div>
+      )}
+      {fresh && (
+        <div className="baking-intro" id="baking-collection" tabIndex={-1}>
+          <p className="baking-label">FRESHLY BAKED</p>
+          <h2>Un poquito de felicidad.</h2>
+          <p>Cookies recién horneadas, hechas para disfrutar cada antojo.</p>
+        </div>
+      )}
       <div className="shop-layout">
         <section aria-label={info.title}>
           <div className="shop-toolbar">
