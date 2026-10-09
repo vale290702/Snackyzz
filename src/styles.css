@@ -628,6 +628,8 @@ main:focus {
   height: 44px;
 }
 .stepper button {
+  display: grid;
+  place-items: center;
   width: 44px;
   min-width: 44px;
   height: 44px;
@@ -637,6 +639,7 @@ main:focus {
   background: var(--tint);
 }
 .stepper .icon {
+  display: block;
   width: 16px;
   height: 16px;
 }
