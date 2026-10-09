@@ -2845,3 +2845,59 @@ small#receipt-help {
   flex-wrap: wrap;
   margin: 0;
 }
+
+/* Delivery fields share the checkout's existing input treatment. */
+.checkout-form .field textarea,
+.checkout-form .field select {
+  width: 100%;
+  min-height: 49px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--chocolate);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+.checkout-form .field textarea {
+  resize: vertical;
+}
+.checkout-form .field textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.checkout-form .field select:disabled {
+  color: var(--muted);
+  background: var(--cream);
+  cursor: not-allowed;
+}
+@media (max-width: 560px) {
+  .checkout-form .field textarea,
+  .checkout-form .field select { font-size: 16px; }
+}
+
+.checkout-form .field select {
+  appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233C1907' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+.checkout-form .field select:disabled {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23795541' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media (forced-colors: active) {
+  .checkout-form .field select { appearance: auto; background-image: none; }
+}
+
+.checkout-form .field select:disabled {
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+
+.checkout-form .choice-card,
+.checkout-form .choice-card.is-selected,
+.checkout-form .field select:disabled {
+  background-color: var(--paper);
+}
