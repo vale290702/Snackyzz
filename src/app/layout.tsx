@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles.css';
 export const metadata: Metadata = {
-  title: 'Snackyzz | Un antojo. Tres formas de caer.',
+  title: 'Snackyzz | Caer nunca supo tan bien.',
   description: 'Elige tus cookies favoritas, arma tu antojo y encuentra los puntos de venta de Snackyzz.',
   icons: { icon: '/assets/favicon.svg' },
 };

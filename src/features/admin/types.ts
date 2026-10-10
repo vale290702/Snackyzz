@@ -16,6 +16,7 @@ export interface ScheduleDay {
   end: string;
 }
 export interface Settings {
+  demo_catalog?: boolean;
   sinpe_number?: string;
   sinpe_recipient?: string;
   whatsapp?: string;

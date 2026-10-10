@@ -256,9 +256,7 @@ export function Admin({ controller: c }: { controller: AdminController }) {
                   >
                     <div>
                       <strong>{o.name}</strong>
-                      <span>
-                        {`${o.id} · ${date(o.createdAt)}`}
-                      </span>
+                      <span>{`${o.id} · ${date(o.createdAt)}`}</span>
                       <small>{o.email}</small>
                     </div>
                     <strong>{formatMoney(o.total)}</strong>
@@ -401,9 +399,7 @@ function Products({ controller: c }: { controller: AdminController }) {
                   <img src={safeImage(p.image)} alt="" />
                   <div>
                     <strong>{p.name}</strong>
-                    <span>
-                      {`${p.tag} · ${formatMoney(p.price)}`}
-                    </span>
+                    <span>{`${p.tag} · ${formatMoney(p.price)}`}</span>
                     <small>
                       {`${productBrandLabel(p)} · Posición ${p.position}`}
                     </small>
@@ -675,9 +671,7 @@ function SettingsPanel({ controller: c }: { controller: AdminController }) {
                 <article key={p.id} className="admin-location-row">
                   <div>
                     <strong>{p.name}</strong>
-                    <span>
-                      {`${p.address} · ${p.city}`}
-                    </span>
+                    <span>{`${p.address} · ${p.city}`}</span>
                     <small>{p.hours || "Sin horario"}</small>
                   </div>
                   <span
@@ -742,6 +736,20 @@ function SettingsForm({
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const value = (key: string) => String(f.get(key) ?? "");
+    const demoCatalog = f.has("demoCatalog");
+    if (
+      !demoCatalog &&
+      (!value("sinpeNumber").trim() || !value("sinpeRecipient").trim())
+    ) {
+      e.currentTarget
+        .querySelector<HTMLInputElement>(
+          !value("sinpeNumber").trim()
+            ? "#setting-sinpe"
+            : "#setting-recipient",
+        )
+        ?.reportValidity();
+      return;
+    }
     const schedule = Object.fromEntries(
       days.map(([day]) => [
         day,
@@ -755,6 +763,7 @@ function SettingsForm({
     void c.storeAction(
       {
         action: "save-settings",
+        demoCatalog,
         sinpeNumber: value("sinpeNumber"),
         sinpeRecipient: value("sinpeRecipient"),
         whatsapp: value("whatsapp"),
@@ -776,12 +785,34 @@ function SettingsForm({
       onSubmit={submit}
     >
       <h2>Datos de la tienda</h2>
+      <label className="check-field">
+        <input
+          type="checkbox"
+          name="demoCatalog"
+          defaultChecked={s.demo_catalog !== false}
+          onChange={(event) => {
+            const form = event.currentTarget.form;
+            for (const name of ["sinpeNumber", "sinpeRecipient"]) {
+              const input = form?.elements.namedItem(
+                name,
+              ) as HTMLInputElement | null;
+              if (input) input.required = !event.currentTarget.checked;
+            }
+          }}
+        />
+        Modo de prueba
+      </label>
+      <p className="form-help">
+        Actívalo para registrar pedidos de prueba sin transferencias reales.
+        Para recibir pagos reales, completa ambos datos SINPE y desactívalo.
+      </p>
       <div className="product-form-grid">
         <div className="field">
           <label htmlFor="setting-sinpe">Número SINPE</label>
           <input
             id="setting-sinpe"
             name="sinpeNumber"
+            required={s.demo_catalog === false}
             maxLength={30}
             defaultValue={s.sinpe_number || ""}
           />
@@ -791,6 +822,7 @@ function SettingsForm({
           <input
             id="setting-recipient"
             name="sinpeRecipient"
+            required={s.demo_catalog === false}
             maxLength={100}
             defaultValue={s.sinpe_recipient || ""}
           />
@@ -1090,9 +1122,7 @@ function OrderDetail({
       <div className="order-items">
         {o.items.map((item, index) => (
           <div key={index}>
-            <span>
-              {`${item.quantity} × ${item.name}`}
-            </span>
+            <span>{`${item.quantity} × ${item.name}`}</span>
             <strong>{formatMoney(item.price * item.quantity)}</strong>
           </div>
         ))}

@@ -168,6 +168,7 @@ async function mockSupabase(
           locations: [location],
           emailConfigured: false,
         });
+      calls.push({ kind: "store-settings", ...request.postDataJSON() });
       return reply({ settings });
     }
     if (path === "/auth/v1/logout") return reply({});
@@ -202,7 +203,7 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Un antojo. Tres formas de caer." }),
+    page.getByRole("heading", { name: "Caer nunca supo tan bien." }),
   ).toBeVisible();
   await expect(page.locator(".product-card")).toHaveCount(3);
   await capture(page, "home");
@@ -470,7 +471,7 @@ test("hash variants, unknown routes, and browser history preserve navigation", a
   ).toBeVisible();
   await page.goto("/#not-a-route");
   await expect(
-    page.getByRole("heading", { name: "Un antojo. Tres formas de caer." }),
+    page.getByRole("heading", { name: "Caer nunca supo tan bien." }),
   ).toBeVisible();
 });
 
@@ -560,4 +561,28 @@ test("expired admin session with a rejected refresh returns to login", async ({ 
   await page.route(/\/auth\/v1\/token\?/, route=>route.fulfill({status:400, contentType:'application/json',body:JSON.stringify({code:'refresh_token_not_found',message:'Invalid Refresh Token: Refresh Token Not Found'})}));
   await page.reload();
   await expect(page.getByRole('heading', {name:'Hola, equipo Snackyzz.'})).toBeVisible();
+});
+
+
+test("admin manages SINPE and requires payment details before leaving demo mode", async ({ page }) => {
+  const calls = await mockSupabase(page);
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', { name: 'Entrar al panel' }).click();
+  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+  await expect(page.getByLabel('Modo de prueba')).toBeChecked();
+  await page.getByLabel('Modo de prueba').uncheck();
+  await page.getByRole('button', { name: 'Guardar configuración' }).click();
+  expect(calls.filter(call => call.kind === 'store-settings')).toHaveLength(0);
+  await expect(page.getByLabel('Número SINPE')).toHaveAttribute('required', '');
+  await page.getByLabel('Número SINPE').fill('88888888');
+  await page.getByLabel('Destinatario SINPE').fill('Test recipient');
+  await page.getByRole('button', { name: 'Guardar configuración' }).click();
+  await expect.poll(() => calls.filter(call => call.kind === 'store-settings').length).toBe(1);
+  expect(calls.find(call => call.kind === 'store-settings')).toMatchObject({
+    action: 'save-settings', demoCatalog: false,
+    sinpeNumber: '88888888', sinpeRecipient: 'Test recipient',
+  });
 });

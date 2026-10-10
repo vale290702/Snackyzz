@@ -7,11 +7,9 @@ export function Home({ products, cart, demoCatalog }: CatalogPageProps) {
       <section className="hero page-width">
         <div className="hero-copy">
           <h1>
-            Un antojo.
+            Caer nunca
             <br />
-            Tres formas
-            <br />
-            de <em>caer.</em>
+            supo <em>tan bien.</em>
           </h1>
           <p>
             Para ese “algo dulce”, para compartir.
