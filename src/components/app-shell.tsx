@@ -40,7 +40,7 @@ const initialState = (): AppState => ({
   draft: { name: '', email: '', phone: '' }, receipt: null, receiptPreview: '', validatingReceipt: false,
   checkoutError: '', submitting: false, lastOrder: null, idempotencyKey: '', detailId: null,
 });
-const titles: Record<Route, string> = { home: 'Caer nunca supo tan bien.', shop: 'Snackyzz', 'baking-stereo': 'Snackyzz X Baking Stereo', sales: 'Dónde encontrarnos', checkout: 'Completa tu pedido', success: 'Pedido recibido', admin: 'Administración', about: 'Sobre nosotros' };
+const titles: Record<Route, string> = { home: 'Caer en el antojo nunca supo tan bien.', shop: 'Snackyzz', 'baking-stereo': 'Snackyzz X Baking Stereo', sales: 'Dónde encontrarnos', checkout: 'Completa tu pedido', success: 'Pedido recibido', admin: 'Administración', about: 'Sobre nosotros' };
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 export default function AppShell() {

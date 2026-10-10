@@ -203,7 +203,7 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Caer nunca supo tan bien." }),
+    page.getByRole("heading", { name: "Caer en el antojo nunca supo tan bien." }),
   ).toBeVisible();
   await expect(page.locator(".product-card")).toHaveCount(3);
   await capture(page, "home");
@@ -471,7 +471,7 @@ test("hash variants, unknown routes, and browser history preserve navigation", a
   ).toBeVisible();
   await page.goto("/#not-a-route");
   await expect(
-    page.getByRole("heading", { name: "Caer nunca supo tan bien." }),
+    page.getByRole("heading", { name: "Caer en el antojo nunca supo tan bien." }),
   ).toBeVisible();
 });
 
