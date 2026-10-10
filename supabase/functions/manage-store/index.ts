@@ -44,12 +44,15 @@ Deno.serve(async(request:Request)=>{
     }
     const body=await request.json();
     if(body.action==="save-settings"){
+      if (body.demoCatalog !== undefined && typeof body.demoCatalog !== "boolean") throw new InputError("Revisa el modo de prueba.");
       const values={
+        ...(typeof body.demoCatalog === "boolean" ? { demo_catalog: body.demoCatalog } : {}),
         sinpe_number:clean(body.sinpeNumber,30),sinpe_recipient:clean(body.sinpeRecipient,100),
         whatsapp:clean(body.whatsapp,30),public_email:clean(body.publicEmail,254),instagram:clean(body.instagram,80),
         uber_delivery_enabled:Boolean(body.uberDeliveryEnabled),uber_disclaimer:clean(body.uberDisclaimer,300,10),
         delivery_lead_hours:Number(body.deliveryLeadHours),delivery_slot_hours:Number(body.deliverySlotHours),delivery_schedule:deliverySchedule(body.deliverySchedule),
       };
+      if (values.demo_catalog === false && (!values.sinpe_number || !values.sinpe_recipient)) throw new InputError("Completa el número y destinatario SINPE antes de desactivar el modo de prueba.");
       if(!Number.isInteger(values.delivery_lead_hours)||values.delivery_lead_hours<0||values.delivery_lead_hours>168||!Number.isInteger(values.delivery_slot_hours)||values.delivery_slot_hours<1||values.delivery_slot_hours>12) throw new InputError("Revisa la anticipación y duración de los horarios.");
       if(values.public_email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.public_email)) throw new InputError("Revisa el correo público.");
       if(values.whatsapp&&!/^\+?[0-9\s-]{8,30}$/.test(values.whatsapp)) throw new InputError("Revisa el número de WhatsApp.");
