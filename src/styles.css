@@ -3139,3 +3139,6 @@ small#receipt-help {
   .settings-grid .schedule-row input[type="checkbox"] { width: 18px; flex-shrink: 0; }
   .delivery-zones-admin .cart-title { flex-wrap: wrap; gap: 16px; }
 }
+
+.delivery-zones-admin .product-editor { position: static; }
+.zone-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 24px; }
