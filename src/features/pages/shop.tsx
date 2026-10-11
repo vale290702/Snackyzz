@@ -31,7 +31,7 @@ export function Shop({
       {fresh && (
         <div className="baking-intro" id="baking-collection" tabIndex={-1}>
           <p className="baking-label">FRESHLY BAKED</p>
-          <h2>Un poquito de felicidad.</h2>
+          <h2>Love at first bite</h2>
           <p>Cookies recién horneadas, hechas para disfrutar cada antojo.</p>
         </div>
       )}
