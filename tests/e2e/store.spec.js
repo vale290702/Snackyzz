@@ -66,7 +66,7 @@ const settings = {
 };
 async function mockSupabase(
   page,
-  { orderFailure = false, emailFailure = false, isAdmin = true } = {},
+  { orderFailure = false, emailFailure = false, isAdmin = true, productSaveFailure = false } = {},
 ) {
   const calls = [];
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -150,6 +150,7 @@ async function mockSupabase(
         });
       }
       calls.push({ kind: "product-save", body: request.postData() });
+      if (productSaveFailure) return reply({error: "No pudimos guardar el producto."}, 503);
       return reply({
         product: {
           ...products[0],
@@ -192,7 +193,7 @@ async function startCheckout(page) {
 }
 async function goToCheckout(page) {
   if (page.viewportSize().width <= 800) {
-    await page.locator(".cart-button").click();
+    await page.locator(".cart-bubble").click();
     await page.locator(".cart-sheet").getByRole("link", { name: "Comprar", exact: true }).click();
   } else {
     await page.locator(".collection-page .cart-column").getByRole("link", { name: "Comprar", exact: true }).click();
@@ -240,14 +241,15 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   }
   expect(errors).toEqual([]);
 });
-test("mobile cart opens from the header and bubble without interrupting shopping", async ({ page }, testInfo) => {
+test("mobile cart opens from the bubble without interrupting shopping", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await mockSupabase(page);
   await page.goto("/#shop");
   const sheet = page.locator(".cart-sheet");
   const bubble = page.locator(".cart-bubble");
+  await expect(page.locator(".cart-button")).toBeHidden();
   await expect(bubble).toBeVisible();
-  await page.locator(".cart-button").click();
+  await page.locator(".cart-bubble").click();
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("link", { name: "Explorar cookies" })).toBeVisible();
   const bounds = await sheet.boundingBox();
@@ -257,7 +259,7 @@ test("mobile cart opens from the header and bubble without interrupting shopping
   expect(bounds.height).toBe(page.viewportSize().height);
   await page.keyboard.press("Escape");
   await expect(sheet).not.toBeVisible();
-  await expect(page.locator(".cart-button")).toBeFocused();
+  await expect(page.locator(".cart-bubble")).toBeFocused();
 
   await page.getByRole("button", { name: "Ver detalles de Choco Cloud" }).click();
   await page.locator("#product-dialog").getByRole("button", { name: "Ver mi carrito" }).click();
@@ -290,7 +292,7 @@ test("narrow mobile pages do not scroll sideways and the cart fills the viewport
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
     await page.goto("/#shop");
-    await page.locator(".cart-button").click();
+    await page.locator(".cart-bubble").click();
     const bounds = await page.locator(".cart-sheet").boundingBox();
     expect(bounds).toMatchObject({ x: 0, y: 0, width, height: 700 });
   }
@@ -305,7 +307,7 @@ test("cart item scrolling stays clear of prices", async ({ page }, testInfo) => 
   for (let index = 0; index < 3; index++) {
     await cards.nth(index).getByRole("button", { name: "Agregar al carrito" }).click();
   }
-  await page.locator(".cart-button").click();
+  await page.locator(".cart-bubble").click();
   const measurements = await page.locator(".cart-sheet").evaluate(sheet => {
     const list = sheet.querySelector(".cart-lines");
     const amount = sheet.querySelector(".cart-line strong");
@@ -682,4 +684,29 @@ test("admin manages SINPE and requires payment details before leaving demo mode"
     action: 'save-settings', demoCatalog: false,
     sinpeNumber: '88888888', sinpeRecipient: 'Test recipient',
   });
+});
+
+
+test("cookie editor preserves draft through refresh and failed save", async ({ page }) => {
+  await mockSupabase(page, {productSaveFailure: true});
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', {name:'Entrar al panel'}).click();
+  await expect(page.getByRole('heading', {name:'Órdenes.'})).toBeVisible();
+  await page.getByRole('button', {name:'Productos', exact:true}).click();
+  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
+  await page.getByLabel('Nombre', {exact:true}).fill('Edited cookie');
+  await page.getByLabel('Descripción', {exact:true}).fill('My unsaved description');
+  await page.getByRole('button', {name:'Actualizar', exact:true}).click();
+  await expect(page.getByRole('button', {name:'Actualizar', exact:true})).toBeEnabled();
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
+  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
+  await page.getByRole('button', {name:'Guardar producto', exact:true}).click();
+  await expect(page.locator('#main').getByRole('alert')).toContainText('No pudimos guardar el producto.');
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
+  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
+  await page.getByRole('button', {name:'Cerrar editor'}).click();
+  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Choco Cloud');
 });
