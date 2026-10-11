@@ -12,7 +12,7 @@ export function About() {
       <section className="about-layout">
         <img
           src="/assets/hero-cookies.webp"
-          alt="Cookies de referencia de Snackyzz"
+          alt="Cookies Snackyzz"
           width="640"
           height="640"
         />

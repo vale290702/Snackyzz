@@ -337,11 +337,9 @@ export function Checkout({
                       ? "Estás probando Snackyzz."
                       : "El pago aún no está disponible."}
                   </strong>
-                  <p>
-                    {demoCatalog
-                      ? "Este es un pedido de prueba. No realices una transferencia real; utiliza una imagen de muestra como comprobante."
-                      : "El número SINPE todavía no está configurado. Escríbenos para consultar antes de hacer un pago."}
-                  </p>
+                  {!demoCatalog && <p>
+                    El número SINPE todavía no está configurado. Escríbenos para consultar antes de hacer un pago.
+                  </p>}
                 </div>
               )}
               <label
@@ -412,9 +410,7 @@ export function Checkout({
             >
               {submitting
                 ? "Registrando tu pedido…"
-                : demoCatalog
-                  ? "Registrar pedido de prueba"
-                  : "Realizar pedido"}{" "}
+                : "Realizar pedido"}{" "}
               {submitting ? (
                 <span className="spinner" aria-hidden="true" />
               ) : (
@@ -489,9 +485,6 @@ export function Success({ lastOrder, contact = {} }: SuccessProps) {
           Una vez revisado el SINPE, te mandaremos un correo con la confirmación
           de tu pedido a <strong>{lastOrder.email}</strong>.
         </p>
-        {lastOrder.demo ? (
-          <p className="demo-notice">Este es un pedido de prueba.</p>
-        ) : null}
       </div>
       {whatsapp ? (
         <a

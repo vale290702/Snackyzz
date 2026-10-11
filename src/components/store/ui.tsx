@@ -249,7 +249,7 @@ export function ProductCard({
       >
         <img
           src={safeImage(product.image)}
-          alt={`${product.name}, imagen de referencia`}
+          alt={product.name}
           width="640"
           height="640"
           loading="lazy"
@@ -394,11 +394,4 @@ export function Cart({
       )}
     </aside>
   );
-}
-export function DemoNotice({ demo }: { demo: boolean }) {
-  return demo ? (
-    <p className="demo-notice">
-      Catálogo de muestra · Sabores, precios e imágenes de referencia.
-    </p>
-  ) : null;
 }

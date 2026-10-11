@@ -1,7 +1,7 @@
-import { Icon, ProductCard, DemoNotice } from "../../components/store/ui";
+import { Icon, ProductCard } from "../../components/store/ui";
 import { productBrand } from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
-export function Home({ products, cart, demoCatalog }: CatalogPageProps) {
+export function Home({ products, cart }: CatalogPageProps) {
   return (
     <main id="main" tabIndex={-1}>
       <section className="hero page-width">
@@ -25,7 +25,7 @@ export function Home({ products, cart, demoCatalog }: CatalogPageProps) {
         <div className="hero-visual">
           <img
             src="/assets/hero-cookies.webp"
-            alt="Cookies con trozos de chocolate sobre un fondo naranja. Fotografía ilustrativa."
+            alt="Cookies con trozos de chocolate sobre un fondo naranja."
             width="1024"
             height="1024"
             fetchPriority="high"
@@ -70,7 +70,6 @@ export function Home({ products, cart, demoCatalog }: CatalogPageProps) {
               <ProductCard key={p.id} product={p} cart={cart} />
             ))}
         </div>
-        <DemoNotice demo={demoCatalog} />
       </section>
       <section className="break-section page-width">
         <div className="break-symbol" aria-hidden="true">

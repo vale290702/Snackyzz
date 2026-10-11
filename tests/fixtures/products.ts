@@ -1,5 +1,5 @@
-import type { Product } from "../types/store";
-// Offline preview only. The server catalog is authoritative for all orders.
+import type { Product } from "../../src/types/store";
+// Test fixture only; never bundled into the storefront.
 export const products: Product[] = [
   {
     id: "choco-cloud",
