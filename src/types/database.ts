@@ -136,6 +136,8 @@ export type Database = {
           phone: string
           pickup_location_id: string | null
           receipt_path: string
+          rejection_reason: string
+          rejected_at: string | null
           status: string
           total: number
         }
@@ -156,6 +158,8 @@ export type Database = {
           phone?: string
           pickup_location_id?: string | null
           receipt_path: string
+          rejection_reason?: string
+          rejected_at?: string | null
           status?: string
           total: number
         }
@@ -176,6 +180,8 @@ export type Database = {
           phone?: string
           pickup_location_id?: string | null
           receipt_path?: string
+          rejection_reason?: string
+          rejected_at?: string | null
           status?: string
           total?: number
         }
@@ -311,6 +317,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_order_notification: {
+        Args: { p_order_id: string; p_action: string; p_reason?: string }
+        Returns: Json
+      }
       claim_confirmation: {
         Args: { p_order_id: string; p_retry?: boolean }
         Returns: Json

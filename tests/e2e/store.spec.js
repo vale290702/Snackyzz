@@ -94,9 +94,11 @@ async function mockSupabase(
     isAdmin = true,
     productSaveFailure = false,
     zoneSaveFailure = false,
+    rejectFailure = false,
   } = {},
 ) {
   const calls = [];
+  let managedOrder = {...order};
   await page.route("https://*.supabase.co/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -155,18 +157,18 @@ async function mockSupabase(
       return reply(zones.filter((zone) => zone.active));
     if (path === "/rest/v1/rpc/is_admin") return reply(isAdmin);
     if (path === "/functions/v1/manage-orders") {
-      if (request.method() === "GET") return reply({ orders: [order] });
+      if (request.method() === "GET") return reply({ orders: [managedOrder] });
       const body = request.postDataJSON();
       calls.push({ kind: "manage", ...body });
-      return reply({
-        order: {
-          ...order,
-          status: "confirmed",
-          confirmedAt: "2026-09-07T15:10:00Z",
-          emailStatus:
-            emailFailure && body.action === "confirm" ? "failed" : "sent",
-        },
-      });
+      if (body.action === "reject" && rejectFailure) return reply({error:"No se pudo rechazar la orden."},503);
+      managedOrder = {
+        ...managedOrder,
+        status: body.action === "reject" ? "rejected" : body.action === "confirm" ? "confirmed" : managedOrder.status,
+        confirmedAt: body.action === "confirm" ? "2026-09-07T15:10:00Z" : managedOrder.confirmedAt,
+        ...(body.action === "reject" ? {rejectedAt:"2026-10-11T18:00:00Z",rejectionReason:body.reason} : {}),
+        emailStatus: emailFailure && body.action !== "retry-email" ? "failed" : "sent",
+      };
+      return reply({order:managedOrder});
     }
     if (path === "/functions/v1/manage-products") {
       if (request.method() === "GET") return reply({ products });
@@ -1011,4 +1013,45 @@ test("zone save failure keeps the draft and spaces actions", async ({page}) => {
   const cancel = await page.getByRole("button",{name:"Cancelar",exact:true}).boundingBox();
   expect(Math.max(cancel.x - (save.x + save.width), cancel.y - (save.y + save.height))).toBeGreaterThanOrEqual(15);
   await capture(page,"zone-editor-actions");
+});
+
+async function openAdminOrder(page) {
+  await page.goto("/#admin");
+  await page.getByLabel("Correo de administración").fill("admin@example.invalid");
+  await page.getByLabel("Contraseña de administración").fill("testing-password");
+  await page.getByRole("button",{name:"Entrar al panel",exact:true}).click();
+  await page.getByRole("button",{name:/Revisar pedido SN-TEST/}).click();
+}
+test("admin requires a rejection reason and can retry the rejection email", async ({page}) => {
+  const calls = await mockSupabase(page,{emailFailure:true});
+  await openAdminOrder(page);
+  await page.getByRole("button",{name:"Rechazar",exact:true}).click();
+  await page.getByRole("button",{name:"Rechazar y notificar",exact:true}).click();
+  expect(calls).toHaveLength(0);
+  const reason = "El comprobante no coincide con el monto del pedido.";
+  await page.getByLabel("Motivo del rechazo",{exact:true}).fill(reason);
+  await capture(page,"order-rejection-form");
+  await page.getByRole("button",{name:"Rechazar y notificar",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Pedido rechazado",exact:true})).toBeVisible();
+  await expect(page.locator(".rejection-reason")).toHaveText(reason);
+  await expect(page.getByRole("button",{name:"Confirmar pedido",exact:true})).toHaveCount(0);
+  await page.getByRole("button",{name:"Reintentar correo",exact:true}).click();
+  await expect(page.getByText("Correo enviado",{exact:true})).toBeVisible();
+  expect(calls.map(call => call.action)).toEqual(["reject","retry-email"]);
+  expect(calls[0].reason).toBe(reason);
+  await page.getByRole("button",{name:"Rechazadas",exact:true}).click();
+  await expect(page.locator(".orders-list .status")).toHaveText("Rechazado");
+});
+test("rejection save failure preserves the reason and order state", async ({page}) => {
+  await mockSupabase(page,{rejectFailure:true});
+  await openAdminOrder(page);
+  await page.getByRole("button",{name:"Rechazar",exact:true}).click();
+  const reason = "No podemos entregar en el horario solicitado.";
+  await page.getByLabel("Motivo del rechazo",{exact:true}).fill(reason);
+  await page.getByRole("button",{name:"Rechazar y notificar",exact:true}).click();
+  await expect(page.locator(".order-rejection-form")).toContainText("No se pudo rechazar la orden.");
+  await expect(page.getByLabel("Motivo del rechazo",{exact:true})).toHaveValue(reason);
+  await page.getByRole("button",{name:"Cancelar",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Confirmar pedido",exact:true})).toBeVisible();
+  await expect(page.locator(".orders-list .status")).toHaveText("Pendiente");
 });

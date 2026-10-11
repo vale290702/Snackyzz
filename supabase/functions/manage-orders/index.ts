@@ -1,8 +1,8 @@
 import { cors, errorResponse, json, serviceClient, type ServiceClient } from '../_shared/http.ts';
 import { InputError } from '../_shared/validation.ts';
-import { sendConfirmation, type MailPayload } from '../_shared/mail.ts';
+import { sendConfirmation, orderMailPayload, type MailPayload } from '../_shared/mail.ts';
 
-type Order = {id:string;name:string;email:string;total:number;receiptPath:string;
+type Order = {id:string;name:string;email:string;total:number;receiptPath:string;status:string;rejectionReason?:string;
   items:{name:string;quantity:number;price:number}[];[key:string]:unknown};
 async function withReceipt(db: ServiceClient,order: Order) {
   const {data,error} = await db.storage.from('receipts').createSignedUrl(order.receiptPath,600);
@@ -18,19 +18,16 @@ async function deliver(db: ServiceClient,claim: {order:Order;claimToken:string;p
   if (!key || (!from && !claim.payload?.from)) {
     result = {status:'failed',error:'Email provider is not configured'};
   } else {
-    const payload = claim.payload ?? {from,to:[order.email],
-      subject:`Snackyzz · Orden ${order.id.slice(0,8)} confirmada`,
-      text:`Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${i.quantity*i.price}`).join('\n')}\n\nTotal: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
-    };
+    const payload = claim.payload ?? orderMailPayload(order,from);
     // Freeze identical payload before contacting Resend; retries retain the same
     // provider key AND body, even when sender settings change between attempts.
     const {data:saved,error} = await db.rpc('prepare_email',{p_order_id:order.id,p_token:claim.claimToken,p_payload:payload});
-    if (error) throw new InputError('La orden está confirmada; recarga para revisar el estado del correo.',503);
-    result = await sendConfirmation(saved,order.id,key);
+    if (error) throw new InputError('La decisión quedó guardada; recarga para revisar el estado del correo.',503);
+    result = await sendConfirmation(saved,order.id,key,fetch,order.status === 'rejected' ? 'reject' : 'confirm');
   }
   const {error} = await db.rpc('finish_email',{p_order_id:order.id,p_token:claim.claimToken,
     p_status:result.status,p_provider_id:'providerId' in result ? result.providerId : null,p_error:result.error ?? null});
-  if (error) throw new InputError('La orden está confirmada; recarga para revisar el estado del correo.',503);
+  if (error) throw new InputError('La decisión quedó guardada; recarga para revisar el estado del correo.',503);
 }
 
 Deno.serve(async (request: Request) => {
@@ -63,9 +60,11 @@ Deno.serve(async (request: Request) => {
     if (text.length > 4096) throw new InputError('Solicitud inválida.');
     let body;
     try { body = JSON.parse(text); } catch { throw new InputError('Solicitud inválida.'); }
-    if (!body || !['confirm','retry-email'].includes(body.action) || !/^[0-9a-f-]{36}$/.test(body.orderId)) throw new InputError('Solicitud inválida.');
-    const {data:claim,error} = await db.rpc('claim_confirmation',{p_order_id:body.orderId,p_retry:body.action === 'retry-email'});
-    if (error) throw new InputError(error.message.includes('not found') ? 'No se encontró la orden.' : 'No se pudo confirmar la orden.',error.message.includes('not found') ? 404 : 409);
+    if (!body || !['confirm','reject','retry-email'].includes(body.action) || !/^[0-9a-f-]{36}$/.test(body.orderId)) throw new InputError('Solicitud inválida.');
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+    if (body.action === 'reject' && (reason.length < 5 || reason.length > 1000 || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(reason))) throw new InputError('Escribe un motivo de rechazo de 5 a 1000 caracteres.');
+    const {data:claim,error} = await db.rpc('claim_order_notification',{p_order_id:body.orderId,p_action:body.action,p_reason:body.action === 'reject' ? reason : ''});
+    if (error) throw new InputError(error.message.includes('not found') ? 'No se encontró la orden.' : 'No se pudo actualizar la orden. Recarga para revisar su estado.',error.message.includes('not found') ? 404 : 409);
     if (claim.claimed) await deliver(db,claim);
     const {data:order,error:snapshotError} = await db.rpc('order_snapshot',{p_order_id:body.orderId});
     if (snapshotError) throw new InputError('Recarga para revisar el estado de la orden.',503);

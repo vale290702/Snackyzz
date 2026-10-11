@@ -180,11 +180,11 @@ export async function api<T = unknown>(
       },
     });
   const action = path.match(
-    /^\/admin\/orders\/([^/]+)\/(confirm|retry-email)$/,
+    /^\/admin\/orders\/([^/]+)\/(confirm|reject|retry-email)$/,
   );
   if (action)
     return invoke<T>("manage-orders", {
-      body: { orderId: decodeURIComponent(action[1]), action: action[2] },
+      body: { orderId: decodeURIComponent(action[1]), action: action[2], ...(body && typeof body === "object" && "reason" in body ? {reason: body.reason} : {}) },
     });
   throw new ApiError("Solicitud no disponible.");
 }
