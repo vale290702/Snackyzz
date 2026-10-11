@@ -1,13 +1,20 @@
-export type MailPayload = {from?:string; to:string[]; subject:string; text:string};
+export type MailPayload = {from?:string; to:string[]; subject:string; text:string; html?:string; attachments?:{filename:string;content:string;content_type:string;content_id:string}[]};
 export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; items:{name:string;quantity:number;price:number}[] };
-export function orderMailPayload(order: OrderMail, from: string): MailPayload {
+export function orderMailPayload(order: OrderMail, from: string, refundImage?: string): MailPayload {
   const rejected = order.status === 'rejected';
-  return {from,to:[order.email],
+  const payload: MailPayload = {from,to:[order.email],
     subject:`Snackyzz · Orden ${order.id.slice(0,8)} ${rejected ? 'rechazada' : 'confirmada'}`,
     text: rejected
       ? `Hola ${order.name},\n\nTu orden no pudo ser aceptada.\n\nMotivo del rechazo:\n${order.rejectionReason}\n\nOrden: ${order.id}\n\nSi tienes alguna consulta sobre tu pedido o pago, escríbenos a Snackyzz.cookies@gmail.com.\n\nSnackyzz`
       : `Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${i.quantity*i.price}`).join('\n')}\n\nTotal: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
   };
+  if (rejected && refundImage) {
+    const escape = (value:string) => value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+    payload.text += '\n\nComprobante de devolución SINPE adjunto.';
+    payload.html = `<div style="font-family:Arial,sans-serif;color:#3B190B;max-width:600px"><p>${escape(payload.text).replace(/\n/g,'<br>')}</p><h2>Comprobante de devolución SINPE</h2><img src="cid:sinpe-refund" alt="Comprobante de devolución SINPE" style="max-width:100%;height:auto"></div>`;
+    payload.attachments = [{filename:'devolucion-sinpe.jpg',content:refundImage,content_type:'image/jpeg',content_id:'sinpe-refund'}];
+  }
+  return payload;
 }
 export type MailResult = {status:'sent'|'failed';providerId?:string;error?:string};
 export async function sendConfirmation(

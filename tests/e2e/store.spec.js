@@ -158,14 +158,19 @@ async function mockSupabase(
     if (path === "/rest/v1/rpc/is_admin") return reply(isAdmin);
     if (path === "/functions/v1/manage-orders") {
       if (request.method() === "GET") return reply({ orders: [managedOrder] });
-      const body = request.postDataJSON();
+      const multipart = request.headers()['content-type']?.includes('multipart/form-data');
+      let body;
+      if (multipart) {
+        const form = await new Response(request.postDataBuffer(),{headers:{'Content-Type':request.headers()['content-type']}}).formData();
+        body = {orderId:form.get('orderId'),action:form.get('action'),reason:form.get('reason'),refundReceipt:form.get('refundReceipt')?.name};
+      } else body = request.postDataJSON();
       calls.push({ kind: "manage", ...body });
       if (body.action === "reject" && rejectFailure) return reply({error:"No se pudo rechazar la orden."},503);
       managedOrder = {
         ...managedOrder,
         status: body.action === "reject" ? "rejected" : body.action === "confirm" ? "confirmed" : managedOrder.status,
         confirmedAt: body.action === "confirm" ? "2026-09-07T15:10:00Z" : managedOrder.confirmedAt,
-        ...(body.action === "reject" ? {rejectedAt:"2026-10-11T18:00:00Z",rejectionReason:body.reason} : {}),
+        ...(body.action === "reject" ? {rejectedAt:"2026-10-11T18:00:00Z",rejectionReason:body.reason,...(body.refundReceipt ? {refundReceiptUrl:"/assets/cookie-chocolate.webp"} : {})} : {}),
         emailStatus: emailFailure && body.action !== "retry-email" ? "failed" : "sent",
       };
       return reply({order:managedOrder});
@@ -1054,4 +1059,29 @@ test("rejection save failure preserves the reason and order state", async ({page
   await page.getByRole("button",{name:"Cancelar",exact:true}).click();
   await expect(page.getByRole("button",{name:"Confirmar pedido",exact:true})).toBeVisible();
   await expect(page.locator(".orders-list .status")).toHaveText("Pendiente");
+});
+
+test("admin attaches a refund receipt and keeps it on email retry", async ({page}) => {
+  const calls = await mockSupabase(page,{emailFailure:true});
+  await openAdminOrder(page);
+  await page.getByRole('button',{name:'Rechazar',exact:true}).click();
+  await page.getByLabel('Motivo del rechazo',{exact:true}).fill('Devolvimos el pago porque no hay disponibilidad.');
+  await page.locator('#refund-receipt').setInputFiles({name:'devolucion.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a2ioAAAAASUVORK5CYII=','base64')});
+  await expect(page.getByAltText('Vista previa del comprobante de devolución SINPE')).toBeVisible();
+  await capture(page,'refund-receipt-form');
+  await page.getByRole('button',{name:'Rechazar y notificar',exact:true}).click();
+  await expect(page.getByAltText('Comprobante de devolución SINPE',{exact:true})).toBeVisible();
+  expect(calls[0].refundReceipt).toBe('devolucion.png');
+  await page.getByRole('button',{name:'Reintentar correo',exact:true}).click();
+  await expect(page.getByText('Correo enviado',{exact:true})).toBeVisible();
+  await expect(page.getByAltText('Comprobante de devolución SINPE',{exact:true})).toBeVisible();
+});
+test("refund upload rejects unsupported files without submitting", async ({page}) => {
+  const calls = await mockSupabase(page);
+  await openAdminOrder(page);
+  await page.getByRole('button',{name:'Rechazar',exact:true}).click();
+  await page.locator('#refund-receipt').setInputFiles({name:'receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('invalid')});
+  await expect(page.getByText('Adjunta una imagen JPG o PNG de hasta 5 MB.',{exact:true})).toBeVisible();
+  await expect(page.getByAltText('Vista previa del comprobante de devolución SINPE')).toHaveCount(0);
+  expect(calls).toHaveLength(0);
 });

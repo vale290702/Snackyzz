@@ -53,6 +53,6 @@ begin
     blocked := true;
   end;
   if not blocked then raise exception 'Confirmed order rejected'; end if;
-  if has_function_privilege('anon','public.claim_order_notification(uuid,text,text)','execute') or has_function_privilege('authenticated','public.claim_order_notification(uuid,text,text)','execute') then raise exception 'Untrusted caller can decide orders'; end if;
+  if has_function_privilege('anon','public.claim_order_notification(uuid,text,text,text)','execute') or has_function_privilege('authenticated','public.claim_order_notification(uuid,text,text,text)','execute') then raise exception 'Untrusted caller can decide orders'; end if;
 end $$;
 rollback;
