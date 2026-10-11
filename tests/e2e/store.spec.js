@@ -183,12 +183,20 @@ async function startCheckout(page) {
     .getByRole("button", { name: "Agregar al carrito" })
     .first()
     .click();
-  await page.getByRole("link", { name: "Comprar", exact: true }).click();
+  await goToCheckout(page);
   await page.getByLabel("Nombre completo").fill("Cliente de prueba");
   await page
     .getByLabel("Correo electrónico", { exact: true })
     .fill("customer@example.invalid");
   await page.getByLabel("Punto de retiro").selectOption(location.id);
+}
+async function goToCheckout(page) {
+  if (page.viewportSize().width <= 800) {
+    await page.locator(".cart-button").click();
+    await page.locator(".cart-sheet").getByRole("link", { name: "Comprar", exact: true }).click();
+  } else {
+    await page.locator(".collection-page .cart-column").getByRole("link", { name: "Comprar", exact: true }).click();
+  }
 }
 async function attachReceipt(page) {
   // Valid PNG fixture encoded locally; no real payment or customer information.
@@ -231,6 +239,95 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
     ).toBe(true);
   }
   expect(errors).toEqual([]);
+});
+test("mobile cart opens from the header and bubble without interrupting shopping", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile");
+  await mockSupabase(page);
+  await page.goto("/#shop");
+  const sheet = page.locator(".cart-sheet");
+  const bubble = page.locator(".cart-bubble");
+  await expect(bubble).toBeVisible();
+  await page.locator(".cart-button").click();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("link", { name: "Explorar cookies" })).toBeVisible();
+  const bounds = await sheet.boundingBox();
+  expect(bounds.x).toBe(0);
+  expect(bounds.y).toBe(0);
+  expect(bounds.width).toBe(page.viewportSize().width);
+  expect(bounds.height).toBe(page.viewportSize().height);
+  await page.keyboard.press("Escape");
+  await expect(sheet).not.toBeVisible();
+  await expect(page.locator(".cart-button")).toBeFocused();
+
+  await page.getByRole("button", { name: "Ver detalles de Choco Cloud" }).click();
+  await page.locator("#product-dialog").getByRole("button", { name: "Ver mi carrito" }).click();
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: "Cerrar carrito" }).click();
+
+  await page.locator(".shop-products .product-card").first().getByRole("button", { name: "Agregar al carrito" }).click();
+  await expect(sheet).not.toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await expect(bubble).toBeVisible();
+  await bubble.click();
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toContainText("Choco Cloud");
+  await sheet.getByRole("button", { name: "Agregar una Choco Cloud" }).click();
+  await expect(page.locator("[data-cart-count]")).toHaveText("2");
+  await sheet.getByRole("link", { name: "Comprar" }).click();
+  await expect(page).toHaveURL(/#checkout$/);
+  await expect(sheet).not.toBeVisible();
+  await expect(bubble).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: "Casi puedes saborearlo." })).toBeVisible();
+});
+
+test("narrow mobile pages do not scroll sideways and the cart fills the viewport", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile");
+  await mockSupabase(page);
+  for (const width of [280, 300]) {
+    await page.setViewportSize({ width, height: 700 });
+    for (const route of ["home", "shop", "checkout"]) {
+      await page.goto(`/#${route}`);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    await page.goto("/#shop");
+    await page.locator(".cart-button").click();
+    const bounds = await page.locator(".cart-sheet").boundingBox();
+    expect(bounds).toMatchObject({ x: 0, y: 0, width, height: 700 });
+  }
+});
+
+test("cart item scrolling stays clear of prices", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile");
+  await mockSupabase(page);
+  await page.setViewportSize({ width: 390, height: 500 });
+  await page.goto("/#shop");
+  const cards = page.locator(".shop-products .product-card");
+  for (let index = 0; index < 3; index++) {
+    await cards.nth(index).getByRole("button", { name: "Agregar al carrito" }).click();
+  }
+  await page.locator(".cart-button").click();
+  const measurements = await page.locator(".cart-sheet").evaluate(sheet => {
+    const list = sheet.querySelector(".cart-lines");
+    const amount = sheet.querySelector(".cart-line strong");
+    return {
+      priceClearance: list.getBoundingClientRect().right - amount.getBoundingClientRect().right,
+      canScroll: list.scrollHeight > list.clientHeight,
+      horizontalOverflow: list.scrollWidth > list.clientWidth,
+    };
+  });
+  expect(measurements.priceClearance).toBeGreaterThanOrEqual(12);
+  expect(measurements.canScroll).toBe(true);
+  expect(measurements.horizontalOverflow).toBe(false);
+});
+
+test("desktop cart button keeps the current collection when its cart is visible", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop");
+  await mockSupabase(page);
+  await page.goto("/#baking-stereo");
+  await page.locator(".cart-button").click();
+  await expect(page).toHaveURL(/#baking-stereo$/);
+  await expect(page.locator(".collection-page .cart-column")).toBeVisible();
+  await expect(page.locator(".cart-sheet")).not.toBeVisible();
 });
 test("receipt is mandatory and success follows persisted API response only", async ({
   page,
@@ -434,7 +531,7 @@ test("separate cookie collections share quantities and checkout", async ({
   await page.locator(".collection-switch a").click();
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
   await capture(page, "snackyzz-collection");
-  await page.getByRole("link", { name: "Comprar", exact: true }).click();
+  await goToCheckout(page);
   await expect(page.locator(".cart-brand")).toContainText([
     "Snackyzz · Selladas",
     "Baking Stereo · Recién horneadas",
