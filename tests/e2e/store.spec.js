@@ -193,7 +193,7 @@ async function startCheckout(page) {
 }
 async function goToCheckout(page) {
   if (page.viewportSize().width <= 800) {
-    await page.locator(".cart-button").click();
+    await page.locator(".cart-bubble").click();
     await page.locator(".cart-sheet").getByRole("link", { name: "Comprar", exact: true }).click();
   } else {
     await page.locator(".collection-page .cart-column").getByRole("link", { name: "Comprar", exact: true }).click();
@@ -241,14 +241,15 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   }
   expect(errors).toEqual([]);
 });
-test("mobile cart opens from the header and bubble without interrupting shopping", async ({ page }, testInfo) => {
+test("mobile cart opens from the bubble without interrupting shopping", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await mockSupabase(page);
   await page.goto("/#shop");
   const sheet = page.locator(".cart-sheet");
   const bubble = page.locator(".cart-bubble");
+  await expect(page.locator(".cart-button")).toBeHidden();
   await expect(bubble).toBeVisible();
-  await page.locator(".cart-button").click();
+  await page.locator(".cart-bubble").click();
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("link", { name: "Explorar cookies" })).toBeVisible();
   const bounds = await sheet.boundingBox();
@@ -258,7 +259,7 @@ test("mobile cart opens from the header and bubble without interrupting shopping
   expect(bounds.height).toBe(page.viewportSize().height);
   await page.keyboard.press("Escape");
   await expect(sheet).not.toBeVisible();
-  await expect(page.locator(".cart-button")).toBeFocused();
+  await expect(page.locator(".cart-bubble")).toBeFocused();
 
   await page.getByRole("button", { name: "Ver detalles de Choco Cloud" }).click();
   await page.locator("#product-dialog").getByRole("button", { name: "Ver mi carrito" }).click();
@@ -291,7 +292,7 @@ test("narrow mobile pages do not scroll sideways and the cart fills the viewport
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
     await page.goto("/#shop");
-    await page.locator(".cart-button").click();
+    await page.locator(".cart-bubble").click();
     const bounds = await page.locator(".cart-sheet").boundingBox();
     expect(bounds).toMatchObject({ x: 0, y: 0, width, height: 700 });
   }
@@ -306,7 +307,7 @@ test("cart item scrolling stays clear of prices", async ({ page }, testInfo) => 
   for (let index = 0; index < 3; index++) {
     await cards.nth(index).getByRole("button", { name: "Agregar al carrito" }).click();
   }
-  await page.locator(".cart-button").click();
+  await page.locator(".cart-bubble").click();
   const measurements = await page.locator(".cart-sheet").evaluate(sheet => {
     const list = sheet.querySelector(".cart-lines");
     const amount = sheet.querySelector(".cart-line strong");

@@ -2979,6 +2979,9 @@ small#receipt-help {
 }
 
 @media (max-width: 800px) {
+  .site-header .cart-button {
+    display: none;
+  }
   .collection-page .shop-layout {
     display: block;
   }
