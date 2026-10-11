@@ -453,7 +453,7 @@ function Products({ controller: c }: { controller: AdminController }) {
           </section>
           {showForm && (
             <ProductForm
-              key={`${s.editingProduct}-${s.formRevision}`}
+              key={s.editingProduct}
               product={editing}
               controller={c}
             />

@@ -66,7 +66,7 @@ const settings = {
 };
 async function mockSupabase(
   page,
-  { orderFailure = false, emailFailure = false, isAdmin = true } = {},
+  { orderFailure = false, emailFailure = false, isAdmin = true, productSaveFailure = false } = {},
 ) {
   const calls = [];
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -150,6 +150,7 @@ async function mockSupabase(
         });
       }
       calls.push({ kind: "product-save", body: request.postData() });
+      if (productSaveFailure) return reply({error: "No pudimos guardar el producto."}, 503);
       return reply({
         product: {
           ...products[0],
@@ -682,4 +683,29 @@ test("admin manages SINPE and requires payment details before leaving demo mode"
     action: 'save-settings', demoCatalog: false,
     sinpeNumber: '88888888', sinpeRecipient: 'Test recipient',
   });
+});
+
+
+test("cookie editor preserves draft through refresh and failed save", async ({ page }) => {
+  await mockSupabase(page, {productSaveFailure: true});
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
+  await page.getByRole('button', {name:'Entrar al panel'}).click();
+  await expect(page.getByRole('heading', {name:'Órdenes.'})).toBeVisible();
+  await page.getByRole('button', {name:'Productos', exact:true}).click();
+  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
+  await page.getByLabel('Nombre', {exact:true}).fill('Edited cookie');
+  await page.getByLabel('Descripción', {exact:true}).fill('My unsaved description');
+  await page.getByRole('button', {name:'Actualizar', exact:true}).click();
+  await expect(page.getByRole('button', {name:'Actualizar', exact:true})).toBeEnabled();
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
+  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
+  await page.getByRole('button', {name:'Guardar producto', exact:true}).click();
+  await expect(page.locator('#main').getByRole('alert')).toContainText('No pudimos guardar el producto.');
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
+  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
+  await page.getByRole('button', {name:'Cerrar editor'}).click();
+  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
+  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Choco Cloud');
 });
