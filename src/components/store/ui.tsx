@@ -65,10 +65,14 @@ export function Nav({
   activePage,
   cartCount,
   resetKey,
+  onCartOpen,
+  cartDisabled = false,
 }: {
   activePage: string;
   cartCount: number;
   resetKey?: number;
+  onCartOpen: (trigger: HTMLElement) => void;
+  cartDisabled?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
@@ -106,15 +110,17 @@ export function Nav({
             ))}
           </nav>
           <div className="nav-actions">
-            <a
-              href="#shop"
+            <button
+              type="button"
               className="cart-button"
-              aria-label={`Ver carrito, ${cartCount} productos`}
+              aria-label={cartDisabled ? "Pedido en curso" : `Ver carrito, ${cartCount} productos`}
+              disabled={cartDisabled}
+              onClick={(event) => onCartOpen(event.currentTarget)}
             >
               <Icon name="bag" />
               <span>Mi carrito</span>
               <b data-cart-count="">{cartCount}</b>
-            </a>
+            </button>
             <button
               className="menu-button icon-button"
               data-menu=""
@@ -287,17 +293,21 @@ export function Cart({
   cart,
   checkout = false,
   fulfillment,
+  onNavigate,
+  titleId,
 }: {
   cart: CartLike;
   checkout?: boolean;
   fulfillment?: Fulfillment;
+  onNavigate?: () => void;
+  titleId?: string;
 }) {
   const lines = cart.getLines();
   const actions = useStoreActions();
   return (
     <aside className="cart-panel" aria-label="Resumen del carrito">
       <div className="cart-title">
-        <h2>{checkout ? "Tu pedido" : "Tu antojo"}</h2>
+        <h2 id={titleId}>{checkout ? "Tu pedido" : "Tu antojo"}</h2>
         <span>
           {`${cart.getCount()} ${cart.getCount() === 1 ? "producto" : "productos"}`}
         </span>
@@ -336,27 +346,29 @@ export function Cart({
               </strong>
             </div>
           ) : null}
-          <div className="cart-total">
-            <span>Total de productos</span>
-            <strong>{cart.getFormattedTotal()}</strong>
+          <div className="cart-actions">
+            <div className="cart-total">
+              <span>Total de productos</span>
+              <strong>{cart.getFormattedTotal()}</strong>
+            </div>
+            {checkout ? null : (
+              <>
+                <a href="#checkout" className="button button-dark wide" onClick={onNavigate}>
+                  Comprar <Icon name="arrow" />
+                </a>
+                <p className="cart-note">
+                  Pago por SINPE · Confirmación por correo
+                </p>
+                <button
+                  className="text-button clear-cart"
+                  data-clear=""
+                  onClick={actions.clearCart}
+                >
+                  Vaciar carrito
+                </button>
+              </>
+            )}
           </div>
-          {checkout ? null : (
-            <>
-              <a href="#checkout" className="button button-dark wide">
-                Comprar <Icon name="arrow" />
-              </a>
-              <p className="cart-note">
-                Pago por SINPE · Confirmación por correo
-              </p>
-              <button
-                className="text-button clear-cart"
-                data-clear=""
-                onClick={actions.clearCart}
-              >
-                Vaciar carrito
-              </button>
-            </>
-          )}
         </>
       ) : (
         <>
@@ -367,10 +379,17 @@ export function Cart({
               Agrega tus cookies favoritas
               <br />y arma tu próximo antojo.
             </p>
+            {onNavigate ? (
+              <a href="#shop" className="button button-dark wide" onClick={onNavigate}>
+                Explorar cookies <Icon name="arrow" />
+              </a>
+            ) : null}
           </div>
-          <button className="button button-dark wide" disabled>
-            Comprar <Icon name="arrow" />
-          </button>
+          {!onNavigate ? (
+            <button className="button button-dark wide" disabled>
+              Comprar <Icon name="arrow" />
+            </button>
+          ) : null}
         </>
       )}
     </aside>

@@ -8,7 +8,7 @@ import { configured, supabase } from '../lib/supabase';
 import { getRouteFromHash, navigateTo, type Route } from '../lib/router';
 import { safeImage } from '../lib/html';
 import { productBrandLabel } from '../lib/collections';
-import { Nav, Footer, Icon, QuantityControl } from './store/ui';
+import { Nav, Footer, Icon, QuantityControl, Cart } from './store/ui';
 import { StoreActionsProvider } from './store/actions';
 import { Home } from '../features/pages/home';
 import { Shop } from '../features/pages/shop';
@@ -61,6 +61,9 @@ export default function AppShell() {
   const mounted = useRef(false);
   const catalogVersion = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
+  const cartDialog = useRef<HTMLDialogElement>(null);
+  const cartTrigger = useRef<HTMLElement | null>(null);
+  const [cartOpen, setCartOpen] = useState(false);
   const dialogTrigger = useRef<HTMLElement | null>(null);
   const pendingFocus = useRef(false);
   const pendingQty = useRef<{ id: string; delta: number; dialog: boolean } | null>(null);
@@ -90,6 +93,9 @@ export default function AppShell() {
 
   useEffect(() => {
     mounted.current = true;
+    const mobileViewport = window.matchMedia('(max-width: 800px)');
+    const closeOnDesktop = () => { if (!mobileViewport.matches) setCartOpen(false); };
+    mobileViewport.addEventListener('change', closeOnDesktop);
     const restored = createCartStore({ products: previewProducts });
     cartRef.current = restored;
     setCart(restored);
@@ -97,6 +103,7 @@ export default function AppShell() {
     patch({ activePage: route });
     const routeChanged = () => {
       dialog.current?.close();
+      setCartOpen(false);
       const activePage = getRouteFromHash();
       pendingFocus.current = true;
       patch({ activePage, detailId: null });
@@ -121,6 +128,7 @@ export default function AppShell() {
       receiptVersion.current++;
       window.removeEventListener('hashchange', routeChanged);
       window.removeEventListener('beforeunload', beforeUnload);
+      mobileViewport.removeEventListener('change', closeOnDesktop);
       subscription?.data.subscription.unsubscribe();
       if (toastTimer.current) clearTimeout(toastTimer.current);
       if (current.current.receiptPreview) URL.revokeObjectURL(current.current.receiptPreview);
@@ -135,13 +143,20 @@ export default function AppShell() {
     }
   }, [state.activePage, renderRevision]);
   useLayoutEffect(() => {
+    const element = cartDialog.current;
+    if (cartOpen && element && !element.open) element.showModal();
+    if (!cartOpen && element?.open) element.close();
+  }, [cartOpen]);
+  useLayoutEffect(() => {
     const element = dialog.current;
     if (state.detailId && element && !element.open) element.showModal();
     if (!state.detailId && element?.open) element.close();
     if (pendingQty.current) {
       const { id, delta, dialog: inDialog } = pendingQty.current;
-      const scope = inDialog ? element : document.getElementById('app');
-      scope?.querySelector<HTMLButtonElement>(`[data-product="${CSS.escape(id)}"][data-qty="${delta}"]:not(:disabled)`)?.focus({ preventScroll: !inDialog });
+      const scope = inDialog ? element : cartDialog.current?.open ? cartDialog.current : document.getElementById('app');
+      const control = scope?.querySelector<HTMLButtonElement>(`[data-product="${CSS.escape(id)}"][data-qty="${delta}"]:not(:disabled)`)
+        ?? scope?.querySelector<HTMLButtonElement>(`[data-product="${CSS.escape(id)}"][data-qty="${-delta}"]:not(:disabled)`);
+      control?.focus({ preventScroll: !inDialog });
       pendingQty.current = null;
     }
   });
@@ -149,6 +164,20 @@ export default function AppShell() {
     dialog.current?.close();
     patch({ detailId: null });
     dialogTrigger.current?.focus({ preventScroll: true });
+  };
+  const closeCart = () => {
+    setCartOpen(false);
+  };
+  const openCart = (trigger: HTMLElement | null) => {
+    if (current.current.submitting) return;
+    if (window.matchMedia('(min-width: 801px)').matches) {
+      if (current.current.activePage === 'shop' || current.current.activePage === 'baking-stereo') {
+        document.querySelector('.collection-page .cart-panel')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } else navigateTo('shop');
+      return;
+    }
+    cartTrigger.current = trigger;
+    setCartOpen(true);
   };
   const changeQuantity = (id: string, delta: number) => {
     const product = current.current.products.find(p => p.id === id);
@@ -234,13 +263,21 @@ export default function AppShell() {
   const props = { ...state, cart };
   const view = state.activePage === 'home' ? <Home {...props} /> : state.activePage === 'shop' ? <Shop {...props} /> : state.activePage === 'baking-stereo' ? <Shop {...props} collection="baking-stereo" /> : state.activePage === 'sales' ? <Sales {...props} /> : state.activePage === 'about' ? <About /> : state.activePage === 'checkout' ? <Checkout {...props} /> : state.activePage === 'success' ? <Success {...props} /> : <Admin controller={admin} />;
   const product = state.products.find(p => p.id === state.detailId);
+  const showCartBubble = !['admin', 'checkout', 'success'].includes(state.activePage) && !state.submitting;
   return <StoreActionsProvider actions={actions}>
-    <div id="app" onClickCapture={guardNavigation}>{state.activePage === 'admin' ? view : <><Nav activePage={state.activePage} cartCount={cart.getCount()} resetKey={renderRevision} />{state.catalogError ? <div className="app-notice" role="status">{state.catalogError} <button data-reload-catalog="" onClick={() => void loadCatalog()}>Reintentar</button></div> : !configured ? <div className="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div> : null}{view}<Footer contact={state.contact} /></>}</div>
+    <div id="app" onClickCapture={guardNavigation}>{state.activePage === 'admin' ? view : <><Nav activePage={state.activePage} cartCount={cart.getCount()} resetKey={renderRevision} onCartOpen={openCart} cartDisabled={state.submitting} />{state.catalogError ? <div className="app-notice" role="status">{state.catalogError} <button data-reload-catalog="" onClick={() => void loadCatalog()}>Reintentar</button></div> : !configured ? <div className="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div> : null}{view}<Footer contact={state.contact} /></>}</div>
+    {showCartBubble ? <button type="button" className="cart-bubble" aria-label={`Ver carrito, ${cart.getCount()} productos`} onClick={event => openCart(event.currentTarget)}><Icon name="bag" /><span aria-hidden="true">{cart.getCount()}</span></button> : null}
+    <dialog className="cart-sheet" aria-labelledby="cart-sheet-title" ref={cartDialog} onClose={() => { setCartOpen(false); if (cartTrigger.current?.isConnected) cartTrigger.current.focus({ preventScroll: true }); }} onClick={event => { if (event.target === event.currentTarget) closeCart(); }}>
+      <div className="cart-sheet-inner">
+        <button type="button" className="icon-button cart-sheet-close" aria-label="Cerrar carrito" onClick={closeCart}><Icon name="close" /></button>
+        <Cart cart={cart} titleId="cart-sheet-title" onNavigate={closeCart} />
+      </div>
+    </dialog>
     <dialog id="product-dialog" className="product-dialog" aria-labelledby="dialog-title" ref={dialog} onClose={() => patch({ detailId: null })} onClick={event => {
       if (event.target !== event.currentTarget) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog();
-    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={`${product.name}, imagen de referencia`} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>Agregar al carrito <Icon name="plus" /></button><a href="#shop" className="button button-outline wide" data-close-dialog="" onClick={closeDialog}>Ver mi carrito <Icon name="bag" /></a>{state.demoCatalog ? <p className="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p> : null}</div></div> : null}</dialog>
-    <div id="toast" className="toast" role="status" aria-live="polite" aria-atomic="true">{toast}</div>
+    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={`${product.name}, imagen de referencia`} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>Agregar al carrito <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button>{state.demoCatalog ? <p className="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p> : null}</div></div> : null}</dialog>
+    <div id="toast" className={`toast ${showCartBubble ? 'toast-with-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
   </StoreActionsProvider>;
 }
