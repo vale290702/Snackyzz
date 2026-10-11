@@ -57,7 +57,7 @@ export function Home({ products, cart }: CatalogPageProps) {
         <div className="section-heading">
           <div>
             <h2>Elige tu debilidad.</h2>
-            <p>Tres cookies. Ninguna decisión equivocada.</p>
+            <p>Muchas cookies. Ninguna decisión equivocada</p>
           </div>
           <a href="#shop" className="text-link">
             Ver todas las cookies <Icon name="arrow" />
