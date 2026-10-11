@@ -40,6 +40,8 @@ export interface Order {
   deliveryFee?: number;
   createdAt: string;
   confirmedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
   receiptUrl: string;
   fulfillmentType?: string;
   fulfillmentLabel?: string;

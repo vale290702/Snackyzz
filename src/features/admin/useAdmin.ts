@@ -126,27 +126,31 @@ export function useAdmin({
       notify(error instanceof Error ? error.message : String(error));
     }
   }
-  async function action(id: string, action: string) {
+  async function action(id: string, action: string, reason?: string) {
     if (current.current.busy) return;
     const rev = revision.current;
     patch({ busy: true, error: "" });
     try {
       const { order } = await api<{ order: Order }>(
         `/admin/orders/${encodeURIComponent(id)}/${action}`,
+        { body: reason === undefined ? undefined : { reason } },
       );
       if (rev !== revision.current) return;
       patch({
         orders: current.current.orders.map((o) => (o.id === id ? order : o)),
       });
+      const decision = order.status === "rejected" ? "Orden rechazada." : "Orden confirmada.";
       notify(
         order.emailStatus === "sent"
-          ? "Orden confirmada. Correo enviado."
+          ? `${decision} Correo enviado.`
           : ["failed", "sending"].includes(order.emailStatus)
-            ? "Orden confirmada. El correo no se pudo enviar; puedes reintentarlo."
+            ? `${decision} El correo no se pudo enviar; puedes reintentarlo.`
             : "Estado de la orden actualizado.",
       );
+      return true;
     } catch (error) {
       if (rev === revision.current) reject(error);
+      return false;
     } finally {
       if (rev === revision.current) patch({ busy: false });
     }

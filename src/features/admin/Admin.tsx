@@ -15,7 +15,7 @@ const date = (value?: string) =>
       }).format(new Date(value))
     : "";
 const emailLabels: Record<string, string> = {
-  not_sent: "Se enviará al confirmar",
+  not_sent: "Se enviará al confirmar o rechazar",
   pending: "Correo en espera",
   sending: "Enviando correo",
   sent: "Correo enviado",
@@ -211,6 +211,7 @@ export function Admin({ controller: c }: { controller: AdminController }) {
             {[
               ["pending", "Pendientes"],
               ["confirmed", "Confirmadas"],
+              ["rejected", "Rechazadas"],
               ["all", "Todas"],
             ].map(([value, label]) => (
               <button
@@ -261,9 +262,9 @@ export function Admin({ controller: c }: { controller: AdminController }) {
                     </div>
                     <strong>{formatMoney(o.total)}</strong>
                     <span
-                      className={`status ${o.status === "confirmed" ? "confirmed" : "pending"}`}
+                      className={`status ${o.status}`}
                     >
-                      {o.status === "confirmed" ? "Confirmado" : "Pendiente"}
+                      {o.status === "confirmed" ? "Confirmado" : o.status === "rejected" ? "Rechazado" : "Pendiente"}
                     </span>
                     <Icon name="chevron" />
                   </button>
@@ -281,7 +282,7 @@ export function Admin({ controller: c }: { controller: AdminController }) {
               </div>
             )}
           </section>
-          {selected && <OrderDetail order={selected} controller={c} />}
+          {selected && <OrderDetail key={selected.id} order={selected} controller={c} />}
         </div>
       </main>
     </>
@@ -1172,11 +1173,18 @@ function OrderDetail({
   order: Order;
   controller: AdminController;
 }) {
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  async function submitRejection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const saved = await c.action(o.id, "reject", reason.trim());
+    if (saved) setRejecting(false);
+  }
   const retry = ["failed", "sending"].includes(o.emailStatus);
   const busy = c.state.busy;
   const detail = useRef<HTMLElement>(null);
   useEffect(() => {
-    detail.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+    detail.current?.scrollIntoView?.({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest" });
   }, [o.id]);
   return (
     <aside
@@ -1260,23 +1268,38 @@ function OrderDetail({
       {o.status === "pending" ? (
         <>
           <p className="admin-confirm-note">
-            Confirma únicamente después de verificar el pago. Se enviará un
-            correo al cliente.
+            {rejecting ? "Revisa el motivo antes de rechazar. Se enviará un correo al cliente." : "Confirma únicamente después de verificar el pago. Se enviará un correo al cliente."}
           </p>
-          <button
-            className="button button-dark wide"
-            data-confirm-order={o.id}
-            disabled={busy}
-            onClick={() => void c.action(o.id, "confirm")}
-          >
-            {busy ? "Confirmando…" : "Confirmar pedido"} <Icon name="check" />
-          </button>
+          {rejecting ? (
+            <form className="order-rejection-form" onSubmit={submitRejection}>
+              <div className="field">
+                <label htmlFor="rejection-reason">Motivo del rechazo</label>
+                <textarea id="rejection-reason" name="reason" required minLength={5} maxLength={1000} rows={4} value={reason} onChange={event => setReason(event.target.value)} aria-describedby="rejection-reason-help" />
+                <small id="rejection-reason-help">Este motivo se enviará al cliente por correo. Rechazar no realiza una devolución SINPE automática.</small>
+              </div>
+              <ErrorMessage message={c.state.error} />
+              <div className="order-decision-actions">
+                <button className="button button-dark" disabled={busy}>{busy ? "Rechazando…" : "Rechazar y notificar"}</button>
+                <button type="button" className="button button-outline" disabled={busy} onClick={() => setRejecting(false)}>Cancelar</button>
+              </div>
+            </form>
+          ) : (
+            <div className="order-decision-actions">
+              <button className="button button-dark" data-confirm-order={o.id} disabled={busy} onClick={() => void c.action(o.id,"confirm")}>
+                {busy ? "Guardando…" : "Confirmar pedido"} <Icon name="check" />
+              </button>
+              <button className="button button-outline" disabled={busy} onClick={() => setRejecting(true)}>Rechazar</button>
+            </div>
+          )}
         </>
       ) : (
         <>
-          <p className="confirmed-note">
-            <Icon name="check" /> Confirmado {date(o.confirmedAt)}
-          </p>
+          {o.status === "rejected" ? <div className="rejection-summary">
+            <h3>Pedido rechazado</h3>
+            <p>{date(o.rejectedAt)}</p>
+            <strong>Motivo del rechazo</strong>
+            <p className="rejection-reason">{o.rejectionReason}</p>
+          </div> : <p className="confirmed-note"><Icon name="check" /> Confirmado {date(o.confirmedAt)}</p>}
           {retry && (
             <>
               <button

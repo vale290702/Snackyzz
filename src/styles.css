@@ -405,9 +405,9 @@ main:focus {
   position: relative;
   min-width: 0;
   aspect-ratio: 1/1;
-  animation: photo-reveal 0.9s var(--ease) both;
 }
 .hero-visual > img {
+  animation: photo-reveal 0.9s var(--ease) both;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -3142,3 +3142,12 @@ small#receipt-help {
 
 .delivery-zones-admin .product-editor { position: static; }
 .zone-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 24px; }
+
+.order-decision-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 20px; }
+.order-detail .order-decision-actions .button { margin-top: 0; }
+.order-rejection-form { margin-top: 20px; }
+.order-rejection-form textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--chocolate); font: inherit; resize: vertical; }
+.rejection-summary { margin-block: 20px; }
+.rejection-summary h3 { margin-bottom: 8px; }
+.rejection-reason { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
+.status.rejected { background: #f9dfd0; color: #8a3215; }
