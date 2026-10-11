@@ -518,8 +518,8 @@ test("separate cookie collections share quantities and checkout", async ({
     .first()
     .click();
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
-  await expect(page.locator(".cart-lines")).toContainText("Choco Cloud");
-  await expect(page.locator(".cart-lines")).toContainText("Chocolate Chip");
+  await expect(page.locator("#main .cart-lines")).toContainText("Choco Cloud");
+  await expect(page.locator("#main .cart-lines")).toContainText("Chocolate Chip");
   await page.reload();
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
   await capture(page, "baking-stereo");
@@ -532,7 +532,7 @@ test("separate cookie collections share quantities and checkout", async ({
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
   await capture(page, "snackyzz-collection");
   await goToCheckout(page);
-  await expect(page.locator(".cart-brand")).toContainText([
+  await expect(page.locator("#main .cart-brand")).toContainText([
     "Snackyzz · Selladas",
     "Baking Stereo · Recién horneadas",
   ]);
