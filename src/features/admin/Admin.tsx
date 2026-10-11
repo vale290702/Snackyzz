@@ -1175,9 +1175,18 @@ function OrderDetail({
 }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
+  const [refundReceipt, setRefundReceipt] = useState<File>();
+  const [refundPreview, setRefundPreview] = useState("");
+  const [refundError, setRefundError] = useState("");
+  useEffect(() => {
+    if (!refundReceipt) { setRefundPreview(""); return; }
+    const url = URL.createObjectURL(refundReceipt);
+    setRefundPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [refundReceipt]);
   async function submitRejection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const saved = await c.action(o.id, "reject", reason.trim());
+    const saved = await c.action(o.id, "reject", reason.trim(), refundReceipt);
     if (saved) setRejecting(false);
   }
   const retry = ["failed", "sending"].includes(o.emailStatus);
@@ -1277,6 +1286,20 @@ function OrderDetail({
                 <textarea id="rejection-reason" name="reason" required minLength={5} maxLength={1000} rows={4} value={reason} onChange={event => setReason(event.target.value)} aria-describedby="rejection-reason-help" />
                 <small id="rejection-reason-help">Este motivo se enviará al cliente por correo. Rechazar no realiza una devolución SINPE automática.</small>
               </div>
+              <div className="field refund-receipt-field">
+                <label htmlFor="refund-receipt">Comprobante de devolución SINPE <span>(opcional)</span></label>
+                <input id="refund-receipt" type="file" accept="image/jpeg,image/png" disabled={busy} onChange={event => {
+                  const file = event.target.files?.[0];
+                  if (file && (!['image/jpeg','image/png'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+                    setRefundError("Adjunta una imagen JPG o PNG de hasta 5 MB.");
+                    event.target.value = ""; setRefundReceipt(undefined); return;
+                  }
+                  setRefundError(""); setRefundReceipt(file);
+                }} />
+                <small>Adjunta el comprobante si devolviste el pago. Se mostrará en el correo del cliente.</small>
+                {refundPreview && <img className="refund-receipt-preview" src={refundPreview} alt="Vista previa del comprobante de devolución SINPE" />}
+                <ErrorMessage message={refundError} />
+              </div>
               <ErrorMessage message={c.state.error} />
               <div className="order-decision-actions">
                 <button className="button button-dark" disabled={busy}>{busy ? "Rechazando…" : "Rechazar y notificar"}</button>
@@ -1299,6 +1322,7 @@ function OrderDetail({
             <p>{date(o.rejectedAt)}</p>
             <strong>Motivo del rechazo</strong>
             <p className="rejection-reason">{o.rejectionReason}</p>
+            {o.refundReceiptUrl && <a href={o.refundReceiptUrl} target="_blank" rel="noreferrer"><img className="refund-receipt-preview" src={o.refundReceiptUrl} alt="Comprobante de devolución SINPE" /></a>}
           </div> : <p className="confirmed-note"><Icon name="check" /> Confirmado {date(o.confirmedAt)}</p>}
           {retry && (
             <>

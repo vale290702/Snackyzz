@@ -3151,3 +3151,8 @@ small#receipt-help {
 .rejection-summary h3 { margin-bottom: 8px; }
 .rejection-reason { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
 .status.rejected { background: #f9dfd0; color: #8a3215; }
+
+.refund-receipt-field { margin-block: 24px; }
+.refund-receipt-preview { display:block; max-width:100%; width:280px; max-height:340px; object-fit:contain; margin-top:16px; border-radius:8px; }
+.refund-receipt-field input[type="file"] { width:100%; font:inherit; color:var(--chocolate); }
+.refund-receipt-field input::file-selector-button { margin-right:12px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--chocolate); font:inherit; cursor:pointer; }

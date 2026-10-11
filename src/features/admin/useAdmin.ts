@@ -126,14 +126,21 @@ export function useAdmin({
       notify(error instanceof Error ? error.message : String(error));
     }
   }
-  async function action(id: string, action: string, reason?: string) {
+  async function action(id: string, action: string, reason?: string, refundReceipt?: File) {
     if (current.current.busy) return;
     const rev = revision.current;
     patch({ busy: true, error: "" });
     try {
+      let body: unknown = reason === undefined ? undefined : { reason };
+      if (refundReceipt) {
+        const form = new FormData();
+        form.set("reason", reason ?? "");
+        form.set("refundReceipt", refundReceipt);
+        body = form;
+      }
       const { order } = await api<{ order: Order }>(
         `/admin/orders/${encodeURIComponent(id)}/${action}`,
-        { body: reason === undefined ? undefined : { reason } },
+        { body },
       );
       if (rev !== revision.current) return;
       patch({

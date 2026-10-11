@@ -23,3 +23,10 @@ test('rejection uses its own stable provider key', async () => {
   expect(providerKey).toBe(`snackyzz-reject-${order.id}`);
   expect(result.status).toBe('sent');
 });
+test('refund image is embedded and user content is escaped', () => {
+  const payload = orderMailPayload({...order,name:'<Ana>',rejectionReason:'No <script>alert(1)</script>'},'orders@example.com','aW1hZ2U=');
+  expect(payload.html).toContain('src="cid:sinpe-refund"');
+  expect(payload.html).toContain('&lt;Ana&gt;');
+  expect(payload.html).not.toContain('<script>');
+  expect(payload.attachments).toEqual([{filename:'devolucion-sinpe.jpg',content:'aW1hZ2U=',content_type:'image/jpeg',content_id:'sinpe-refund'}]);
+});

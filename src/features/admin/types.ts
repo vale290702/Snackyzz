@@ -43,6 +43,7 @@ export interface Order {
   rejectedAt?: string;
   rejectionReason?: string;
   receiptUrl: string;
+  refundReceiptUrl?: string;
   fulfillmentType?: string;
   fulfillmentLabel?: string;
   fulfillmentAddress?: string;

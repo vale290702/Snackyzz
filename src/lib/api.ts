@@ -182,6 +182,11 @@ export async function api<T = unknown>(
   const action = path.match(
     /^\/admin\/orders\/([^/]+)\/(confirm|reject|retry-email)$/,
   );
+  if (action && body instanceof FormData) {
+    body.set("orderId", decodeURIComponent(action[1]));
+    body.set("action", action[2]);
+    return invoke<T>("manage-orders", { body });
+  }
   if (action)
     return invoke<T>("manage-orders", {
       body: { orderId: decodeURIComponent(action[1]), action: action[2], ...(body && typeof body === "object" && "reason" in body ? {reason: body.reason} : {}) },
