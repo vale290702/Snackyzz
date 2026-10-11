@@ -52,6 +52,20 @@ const location = {
   position: 1,
   active: true,
 };
+const zones = [
+  {
+    id: "00000000-0000-0000-0000-000000000020",
+    name: "Escazú",
+    price: 2000,
+    active: true,
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000021",
+    name: "Santa Ana",
+    price: 3000,
+    active: true,
+  },
+];
 const settings = {
   id: 1,
   demo_catalog: true,
@@ -61,12 +75,25 @@ const settings = {
   public_email: "Snackyzz.cookies@gmail.com",
   instagram: "Snackyzz.cookies",
   uber_delivery_enabled: true,
+  delivery_lead_hours: 6,
+  delivery_slot_hours: 3,
+  delivery_schedule: Object.fromEntries(
+    ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) => [
+      day,
+      { enabled: true, start: "09:00", end: "18:00" },
+    ]),
+  ),
   uber_disclaimer:
     "El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado.",
 };
 async function mockSupabase(
   page,
-  { orderFailure = false, emailFailure = false, isAdmin = true, productSaveFailure = false } = {},
+  {
+    orderFailure = false,
+    emailFailure = false,
+    isAdmin = true,
+    productSaveFailure = false,
+  } = {},
 ) {
   const calls = [];
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -123,6 +150,8 @@ async function mockSupabase(
         },
       });
     }
+    if (path === "/rest/v1/delivery_zones")
+      return reply(zones.filter((zone) => zone.active));
     if (path === "/rest/v1/rpc/is_admin") return reply(isAdmin);
     if (path === "/functions/v1/manage-orders") {
       if (request.method() === "GET") return reply({ orders: [order] });
@@ -150,7 +179,8 @@ async function mockSupabase(
         });
       }
       calls.push({ kind: "product-save", body: request.postData() });
-      if (productSaveFailure) return reply({error: "No pudimos guardar el producto."}, 503);
+      if (productSaveFailure)
+        return reply({ error: "No pudimos guardar el producto." }, 503);
       return reply({
         product: {
           ...products[0],
@@ -167,9 +197,27 @@ async function mockSupabase(
         return reply({
           settings,
           locations: [location],
+          zones,
           emailConfigured: false,
         });
-      calls.push({ kind: "store-settings", ...request.postDataJSON() });
+      const body = request.postDataJSON();
+      calls.push({ kind: "store-settings", ...body });
+      if (body.action === "save-zone")
+        return reply({
+          zone: {
+            id: body.id || "00000000-0000-0000-0000-000000000022",
+            name: body.name,
+            price: body.price,
+            active: true,
+          },
+        });
+      if (["archive-zone", "restore-zone"].includes(body.action))
+        return reply({
+          zone: {
+            ...zones.find((zone) => zone.id === body.id),
+            active: body.action === "restore-zone",
+          },
+        });
       return reply({ settings });
     }
     if (path === "/auth/v1/logout") return reply({});
@@ -194,9 +242,15 @@ async function startCheckout(page) {
 async function goToCheckout(page) {
   if (page.viewportSize().width <= 800) {
     await page.locator(".cart-bubble").click();
-    await page.locator(".cart-sheet").getByRole("link", { name: "Comprar", exact: true }).click();
+    await page
+      .locator(".cart-sheet")
+      .getByRole("link", { name: "Comprar", exact: true })
+      .click();
   } else {
-    await page.locator(".collection-page .cart-column").getByRole("link", { name: "Comprar", exact: true }).click();
+    await page
+      .locator(".collection-page .cart-column")
+      .getByRole("link", { name: "Comprar", exact: true })
+      .click();
   }
 }
 async function attachReceipt(page) {
@@ -212,7 +266,9 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Caer en el antojo nunca supo tan bien." }),
+    page.getByRole("heading", {
+      name: "Caer en el antojo nunca supo tan bien.",
+    }),
   ).toBeVisible();
   await expect(page.locator(".product-card")).toHaveCount(3);
   await capture(page, "home");
@@ -241,7 +297,9 @@ test("store is responsive, cart persists, and product dialog supports keyboard c
   }
   expect(errors).toEqual([]);
 });
-test("mobile cart opens from the bubble without interrupting shopping", async ({ page }, testInfo) => {
+test("mobile cart opens from the bubble without interrupting shopping", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await mockSupabase(page);
   await page.goto("/#shop");
@@ -251,7 +309,9 @@ test("mobile cart opens from the bubble without interrupting shopping", async ({
   await expect(bubble).toBeVisible();
   await page.locator(".cart-bubble").click();
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByRole("link", { name: "Explorar cookies" })).toBeVisible();
+  await expect(
+    sheet.getByRole("link", { name: "Explorar cookies" }),
+  ).toBeVisible();
   const bounds = await sheet.boundingBox();
   expect(bounds.x).toBe(0);
   expect(bounds.y).toBe(0);
@@ -261,12 +321,21 @@ test("mobile cart opens from the bubble without interrupting shopping", async ({
   await expect(sheet).not.toBeVisible();
   await expect(page.locator(".cart-bubble")).toBeFocused();
 
-  await page.getByRole("button", { name: "Ver detalles de Choco Cloud" }).click();
-  await page.locator("#product-dialog").getByRole("button", { name: "Ver mi carrito" }).click();
+  await page
+    .getByRole("button", { name: "Ver detalles de Choco Cloud" })
+    .click();
+  await page
+    .locator("#product-dialog")
+    .getByRole("button", { name: "Ver mi carrito" })
+    .click();
   await expect(sheet).toBeVisible();
   await sheet.getByRole("button", { name: "Cerrar carrito" }).click();
 
-  await page.locator(".shop-products .product-card").first().getByRole("button", { name: "Agregar al carrito" }).click();
+  await page
+    .locator(".shop-products .product-card")
+    .first()
+    .getByRole("button", { name: "Agregar al carrito" })
+    .click();
   await expect(sheet).not.toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 900));
   await expect(bubble).toBeVisible();
@@ -279,17 +348,23 @@ test("mobile cart opens from the bubble without interrupting shopping", async ({
   await expect(page).toHaveURL(/#checkout$/);
   await expect(sheet).not.toBeVisible();
   await expect(bubble).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Casi puedes saborearlo." })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Casi puedes saborearlo." }),
+  ).toBeVisible();
 });
 
-test("narrow mobile pages do not scroll sideways and the cart fills the viewport", async ({ page }, testInfo) => {
+test("narrow mobile pages do not scroll sideways and the cart fills the viewport", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await mockSupabase(page);
   for (const width of [280, 300]) {
     await page.setViewportSize({ width, height: 700 });
     for (const route of ["home", "shop", "checkout"]) {
       await page.goto(`/#${route}`);
-      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(width);
     }
     await page.goto("/#shop");
     await page.locator(".cart-bubble").click();
@@ -298,21 +373,28 @@ test("narrow mobile pages do not scroll sideways and the cart fills the viewport
   }
 });
 
-test("cart item scrolling stays clear of prices", async ({ page }, testInfo) => {
+test("cart item scrolling stays clear of prices", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await mockSupabase(page);
   await page.setViewportSize({ width: 390, height: 500 });
   await page.goto("/#shop");
   const cards = page.locator(".shop-products .product-card");
   for (let index = 0; index < 3; index++) {
-    await cards.nth(index).getByRole("button", { name: "Agregar al carrito" }).click();
+    await cards
+      .nth(index)
+      .getByRole("button", { name: "Agregar al carrito" })
+      .click();
   }
   await page.locator(".cart-bubble").click();
-  const measurements = await page.locator(".cart-sheet").evaluate(sheet => {
+  const measurements = await page.locator(".cart-sheet").evaluate((sheet) => {
     const list = sheet.querySelector(".cart-lines");
     const amount = sheet.querySelector(".cart-line strong");
     return {
-      priceClearance: list.getBoundingClientRect().right - amount.getBoundingClientRect().right,
+      priceClearance:
+        list.getBoundingClientRect().right -
+        amount.getBoundingClientRect().right,
       canScroll: list.scrollHeight > list.clientHeight,
       horizontalOverflow: list.scrollWidth > list.clientWidth,
     };
@@ -322,7 +404,9 @@ test("cart item scrolling stays clear of prices", async ({ page }, testInfo) => 
   expect(measurements.horizontalOverflow).toBe(false);
 });
 
-test("desktop cart button keeps the current collection when its cart is visible", async ({ page }, testInfo) => {
+test("desktop cart button keeps the current collection when its cart is visible", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop");
   await mockSupabase(page);
   await page.goto("/#baking-stereo");
@@ -336,16 +420,12 @@ test("receipt is mandatory and success follows persisted API response only", asy
 }) => {
   const calls = await mockSupabase(page);
   await startCheckout(page);
-  await page
-    .getByRole("button", { name: "Realizar pedido" })
-    .click();
+  await page.getByRole("button", { name: "Realizar pedido" }).click();
   expect(calls).toHaveLength(0);
   await expect(page).toHaveURL(/#checkout$/);
   await attachReceipt(page);
   await capture(page, "checkout");
-  await page
-    .getByRole("button", { name: "Realizar pedido" })
-    .click();
+  await page.getByRole("button", { name: "Realizar pedido" }).click();
   await expect(
     page.getByRole("heading", { name: "¡Pedido realizado con éxito!" }),
   ).toBeVisible();
@@ -368,11 +448,15 @@ test("failed order preserves the receipt/cart and reuses its idempotency key", a
     name: "Realizar pedido",
   });
   await submit.click();
-  await expect(page.locator("#checkout-error")).toContainText("No pudimos guardar");
+  await expect(page.locator("#checkout-error")).toContainText(
+    "No pudimos guardar",
+  );
   await expect(page.getByText("receipt.png", { exact: true })).toBeVisible();
   await expect(page.locator("[data-cart-count]")).toHaveText("1");
   await submit.click();
-  await expect(page.locator("#checkout-error")).toContainText("No pudimos guardar");
+  await expect(page.locator("#checkout-error")).toContainText(
+    "No pudimos guardar",
+  );
   expect(calls).toHaveLength(2);
   expect(calls[0].key).toEqual(calls[1].key);
 });
@@ -521,7 +605,9 @@ test("separate cookie collections share quantities and checkout", async ({
     .click();
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
   await expect(page.locator("#main .cart-lines")).toContainText("Choco Cloud");
-  await expect(page.locator("#main .cart-lines")).toContainText("Chocolate Chip");
+  await expect(page.locator("#main .cart-lines")).toContainText(
+    "Chocolate Chip",
+  );
   await page.reload();
   await expect(page.locator("[data-cart-count]")).toHaveText("2");
   await capture(page, "baking-stereo");
@@ -570,7 +656,9 @@ test("hash variants, unknown routes, and browser history preserve navigation", a
   ).toBeVisible();
   await page.goto("/#not-a-route");
   await expect(
-    page.getByRole("heading", { name: "Caer en el antojo nunca supo tan bien." }),
+    page.getByRole("heading", {
+      name: "Caer en el antojo nunca supo tan bien.",
+    }),
   ).toBeVisible();
 });
 
@@ -585,128 +673,320 @@ test("stored cart hydrates on a direct checkout visit", async ({ page }) => {
   await page.goto("/#checkout");
   await expect(page.locator("[data-cart-count]")).toHaveText("3");
   await expect(page.locator("#main .cart-lines")).toContainText("Choco Cloud");
-  await expect(page.locator("#main .cart-lines")).toContainText("Chocolate Chip");
+  await expect(page.locator("#main .cart-lines")).toContainText(
+    "Chocolate Chip",
+  );
   await expect(page.locator("#main .cart-lines")).not.toContainText("ghost");
 });
 
-
-test("admin session survives reload without changing login flow", async ({ page }) => {
+test("admin session survives reload without changing login flow", async ({
+  page,
+}) => {
   await mockSupabase(page);
-  await page.goto('/#admin');
-  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
-  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
-  await page.getByRole('button', { name: 'Entrar al panel' }).click();
-  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Configuración', exact: true }).click();
-  await capture(page, 'admin-settings');
-  await page.getByRole('button', { name: 'Productos', exact: true }).click();
-  await page.locator('.admin-product-row').first().getByRole('button', { name: 'Editar' }).click();
-  await capture(page, 'admin-editor');
-  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Configuración", exact: true })
+    .click();
+  await capture(page, "admin-settings");
+  await page.getByRole("button", { name: "Productos", exact: true }).click();
+  await page
+    .locator(".admin-product-row")
+    .first()
+    .getByRole("button", { name: "Editar" })
+    .click();
+  await capture(page, "admin-editor");
+  await page
+    .getByRole("button", { name: "Cerrar sesión", exact: true })
+    .click();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Hola, equipo Snackyzz.' })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hola, equipo Snackyzz." }),
+  ).toBeVisible();
 });
 
 test("authenticated non-admin cannot access management", async ({ page }) => {
   await mockSupabase(page, { isAdmin: false });
-  await page.goto('/#admin');
-  await page.getByLabel('Correo de administración').fill('customer@example.invalid');
-  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
-  await page.getByRole('button', { name: 'Entrar al panel' }).click();
-  await expect(page.getByText('Esta cuenta no tiene acceso de administración.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toHaveCount(0);
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("customer@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(
+    page.getByText("Esta cuenta no tiene acceso de administración."),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toHaveCount(0);
 });
 
-test("keyboard cart controls retain focus and dialog appearance", async ({ page }) => {
+test("keyboard cart controls retain focus and dialog appearance", async ({
+  page,
+}) => {
   await mockSupabase(page);
-  await page.goto('/#shop');
-  const add = page.locator('.product-card [data-product="choco-cloud"][data-qty="1"]');
+  await page.goto("/#shop");
+  const add = page.locator(
+    '.product-card [data-product="choco-cloud"][data-qty="1"]',
+  );
   await add.focus();
-  await page.keyboard.press('Enter');
+  await page.keyboard.press("Enter");
   await expect(add).toBeFocused();
-  await page.getByRole('button', {name: 'Ver detalles de Choco Cloud'}).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await capture(page, 'product-dialog');
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page
+    .getByRole("button", { name: "Ver detalles de Choco Cloud" })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await capture(page, "product-dialog");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).not.toBeVisible();
 });
 
-test("catalog failure displays the existing error and retries", async ({ page }) => {
+test("catalog failure displays the existing error and retries", async ({
+  page,
+}) => {
   await mockSupabase(page);
-  await page.route(/\/rest\/v1\/products\?/, route => route.fulfill({status:400, contentType:'application/json', body:JSON.stringify({message:'unavailable'})}));
-  await page.goto('/#shop');
-  await expect(page.getByRole('button', {name:'Reintentar'})).toBeVisible();
+  await page.route(/\/rest\/v1\/products\?/, (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "unavailable" }),
+    }),
+  );
+  await page.goto("/#shop");
+  await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
   await page.unroute(/\/rest\/v1\/products\?/);
-  await page.getByRole('button', {name:'Reintentar'}).click();
-  await expect(page.getByRole('button', {name:'Reintentar'})).toHaveCount(0);
-  await expect(page.getByRole('button', {name:'Agregar al carrito'}).first()).toBeVisible();
+  await page.getByRole("button", { name: "Reintentar" }).click();
+  await expect(page.getByRole("button", { name: "Reintentar" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Agregar al carrito" }).first(),
+  ).toBeVisible();
 });
 
-test("expired admin session with a rejected refresh returns to login", async ({ page }) => {
+test("expired admin session with a rejected refresh returns to login", async ({
+  page,
+}) => {
   await mockSupabase(page);
-  await page.goto('/#admin');
-  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
-  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
-  await page.getByRole('button', {name:'Entrar al panel'}).click();
-  await expect(page.getByRole('heading', {name:'Órdenes.'})).toBeVisible();
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toBeVisible();
   await page.evaluate(() => {
-    const key=Object.keys(localStorage).find(key=>key.startsWith('sb-') && key.endsWith('-auth-token'));
-    const session=JSON.parse(localStorage.getItem(key));
-    session.expires_at=1;
-    localStorage.setItem(key,JSON.stringify(session));
+    const key = Object.keys(localStorage).find(
+      (key) => key.startsWith("sb-") && key.endsWith("-auth-token"),
+    );
+    const session = JSON.parse(localStorage.getItem(key));
+    session.expires_at = 1;
+    localStorage.setItem(key, JSON.stringify(session));
   });
-  await page.route(/\/auth\/v1\/token\?/, route=>route.fulfill({status:400, contentType:'application/json',body:JSON.stringify({code:'refresh_token_not_found',message:'Invalid Refresh Token: Refresh Token Not Found'})}));
+  await page.route(/\/auth\/v1\/token\?/, (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({
+        code: "refresh_token_not_found",
+        message: "Invalid Refresh Token: Refresh Token Not Found",
+      }),
+    }),
+  );
   await page.reload();
-  await expect(page.getByRole('heading', {name:'Hola, equipo Snackyzz.'})).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hola, equipo Snackyzz." }),
+  ).toBeVisible();
 });
 
-
-test("admin manages SINPE and requires payment details before leaving demo mode", async ({ page }) => {
+test("admin manages SINPE and requires payment details before leaving demo mode", async ({
+  page,
+}) => {
   const calls = await mockSupabase(page);
-  await page.goto('/#admin');
-  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
-  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
-  await page.getByRole('button', { name: 'Entrar al panel' }).click();
-  await expect(page.getByRole('heading', { name: 'Órdenes.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Configuración', exact: true }).click();
-  await expect(page.getByLabel('Modo de prueba')).toBeChecked();
-  await page.getByLabel('Modo de prueba').uncheck();
-  await page.getByRole('button', { name: 'Guardar configuración' }).click();
-  expect(calls.filter(call => call.kind === 'store-settings')).toHaveLength(0);
-  await expect(page.getByLabel('Número SINPE')).toHaveAttribute('required', '');
-  await page.getByLabel('Número SINPE').fill('88888888');
-  await page.getByLabel('Destinatario SINPE').fill('Test recipient');
-  await page.getByRole('button', { name: 'Guardar configuración' }).click();
-  await expect.poll(() => calls.filter(call => call.kind === 'store-settings').length).toBe(1);
-  expect(calls.find(call => call.kind === 'store-settings')).toMatchObject({
-    action: 'save-settings', demoCatalog: false,
-    sinpeNumber: '88888888', sinpeRecipient: 'Test recipient',
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Configuración", exact: true })
+    .click();
+  await expect(page.getByLabel("Modo de prueba")).toBeChecked();
+  await page.getByLabel("Modo de prueba").uncheck();
+  await page.getByRole("button", { name: "Guardar configuración" }).click();
+  expect(calls.filter((call) => call.kind === "store-settings")).toHaveLength(
+    0,
+  );
+  await expect(page.getByLabel("Número SINPE")).toHaveAttribute("required", "");
+  await page.getByLabel("Número SINPE").fill("88888888");
+  await page.getByLabel("Destinatario SINPE").fill("Test recipient");
+  await page.getByRole("button", { name: "Guardar configuración" }).click();
+  await expect
+    .poll(() => calls.filter((call) => call.kind === "store-settings").length)
+    .toBe(1);
+  expect(calls.find((call) => call.kind === "store-settings")).toMatchObject({
+    action: "save-settings",
+    demoCatalog: false,
+    sinpeNumber: "88888888",
+    sinpeRecipient: "Test recipient",
   });
 });
 
+test("cookie editor preserves draft through refresh and failed save", async ({
+  page,
+}) => {
+  await mockSupabase(page, { productSaveFailure: true });
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("test-only-not-a-real-password");
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(page.getByRole("heading", { name: "Órdenes." })).toBeVisible();
+  await page.getByRole("button", { name: "Productos", exact: true }).click();
+  await page
+    .locator(".admin-product-row")
+    .first()
+    .getByRole("button", { name: "Editar", exact: true })
+    .click();
+  await page.getByLabel("Nombre", { exact: true }).fill("Edited cookie");
+  await page
+    .getByLabel("Descripción", { exact: true })
+    .fill("My unsaved description");
+  await page.getByRole("button", { name: "Actualizar", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Actualizar", exact: true }),
+  ).toBeEnabled();
+  await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(
+    "Edited cookie",
+  );
+  await expect(page.getByLabel("Descripción", { exact: true })).toHaveValue(
+    "My unsaved description",
+  );
+  await page
+    .getByRole("button", { name: "Guardar producto", exact: true })
+    .click();
+  await expect(page.locator("#main").getByRole("alert")).toContainText(
+    "No pudimos guardar el producto.",
+  );
+  await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(
+    "Edited cookie",
+  );
+  await expect(page.getByLabel("Descripción", { exact: true })).toHaveValue(
+    "My unsaved description",
+  );
+  await page.getByRole("button", { name: "Cerrar editor" }).click();
+  await page
+    .locator(".admin-product-row")
+    .first()
+    .getByRole("button", { name: "Editar", exact: true })
+    .click();
+  await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(
+    "Choco Cloud",
+  );
+});
 
-test("cookie editor preserves draft through refresh and failed save", async ({ page }) => {
-  await mockSupabase(page, {productSaveFailure: true});
-  await page.goto('/#admin');
-  await page.getByLabel('Correo de administración').fill('admin@example.invalid');
-  await page.getByLabel('Contraseña de administración').fill('test-only-not-a-real-password');
-  await page.getByRole('button', {name:'Entrar al panel'}).click();
-  await expect(page.getByRole('heading', {name:'Órdenes.'})).toBeVisible();
-  await page.getByRole('button', {name:'Productos', exact:true}).click();
-  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
-  await page.getByLabel('Nombre', {exact:true}).fill('Edited cookie');
-  await page.getByLabel('Descripción', {exact:true}).fill('My unsaved description');
-  await page.getByRole('button', {name:'Actualizar', exact:true}).click();
-  await expect(page.getByRole('button', {name:'Actualizar', exact:true})).toBeEnabled();
-  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
-  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
-  await page.getByRole('button', {name:'Guardar producto', exact:true}).click();
-  await expect(page.locator('#main').getByRole('alert')).toContainText('No pudimos guardar el producto.');
-  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Edited cookie');
-  await expect(page.getByLabel('Descripción', {exact:true})).toHaveValue('My unsaved description');
-  await page.getByRole('button', {name:'Cerrar editor'}).click();
-  await page.locator('.admin-product-row').first().getByRole('button', {name:'Editar', exact:true}).click();
-  await expect(page.getByLabel('Nombre', {exact:true})).toHaveValue('Choco Cloud');
+test("delivery zones update the payable total and disappear for pickup", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+  await startCheckout(page);
+  await expect(page.getByLabel("Zona", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Enviar con mensajero").check();
+  await page.getByLabel("Zona", { exact: true }).selectOption(zones[0].id);
+  await expect(
+    page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
+  ).toContainText("4 500");
+  await page.getByLabel("Zona", { exact: true }).selectOption(zones[1].id);
+  await expect(
+    page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
+  ).toContainText("5 500");
+  await capture(page, "delivery-zones-checkout");
+  await page.getByLabel("Retiro", { exact: false }).first().check();
+  await expect(page.getByLabel("Zona", { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
+  ).toHaveCount(0);
+});
+
+test("admin can add edit and deactivate delivery zones", async ({ page }) => {
+  const calls = await mockSupabase(page);
+  await page.goto("/#admin");
+  await page
+    .getByLabel("Correo de administración")
+    .fill("admin@example.invalid");
+  await page
+    .getByLabel("Contraseña de administración")
+    .fill("testing-password");
+  await page
+    .getByRole("button", { name: "Entrar al panel", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Configuración", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Nueva zona", exact: true }).click();
+  await page.getByLabel("Nombre de la zona").fill("San José");
+  await page.getByLabel("Precio de envío (₡)").fill("1500");
+  await page.getByRole("button", { name: "Guardar zona", exact: true }).click();
+  await expect(page.locator(".delivery-zones-admin")).toContainText("San José");
+  const row = page
+    .locator(".delivery-zones-admin article")
+    .filter({ hasText: "San José" });
+  await row.getByRole("button", { name: "Editar", exact: true }).click();
+  await page.getByLabel("Precio de envío (₡)").fill("1800");
+  await page.getByRole("button", { name: "Guardar zona", exact: true }).click();
+  await expect(row).toContainText("1 800");
+  await page
+    .locator(".delivery-zones-admin article")
+    .filter({ hasText: "Escazú" })
+    .getByRole("button", { name: "Desactivar", exact: true })
+    .click();
+  await expect(
+    page.locator(".delivery-zones-admin article").filter({ hasText: "Escazú" }),
+  ).toContainText("Inactiva");
+  expect(
+    calls
+      .filter((call) => call.action === "save-zone")
+      .map((call) => call.price),
+  ).toEqual([1500, 1800]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await capture(page, "delivery-zones-admin");
+});
+
+test("delivery submission requires a zone and sends its id without a client fee", async ({page}) => {
+  const calls = await mockSupabase(page);
+  await startCheckout(page);
+  await page.getByLabel("Enviar con mensajero").check();
+  await page.getByLabel("Dirección de entrega").fill("San José, Avenida 1, casa 2");
+  await page.getByLabel("Fecha de entrega").selectOption({index:2});
+  await page.getByLabel("Horario de entrega").selectOption({index:1});
+  await attachReceipt(page);
+  await page.getByRole("button", {name:"Realizar pedido",exact:true}).click();
+  expect(calls.filter(call => call.kind === "create")).toHaveLength(0);
+  await page.getByLabel("Zona", {exact:true}).selectOption(zones[0].id);
+  await page.getByRole("button", {name:"Realizar pedido",exact:true}).click();
+  await expect(page.getByRole("heading", {name:"¡Pedido realizado con éxito!"})).toBeVisible();
+  const request = calls.find(call => call.kind === "create");
+  expect(request.body).toContain('name="deliveryZoneId"');
+  expect(request.body).toContain(zones[0].id);
+  expect(request.body).not.toContain('name="deliveryFee"');
 });

@@ -34,7 +34,7 @@ const initialState = (): AppState => ({
   products: [], salesPoints: [], selectedCity: 'Todos', demoCatalog: true,
   payment: { configured: false, number: '', recipient: '' },
   contact: { whatsapp: '', email: 'Snackyzz.cookies@gmail.com', instagram: 'Snackyzz.cookies' },
-  delivery: { uberEnabled: true, disclaimer: 'El costo del servicio de mensajería corre por cuenta del cliente y se paga por separado.', leadHours: 6, slotHours: 3, schedule: {} },
+  delivery: { uberEnabled: true, disclaimer: 'El envío se calcula según tu zona y se incluye en el total a pagar.', leadHours: 6, slotHours: 3, schedule: {} },
   fulfillment: emptyFulfillment(), catalogReady: false, catalogError: '', activePage: 'home',
   draft: { name: '', email: '', phone: '' }, receipt: null, receiptPreview: '', validatingReceipt: false,
   checkoutError: '', submitting: false, lastOrder: null, idempotencyKey: '', detailId: null,
@@ -218,6 +218,7 @@ export default function AppShell() {
     body.set('receipt', data.receipt);
     body.set('fulfillmentType', data.fulfillment.type);
     body.set('pickupLocationId', data.fulfillment.pickupLocationId);
+    body.set('deliveryZoneId', data.fulfillment.type === 'uber' ? data.fulfillment.deliveryZoneId || '' : '');
     body.set('deliveryAddress', data.fulfillment.deliveryAddress.trim());
     body.set('deliveryDate', data.fulfillment.deliveryDate);
     body.set('deliverySlotStart', data.fulfillment.deliverySlotStart);

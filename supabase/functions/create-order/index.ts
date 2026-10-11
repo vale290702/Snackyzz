@@ -14,6 +14,8 @@ Deno.serve(async (request: Request) => {
     const fields = validateFields(form);
     const fulfillmentType = String(form.get('fulfillmentType') ?? '');
     const pickupLocationId = String(form.get('pickupLocationId') ?? '') || null;
+    const deliveryZoneId = fulfillmentType === 'uber' ? String(form.get('deliveryZoneId') ?? '') : null;
+    if (fulfillmentType === 'uber' && !/^[0-9a-f-]{36}$/i.test(deliveryZoneId ?? '')) throw new InputError('Selecciona una zona de entrega.');
     const deliveryAddress = String(form.get('deliveryAddress') ?? '').trim();
     const deliveryDate = String(form.get('deliveryDate') ?? '');
     const deliverySlotStart = String(form.get('deliverySlotStart') ?? '');
@@ -24,7 +26,7 @@ Deno.serve(async (request: Request) => {
     if (receipt.size > MAX_BYTES) throw new InputError('El comprobante debe pesar como máximo 5 MB.');
     const original = new Uint8Array(await receipt.arrayBuffer());
     if (fulfillmentType === 'uber' && (!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate) || !/^\d{2}:\d{2}$/.test(deliverySlotStart))) throw new InputError('Selecciona la fecha y el horario de entrega.');
-    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart},original);
+    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart,deliveryZoneId},original);
     const bytes = await normalizeReceipt(original);
     const db = serviceClient();
     const path = `${crypto.randomUUID()}.jpg`;
@@ -34,6 +36,7 @@ Deno.serve(async (request: Request) => {
       p_key:key,p_fingerprint:hash,p_name:fields.name,p_email:fields.email,p_phone:fields.phone,
       p_items:fields.items,p_receipt_path:path,
       p_fulfillment_type:fulfillmentType,p_pickup_location_id:pickupLocationId,p_delivery_address:deliveryAddress,
+      p_delivery_zone_id:deliveryZoneId,
       p_delivery_date:deliveryDate || null,p_delivery_slot_start:deliverySlotStart || null,
     });
     if (error) {

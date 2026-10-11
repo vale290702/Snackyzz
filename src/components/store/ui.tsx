@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { productBrandLabel } from "../../lib/collections";
+import { deliveryQuote } from "../../lib/delivery-zones";
+import type { DeliveryZone } from "../../types/store";
 import { formatMoney } from "../../lib/cart";
 import { safeImage } from "../../lib/html";
 import type {
@@ -113,7 +115,11 @@ export function Nav({
             <button
               type="button"
               className="cart-button"
-              aria-label={cartDisabled ? "Pedido en curso" : `Ver carrito, ${cartCount} productos`}
+              aria-label={
+                cartDisabled
+                  ? "Pedido en curso"
+                  : `Ver carrito, ${cartCount} productos`
+              }
               disabled={cartDisabled}
               onClick={(event) => onCartOpen(event.currentTarget)}
             >
@@ -295,14 +301,22 @@ export function Cart({
   fulfillment,
   onNavigate,
   titleId,
+  zones,
 }: {
   cart: CartLike;
   checkout?: boolean;
   fulfillment?: Fulfillment;
   onNavigate?: () => void;
   titleId?: string;
+  zones?: DeliveryZone[];
 }) {
   const lines = cart.getLines();
+  const quote = deliveryQuote(
+    lines.reduce((sum, line) => sum + line.total, 0),
+    fulfillment?.type || "pickup",
+    fulfillment?.deliveryZoneId || "",
+    zones,
+  );
   const actions = useStoreActions();
   return (
     <aside className="cart-panel" aria-label="Resumen del carrito">
@@ -351,9 +365,33 @@ export function Cart({
               <span>Total de productos</span>
               <strong>{cart.getFormattedTotal()}</strong>
             </div>
+            {checkout && fulfillment?.type === "uber" && (
+              <>
+                <div className="cart-total">
+                  <span>Envío{quote.zone ? ` · ${quote.zone.name}` : ""}</span>
+                  <strong>
+                    {quote.zone
+                      ? formatMoney(quote.fee)
+                      : "Selecciona una zona"}
+                  </strong>
+                </div>
+                <div className="cart-total">
+                  <span>Total a pagar</span>
+                  <strong>
+                    {quote.zone
+                      ? formatMoney(quote.total)
+                      : "Pendiente de zona"}
+                  </strong>
+                </div>
+              </>
+            )}
             {checkout ? null : (
               <>
-                <a href="#checkout" className="button button-dark wide" onClick={onNavigate}>
+                <a
+                  href="#checkout"
+                  className="button button-dark wide"
+                  onClick={onNavigate}
+                >
                   Comprar <Icon name="arrow" />
                 </a>
                 <p className="cart-note">
@@ -380,7 +418,11 @@ export function Cart({
               <br />y arma tu próximo antojo.
             </p>
             {onNavigate ? (
-              <a href="#shop" className="button button-dark wide" onClick={onNavigate}>
+              <a
+                href="#shop"
+                className="button button-dark wide"
+                onClick={onNavigate}
+              >
                 Explorar cookies <Icon name="arrow" />
               </a>
             ) : null}
