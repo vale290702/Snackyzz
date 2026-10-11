@@ -93,6 +93,7 @@ async function mockSupabase(
     emailFailure = false,
     isAdmin = true,
     productSaveFailure = false,
+    zoneSaveFailure = false,
   } = {},
 ) {
   const calls = [];
@@ -202,6 +203,7 @@ async function mockSupabase(
         });
       const body = request.postDataJSON();
       calls.push({ kind: "store-settings", ...body });
+      if (body.action === "save-zone" && zoneSaveFailure) return reply({ error: "No se pudo guardar la zona." }, 503);
       if (body.action === "save-zone")
         return reply({
           zone: {
@@ -989,4 +991,24 @@ test("delivery submission requires a zone and sends its id without a client fee"
   expect(request.body).toContain('name="deliveryZoneId"');
   expect(request.body).toContain(zones[0].id);
   expect(request.body).not.toContain('name="deliveryFee"');
+});
+
+test("zone save failure keeps the draft and spaces actions", async ({page}) => {
+  await mockSupabase(page, {zoneSaveFailure:true});
+  await page.goto("/#admin");
+  await page.getByLabel("Correo de administración").fill("admin@example.invalid");
+  await page.getByLabel("Contraseña de administración").fill("testing-password");
+  await page.getByRole("button", {name:"Entrar al panel"}).click();
+  await page.getByRole("button", {name:"Configuración",exact:true}).click();
+  await page.getByRole("button", {name:"Nueva zona",exact:true}).click();
+  await page.getByLabel("Nombre de la zona").fill("San José");
+  await page.getByLabel("Precio de envío (₡)").fill("1500");
+  await page.getByRole("button",{name:"Guardar zona",exact:true}).click();
+  await expect(page.locator(".delivery-zones-admin")).toContainText("No se pudo guardar la zona.");
+  await expect(page.getByLabel("Nombre de la zona")).toHaveValue("San José");
+  await expect(page.getByLabel("Precio de envío (₡)")).toHaveValue("1500");
+  const save = await page.getByRole("button",{name:"Guardar zona",exact:true}).boundingBox();
+  const cancel = await page.getByRole("button",{name:"Cancelar",exact:true}).boundingBox();
+  expect(Math.max(cancel.x - (save.x + save.width), cancel.y - (save.y + save.height))).toBeGreaterThanOrEqual(15);
+  await capture(page,"zone-editor-actions");
 });

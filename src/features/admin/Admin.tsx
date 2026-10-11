@@ -827,16 +827,15 @@ function DeliveryZones({ controller: c }: { controller: AdminController }) {
               defaultValue={zone?.price ?? ""}
             />
           </div>
-          <button className="button button-dark" disabled={c.state.busy}>
-            Guardar zona
-          </button>{" "}
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => setEditing(null)}
-          >
-            Cancelar
-          </button>
+          <ErrorMessage message={c.state.error} />
+          <div className="zone-form-actions">
+            <button className="button button-dark" disabled={c.state.busy}>
+              {c.state.busy ? "Guardando…" : "Guardar zona"}
+            </button>
+            <button type="button" className="button button-outline" disabled={c.state.busy} onClick={() => setEditing(null)}>
+              Cancelar
+            </button>
+          </div>
         </form>
       )}
     </section>
