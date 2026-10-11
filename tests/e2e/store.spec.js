@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import { products as catalogProducts } from "../../src/data/products.ts";
+import { products as catalogProducts } from "../fixtures/products.ts";
 const products = catalogProducts.map((product, index) => ({
   ...product,
   active: true,
@@ -337,14 +337,14 @@ test("receipt is mandatory and success follows persisted API response only", asy
   const calls = await mockSupabase(page);
   await startCheckout(page);
   await page
-    .getByRole("button", { name: "Registrar pedido de prueba" })
+    .getByRole("button", { name: "Realizar pedido" })
     .click();
   expect(calls).toHaveLength(0);
   await expect(page).toHaveURL(/#checkout$/);
   await attachReceipt(page);
   await capture(page, "checkout");
   await page
-    .getByRole("button", { name: "Registrar pedido de prueba" })
+    .getByRole("button", { name: "Realizar pedido" })
     .click();
   await expect(
     page.getByRole("heading", { name: "¡Pedido realizado con éxito!" }),
@@ -365,7 +365,7 @@ test("failed order preserves the receipt/cart and reuses its idempotency key", a
   await startCheckout(page);
   await attachReceipt(page);
   const submit = page.getByRole("button", {
-    name: "Registrar pedido de prueba",
+    name: "Realizar pedido",
   });
   await submit.click();
   await expect(page.locator("#checkout-error")).toContainText("No pudimos guardar");
@@ -488,11 +488,11 @@ test("checkout waits for replacement image validation instead of sending a stale
   });
   await page.locator("#receipt").setInputFiles("tests/fixtures/receipt.png");
   await expect(
-    page.getByRole("button", { name: "Registrar pedido de prueba" }),
+    page.getByRole("button", { name: "Realizar pedido" }),
   ).toBeDisabled();
   expect(calls).toHaveLength(0);
   await expect(
-    page.getByRole("button", { name: "Registrar pedido de prueba" }),
+    page.getByRole("button", { name: "Realizar pedido" }),
   ).toBeEnabled();
 });
 
@@ -584,9 +584,9 @@ test("stored cart hydrates on a direct checkout visit", async ({ page }) => {
   );
   await page.goto("/#checkout");
   await expect(page.locator("[data-cart-count]")).toHaveText("3");
-  await expect(page.locator(".cart-lines")).toContainText("Choco Cloud");
-  await expect(page.locator(".cart-lines")).toContainText("Chocolate Chip");
-  await expect(page.locator(".cart-lines")).not.toContainText("ghost");
+  await expect(page.locator("#main .cart-lines")).toContainText("Choco Cloud");
+  await expect(page.locator("#main .cart-lines")).toContainText("Chocolate Chip");
+  await expect(page.locator("#main .cart-lines")).not.toContainText("ghost");
 });
 
 

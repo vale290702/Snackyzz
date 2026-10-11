@@ -1,12 +1,11 @@
 import { BakingHero } from "./baking-hero";
 import "./baking-stereo.css";
-import { ProductCard, Cart, DemoNotice, Icon } from "../../components/store/ui";
+import { ProductCard, Cart, Icon } from "../../components/store/ui";
 import { collections, productBrand } from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
 export function Shop({
   products,
   cart,
-  demoCatalog,
   collection = "snackyzz",
 }: CatalogPageProps & { collection?: "snackyzz" | "baking-stereo" }) {
   const fresh = collection === "baking-stereo";
@@ -52,7 +51,6 @@ export function Shop({
                   <ProductCard key={p.id} product={p} cart={cart} />
                 ))}
               </div>
-              <DemoNotice demo={demoCatalog} />
             </>
           ) : (
             <div className="collection-empty">

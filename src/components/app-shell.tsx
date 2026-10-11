@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
-import { products as previewProducts } from '../data/products';
 import { createCartStore } from '../lib/cart';
 import { api } from '../lib/api';
 import { configured, supabase } from '../lib/supabase';
@@ -32,7 +31,7 @@ interface AppState extends Catalog {
 }
 const emptyFulfillment = (): Fulfillment => ({ type: 'pickup', pickupLocationId: '', deliveryAddress: '', deliveryDate: '', deliverySlotStart: '' });
 const initialState = (): AppState => ({
-  products: previewProducts, salesPoints: [], selectedCity: 'Todos', demoCatalog: true,
+  products: [], salesPoints: [], selectedCity: 'Todos', demoCatalog: true,
   payment: { configured: false, number: '', recipient: '' },
   contact: { whatsapp: '', email: 'Snackyzz.cookies@gmail.com', instagram: 'Snackyzz.cookies' },
   delivery: { uberEnabled: true, disclaimer: 'El costo del servicio de mensajería corre por cuenta del cliente y se paga por separado.', leadHours: 6, slotHours: 3, schedule: {} },
@@ -52,7 +51,7 @@ export default function AppShell() {
     setState(current.current);
     if (Object.keys(value).some(key => !['draft', 'idempotencyKey'].includes(key))) setRenderRevision(n => n + 1);
   }, []);
-  const [cart, setCart] = useState(() => createCartStore({ products: previewProducts, storage: null }));
+  const [cart, setCart] = useState(() => createCartStore({ products: [], storage: null }));
   const cartRef = useRef(cart);
   const [, updateCart] = useState(0);
   const [toast, setToast] = useState('');
@@ -96,7 +95,7 @@ export default function AppShell() {
     const mobileViewport = window.matchMedia('(max-width: 800px)');
     const closeOnDesktop = () => { if (!mobileViewport.matches) setCartOpen(false); };
     mobileViewport.addEventListener('change', closeOnDesktop);
-    const restored = createCartStore({ products: previewProducts });
+    const restored = createCartStore({ products: [] });
     cartRef.current = restored;
     setCart(restored);
     const route = getRouteFromHash();
@@ -277,7 +276,7 @@ export default function AppShell() {
       if (event.target !== event.currentTarget) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog();
-    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={`${product.name}, imagen de referencia`} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>Agregar al carrito <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button>{state.demoCatalog ? <p className="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p> : null}</div></div> : null}</dialog>
+    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>Agregar al carrito <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
     <div id="toast" className={`toast ${showCartBubble ? 'toast-with-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
   </StoreActionsProvider>;
 }
