@@ -18,6 +18,7 @@ const initial: AdminState = {
   products: [],
   settings: null,
   locations: [],
+  zones: [],
   emailConfigured: false,
   editingLocation: null,
   view: "orders",
@@ -78,6 +79,7 @@ export function useAdmin({
       products,
       settings: store.settings,
       locations: store.locations,
+      zones: store.zones ?? [],
       emailConfigured: store.emailConfigured,
       loaded: true,
     };
@@ -206,10 +208,20 @@ export function useAdmin({
     }
     patch({ busy: true, error: "" });
     try {
-      const result = await api<{ settings?: Settings; location?: SalesPoint }>(
-        "/admin/store/action",
-        { body },
-      );
+      const result = await api<{
+        settings?: Settings;
+        location?: SalesPoint;
+        zone?: import("../../types/store").DeliveryZone;
+      }>("/admin/store/action", { body });
+      if (result.zone) {
+        const zone = result.zone;
+        patch({
+          zones: [
+            ...current.current.zones.filter((item) => item.id !== zone.id),
+            zone,
+          ].sort((a, b) => a.name.localeCompare(b.name)),
+        });
+      }
       if (result.settings) patch({ settings: result.settings });
       if (result.location) {
         const location = result.location;
@@ -226,8 +238,10 @@ export function useAdmin({
       }
       patch({ editingLocation: null });
       notify(message);
+      return true;
     } catch (error) {
       reject(error);
+      return false;
     } finally {
       patch({ busy: false });
       await onCatalogChange();

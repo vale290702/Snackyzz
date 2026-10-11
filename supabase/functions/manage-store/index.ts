@@ -35,12 +35,13 @@ Deno.serve(async(request:Request)=>{
     if(!["GET","POST"].includes(request.method)) throw new InputError("Método no permitido.",405);
     const db=await authorize(request);
     if(request.method==="GET"){
-      const [settings,locations]=await Promise.all([
+      const [settings,locations,zones]=await Promise.all([
         db.from("store_settings").select("*").eq("id",1).single(),
         db.from("sales_points").select("*").order("position").order("name"),
+        db.from("delivery_zones").select("*").order("name"),
       ]);
-      if(settings.error||locations.error) throw new InputError("No se pudo cargar la configuración.",503);
-      return json({settings:settings.data,locations:locations.data,emailConfigured:Boolean(Deno.env.get("RESEND_API_KEY")&&Deno.env.get("FROM_EMAIL"))},200,headers);
+      if(settings.error||locations.error||zones.error) throw new InputError("No se pudo cargar la configuración.",503);
+      return json({settings:settings.data,locations:locations.data,zones:zones.data,emailConfigured:Boolean(Deno.env.get("RESEND_API_KEY")&&Deno.env.get("FROM_EMAIL"))},200,headers);
     }
     const body=await request.json();
     if(body.action==="save-settings"){
@@ -59,6 +60,20 @@ Deno.serve(async(request:Request)=>{
       const {data,error}=await db.from("store_settings").update(values).eq("id",1).select().single();
       if(error) throw new InputError("No se pudo guardar la configuración.",503);
       return json({settings:data},200,headers);
+    }
+    if(body.action === "save-zone") {
+      const values = { name: clean(body.name,100,2), price: Number(body.price) };
+      if (!Number.isInteger(values.price) || values.price < 0 || values.price > 1000000) throw new InputError("Revisa el precio de envío.");
+      if (body.id && !/^[0-9a-f-]{36}$/i.test(body.id)) throw new InputError("Zona inválida.");
+      const query = body.id ? db.from("delivery_zones").update(values).eq("id",body.id) : db.from("delivery_zones").insert(values);
+      const {data,error} = await query.select().single();
+      if(error) throw new InputError("No se pudo guardar la zona. Revisa que el nombre no esté repetido.",503);
+      return json({zone:data},body.id?200:201,headers);
+    }
+    if (["archive-zone","restore-zone"].includes(body.action) && /^[0-9a-f-]{36}$/i.test(body.id ?? "")) {
+      const {data,error} = await db.from("delivery_zones").update({active:body.action === "restore-zone"}).eq("id",body.id).select().single();
+      if(error) throw new InputError("No se pudo actualizar la zona.",503);
+      return json({zone:data},200,headers);
     }
     if(body.action==="save-location"){
       const values={name:clean(body.name,100,2),city:clean(body.city,100,2),address:clean(body.address,300,5),hours:clean(body.hours,200),map_url:clean(body.mapUrl,500),position:Number(body.position),active:true};

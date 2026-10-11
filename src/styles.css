@@ -3127,3 +3127,15 @@ small#receipt-help {
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 }
+
+/* Delivery-zone management follows the existing settings controls. */
+.settings-grid > * { min-width: 0; }
+.delivery-zones-admin { margin-bottom: 28px; }
+.delivery-zones-admin .cart-title > div { min-width: 0; }
+.delivery-zones-admin .product-editor { margin-top: 24px; }
+@media (max-width: 560px) {
+  .settings-grid .schedule-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr); }
+  .settings-grid .schedule-row input { min-width: 0; width: 100%; }
+  .settings-grid .schedule-row input[type="checkbox"] { width: 18px; flex-shrink: 0; }
+  .delivery-zones-admin .cart-title { flex-wrap: wrap; gap: 16px; }
+}

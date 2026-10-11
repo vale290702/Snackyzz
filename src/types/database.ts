@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivery_zones: {
+        Row: { id: string; name: string; price: number; active: boolean }
+        Insert: { id?: string; name: string; price: number; active?: boolean }
+        Update: { id?: string; name?: string; price?: number; active?: boolean }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           user_id: string
@@ -311,6 +317,7 @@ export type Database = {
       }
       create_order: {
         Args: {
+          p_delivery_zone_id?: string
           p_delivery_address?: string
           p_delivery_date?: string
           p_delivery_slot_start?: string

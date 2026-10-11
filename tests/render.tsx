@@ -36,6 +36,7 @@ export function renderAdmin(overrides: Partial<AdminState>) {
     products: [],
     settings: null,
     locations: [],
+    zones: [],
     emailConfigured: false,
     editingLocation: null,
     view: "orders",

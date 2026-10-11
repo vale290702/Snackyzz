@@ -36,11 +36,19 @@ export interface Contact {
 export interface Fulfillment {
   type: string;
   pickupLocationId: string;
+  deliveryZoneId?: string;
   deliveryAddress: string;
   deliveryDate: string;
   deliverySlotStart: string;
 }
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  price: number;
+  active: boolean;
+}
 export interface Delivery {
+  zones?: DeliveryZone[];
   uberEnabled?: boolean;
   disclaimer?: string;
   slotHours?: number;

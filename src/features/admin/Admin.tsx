@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Icon, Wordmark } from "../../components/store/ui";
 import { productBrand, productBrandLabel } from "../../lib/collections";
 import { formatMoney } from "../../lib/cart";
@@ -652,77 +652,194 @@ function SettingsPanel({ controller: c }: { controller: AdminController }) {
             settings={settings}
             controller={c}
           />
-          <section className="locations-admin">
-            <div className="cart-title">
-              <div>
-                <h2>Puntos de retiro</h2>
-                <p>Ubicaciones disponibles para clientes.</p>
+          <div>
+            <DeliveryZones controller={c} />
+            <section className="locations-admin">
+              <div className="cart-title">
+                <div>
+                  <h2>Puntos de retiro</h2>
+                  <p>Ubicaciones disponibles para clientes.</p>
+                </div>
+                <button
+                  className="button button-outline"
+                  data-new-location
+                  onClick={() => c.patch({ editingLocation: "new" })}
+                >
+                  Nuevo punto
+                </button>
               </div>
-              <button
-                className="button button-outline"
-                data-new-location
-                onClick={() => c.patch({ editingLocation: "new" })}
-              >
-                Nuevo punto
-              </button>
-            </div>
-            {s.locations.length ? (
-              s.locations.map((p) => (
-                <article key={p.id} className="admin-location-row">
-                  <div>
-                    <strong>{p.name}</strong>
-                    <span>{`${p.address} · ${p.city}`}</span>
-                    <small>{p.hours || "Sin horario"}</small>
-                  </div>
-                  <span
-                    className={`status ${p.active ? "confirmed" : "pending"}`}
-                  >
-                    {p.active ? "Activo" : "Archivado"}
-                  </span>
-                  <div className="product-row-actions">
-                    <button
-                      className="text-button"
-                      data-edit-location={p.id}
-                      onClick={() => c.patch({ editingLocation: p.id })}
+              {s.locations.length ? (
+                s.locations.map((p) => (
+                  <article key={p.id} className="admin-location-row">
+                    <div>
+                      <strong>{p.name}</strong>
+                      <span>{`${p.address} · ${p.city}`}</span>
+                      <small>{p.hours || "Sin horario"}</small>
+                    </div>
+                    <span
+                      className={`status ${p.active ? "confirmed" : "pending"}`}
                     >
-                      Editar
-                    </button>
-                    <button
-                      className={`text-button ${p.active ? "danger" : ""}`}
-                      data-location-action={p.active ? "archive" : "restore"}
-                      data-location-id={p.id}
-                      onClick={() =>
-                        void c.storeAction(
-                          {
-                            action: `${p.active ? "archive" : "restore"}-location`,
-                            id: p.id,
-                          },
-                          p.active ? "Punto archivado." : "Punto restaurado.",
-                        )
-                      }
-                    >
-                      {p.active ? "Archivar" : "Restaurar"}
-                    </button>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="admin-empty">
-                <h3>Sin puntos de retiro.</h3>
-                <p>Crea una ubicación para ofrecer retiro.</p>
-              </div>
-            )}
-            {s.editingLocation && (
-              <LocationForm
-                key={`${s.editingLocation}-${s.formRevision}`}
-                point={editing}
-                controller={c}
-              />
-            )}
-          </section>
+                      {p.active ? "Activo" : "Archivado"}
+                    </span>
+                    <div className="product-row-actions">
+                      <button
+                        className="text-button"
+                        data-edit-location={p.id}
+                        onClick={() => c.patch({ editingLocation: p.id })}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className={`text-button ${p.active ? "danger" : ""}`}
+                        data-location-action={p.active ? "archive" : "restore"}
+                        data-location-id={p.id}
+                        onClick={() =>
+                          void c.storeAction(
+                            {
+                              action: `${p.active ? "archive" : "restore"}-location`,
+                              id: p.id,
+                            },
+                            p.active ? "Punto archivado." : "Punto restaurado.",
+                          )
+                        }
+                      >
+                        {p.active ? "Archivar" : "Restaurar"}
+                      </button>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="admin-empty">
+                  <h3>Sin puntos de retiro.</h3>
+                  <p>Crea una ubicación para ofrecer retiro.</p>
+                </div>
+              )}
+              {s.editingLocation && (
+                <LocationForm
+                  key={`${s.editingLocation}-${s.formRevision}`}
+                  point={editing}
+                  controller={c}
+                />
+              )}
+            </section>
+          </div>
         </div>
       </main>
     </>
+  );
+}
+function DeliveryZones({ controller: c }: { controller: AdminController }) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const zone = c.state.zones.find((item) => item.id === editing);
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const saved = await c.storeAction(
+      {
+        action: "save-zone",
+        id: zone?.id,
+        name: form.get("name"),
+        price: Number(form.get("price")),
+      },
+      "Zona guardada.",
+    );
+    if (saved) setEditing(null);
+  }
+  return (
+    <section className="locations-admin delivery-zones-admin">
+      <div className="cart-title">
+        <div>
+          <h2>Zonas de entrega</h2>
+          <p>El precio de cada zona se suma al pedido.</p>
+        </div>
+        <button
+          className="button button-outline"
+          onClick={() => setEditing("new")}
+        >
+          Nueva zona
+        </button>
+      </div>
+      {c.state.zones.length ? (
+        c.state.zones.map((item) => (
+          <article className="admin-location-row" key={item.id}>
+            <div>
+              <strong>{item.name}</strong>
+              <span>{formatMoney(item.price)}</span>
+            </div>
+            <span className={`status ${item.active ? "confirmed" : "pending"}`}>
+              {item.active ? "Activa" : "Inactiva"}
+            </span>
+            <div className="product-row-actions">
+              <button
+                className="text-button"
+                onClick={() => setEditing(item.id)}
+              >
+                Editar
+              </button>
+              <button
+                className="text-button"
+                disabled={c.state.busy}
+                onClick={() =>
+                  void c.storeAction(
+                    {
+                      action: item.active ? "archive-zone" : "restore-zone",
+                      id: item.id,
+                    },
+                    "Zona actualizada.",
+                  )
+                }
+              >
+                {item.active ? "Desactivar" : "Activar"}
+              </button>
+            </div>
+          </article>
+        ))
+      ) : (
+        <div className="admin-empty">
+          <h3>Sin zonas de entrega.</h3>
+          <p>Agrega una zona y su precio para ofrecer envío.</p>
+        </div>
+      )}
+      {editing && (
+        <form key={editing} className="product-editor" onSubmit={save}>
+          <h3>{zone ? "Editar zona" : "Nueva zona"}</h3>
+          <div className="field">
+            <label htmlFor="zone-name">Nombre de la zona</label>
+            <input
+              id="zone-name"
+              name="name"
+              required
+              minLength={2}
+              maxLength={100}
+              defaultValue={zone?.name || ""}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="zone-price">Precio de envío (₡)</label>
+            <input
+              id="zone-price"
+              name="price"
+              type="number"
+              required
+              min={0}
+              max={1000000}
+              step={1}
+              defaultValue={zone?.price ?? ""}
+            />
+          </div>
+          <button className="button button-dark" disabled={c.state.busy}>
+            Guardar zona
+          </button>{" "}
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setEditing(null)}
+          >
+            Cancelar
+          </button>
+        </form>
+      )}
+    </section>
   );
 }
 function SettingsForm({
@@ -770,7 +887,8 @@ function SettingsForm({
         publicEmail: value("publicEmail"),
         instagram: value("instagram"),
         uberDeliveryEnabled: f.has("uberDeliveryEnabled"),
-        uberDisclaimer: value("uberDisclaimer"),
+        uberDisclaimer:
+          "El envío se calcula según tu zona y se incluye en el total a pagar.",
         deliveryLeadHours: Number(f.get("deliveryLeadHours")),
         deliverySlotHours: Number(f.get("deliverySlotHours")),
         deliverySchedule: schedule,
@@ -921,18 +1039,6 @@ function SettingsForm({
           );
         })}
       </fieldset>
-      <div className="field">
-        <label htmlFor="setting-disclaimer">Aviso de entrega</label>
-        <textarea
-          id="setting-disclaimer"
-          name="uberDisclaimer"
-          required
-          minLength={10}
-          maxLength={300}
-          rows={3}
-          defaultValue={s.uber_disclaimer || ""}
-        />
-      </div>
       <button className="button button-dark wide" disabled={c.state.busy}>
         Guardar configuración
       </button>
@@ -1110,6 +1216,12 @@ function OrderDetail({
               : `Retiro en ${o.fulfillmentLabel || "punto de venta"}`}
           </strong>
           <p>{o.fulfillmentAddress || ""}</p>
+          {o.deliveryZoneName && (
+            <p>
+              Zona: {o.deliveryZoneName} · Envío:{" "}
+              {formatMoney(o.deliveryFee ?? 0)}
+            </p>
+          )}
           {o.deliveryDate && (
             <p>
               <strong>Programado:</strong> {o.deliveryDate} ·{" "}

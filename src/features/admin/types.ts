@@ -36,6 +36,8 @@ export interface Order {
   status: string;
   emailStatus: string;
   total: number;
+  deliveryZoneName?: string;
+  deliveryFee?: number;
   createdAt: string;
   confirmedAt?: string;
   receiptUrl: string;
@@ -57,6 +59,7 @@ export interface AdminState {
   products: Product[];
   settings: Settings | null;
   locations: SalesPoint[];
+  zones: import("../../types/store").DeliveryZone[];
   emailConfigured: boolean;
   editingLocation: string | null;
   view: string;
@@ -71,5 +74,6 @@ export interface AdminState {
 export interface StoreResponse {
   settings: Settings;
   locations: SalesPoint[];
+  zones: import("../../types/store").DeliveryZone[];
   emailConfigured: boolean;
 }

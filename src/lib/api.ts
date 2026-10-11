@@ -14,13 +14,27 @@ function requireClient() {
     );
   return supabase;
 }
-type SettingsRow = Partial<import("../types/database").Database["public"]["Tables"]["store_settings"]["Row"]>;
-function scheduleValue(value: SettingsRow["delivery_schedule"]): Record<string, { enabled: boolean; start: string; end: string }> {
+type SettingsRow = Partial<
+  import("../types/database").Database["public"]["Tables"]["store_settings"]["Row"]
+>;
+function scheduleValue(
+  value: SettingsRow["delivery_schedule"],
+): Record<string, { enabled: boolean; start: string; end: string }> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(Object.entries(value).flatMap(([key, day]) => {
-    if (!day || typeof day !== "object" || Array.isArray(day) || typeof day.enabled !== "boolean" || typeof day.start !== "string" || typeof day.end !== "string") return [];
-    return [[key, { enabled: day.enabled, start: day.start, end: day.end }]];
-  }));
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, day]) => {
+      if (
+        !day ||
+        typeof day !== "object" ||
+        Array.isArray(day) ||
+        typeof day.enabled !== "boolean" ||
+        typeof day.start !== "string" ||
+        typeof day.end !== "string"
+      )
+        return [];
+      return [[key, { enabled: day.enabled, start: day.start, end: day.end }]];
+    }),
+  );
 }
 function storeSettings(row: SettingsRow = {}) {
   return {
@@ -37,15 +51,29 @@ function storeSettings(row: SettingsRow = {}) {
     },
     delivery: {
       uberEnabled: row.uber_delivery_enabled !== false,
-      disclaimer: row.uber_disclaimer ?? "El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado.",
+      disclaimer:
+        row.uber_disclaimer ??
+        "El envío se calcula según tu zona y se incluye en el total a pagar.",
       leadHours: row.delivery_lead_hours ?? 6,
       slotHours: row.delivery_slot_hours ?? 3,
       schedule: scheduleValue(row.delivery_schedule),
     },
   };
 }
-async function invoke<T>(name: string, options: { body?: unknown; headers?: Record<string, string>; method?: "GET" | "POST" }) {
-  const { data, error } = await requireClient().functions.invoke<T>(name, options as Parameters<ReturnType<typeof requireClient>["functions"]["invoke"]>[1]);
+async function invoke<T>(
+  name: string,
+  options: {
+    body?: unknown;
+    headers?: Record<string, string>;
+    method?: "GET" | "POST";
+  },
+) {
+  const { data, error } = await requireClient().functions.invoke<T>(
+    name,
+    options as Parameters<
+      ReturnType<typeof requireClient>["functions"]["invoke"]
+    >[1],
+  );
   if (error) {
     let message =
       "No pudimos completar la solicitud. Revisa tu conexión e inténtalo de nuevo.";
@@ -58,16 +86,30 @@ async function invoke<T>(name: string, options: { body?: unknown; headers?: Reco
     }
     throw new ApiError(String(message), error.context?.status || 0);
   }
-  if (data === null) throw new ApiError("No pudimos completar la solicitud. Inténtalo de nuevo.");
+  if (data === null)
+    throw new ApiError(
+      "No pudimos completar la solicitud. Inténtalo de nuevo.",
+    );
   return data;
 }
-export async function api<T = unknown>(path: string, { body, headers = {} }: {body?: unknown; headers?: Record<string,string>; method?: string} = {}): Promise<T> {
+export async function api<T = unknown>(
+  path: string,
+  {
+    body,
+    headers = {},
+  }: { body?: unknown; headers?: Record<string, string>; method?: string } = {},
+): Promise<T> {
   const client = requireClient();
   if (path === "/catalog") {
     const results = await Promise.all([
       client.from("products").select("*").eq("active", true).order("position"),
       client.from("sales_points").select("*").order("position"),
       client.from("store_settings").select("*").eq("id", 1).single(),
+      client
+        .from("delivery_zones")
+        .select("*")
+        .eq("active", true)
+        .order("name"),
     ]);
     if (results.some((r) => r.error))
       throw new ApiError("No pudimos cargar el catálogo. Inténtalo de nuevo.");
@@ -76,6 +118,10 @@ export async function api<T = unknown>(path: string, { body, headers = {} }: {bo
       products: results[0].data,
       salesPoints: results[1].data,
       ...storeSettings(settings ?? {}),
+      delivery: {
+        ...storeSettings(settings ?? {}).delivery,
+        zones: results[3].data ?? [],
+      },
     } as T;
   }
   if (path === "/orders") return invoke<T>("create-order", { body, headers });
@@ -92,7 +138,9 @@ export async function api<T = unknown>(path: string, { body, headers = {} }: {bo
     return { authenticated: true } as T;
   }
   if (path === "/admin/login") {
-    const { error } = await client.auth.signInWithPassword(body as {email:string;password:string});
+    const { error } = await client.auth.signInWithPassword(
+      body as { email: string; password: string },
+    );
     if (error)
       throw new ApiError(
         "Correo o contraseña incorrectos. Inténtalo de nuevo.",
@@ -117,8 +165,10 @@ export async function api<T = unknown>(path: string, { body, headers = {} }: {bo
     return invoke<T>("manage-products", { method: "GET" });
   if (path === "/admin/products/save")
     return invoke<T>("manage-products", { body });
-  if (path === "/admin/store") return invoke<T>("manage-store", { method: "GET" });
-  if (path === "/admin/store/action") return invoke<T>("manage-store", { body });
+  if (path === "/admin/store")
+    return invoke<T>("manage-store", { method: "GET" });
+  if (path === "/admin/store/action")
+    return invoke<T>("manage-store", { body });
   const productAction = path.match(
     /^\/admin\/products\/([^/]+)\/(archive|restore)$/,
   );

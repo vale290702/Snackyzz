@@ -43,10 +43,11 @@ function checkout(overrides = {}) {
     ...overrides,
   });
 }
-test("checkout requires an address and explains that the customer pays Uber delivery", () => {
+test("checkout requires an address and zone and includes delivery in payment", () => {
   const html = checkout();
   assert.match(html, /name="deliveryAddress"[^>]*required/);
-  assert.match(html, /corre por cuenta del cliente y se paga por separado/);
+  assert.match(html, /name="deliveryZoneId"[^>]*required/);
+  assert.match(html, /se incluye en el total a pagar/);
 });
 test("checkout lists admin-provided pickup locations", () => {
   const html = checkout({

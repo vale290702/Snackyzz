@@ -1,5 +1,7 @@
 "use client";
 import { Icon, Cart, useStoreActions } from "../../components/store/ui";
+import { deliveryQuote } from "../../lib/delivery-zones";
+import { formatMoney } from "../../lib/cart";
 import { deliveryDates, deliverySlots } from "../../lib/delivery";
 import type { CheckoutProps, SuccessProps } from "../../types/store";
 
@@ -45,6 +47,12 @@ export function Checkout({
   const method = fulfillment?.type || (locations.length ? "pickup" : "uber");
   const selected = locations.find(
     (point) => point.id === fulfillment?.pickupLocationId,
+  );
+  const quote = deliveryQuote(
+    cart.getLines().reduce((sum, line) => sum + line.total, 0),
+    method,
+    fulfillment.deliveryZoneId || "",
+    delivery.zones,
   );
   const dates = deliveryDates(delivery.schedule);
   const slots = fulfillment?.deliveryDate
@@ -228,6 +236,36 @@ export function Checkout({
               ) : (
                 <>
                   <div className="field">
+                    <label htmlFor="delivery-zone">Zona</label>
+                    <select
+                      id="delivery-zone"
+                      name="deliveryZoneId"
+                      required
+                      value={fulfillment.deliveryZoneId || ""}
+                      onChange={(event) =>
+                        actions.checkoutChange(
+                          "deliveryZoneId",
+                          event.target.value,
+                        )
+                      }
+                    >
+                      <option value="">Selecciona una zona</option>
+                      {(delivery.zones ?? [])
+                        .filter((zone) => zone.active)
+                        .map((zone) => (
+                          <option key={zone.id} value={zone.id}>
+                            {zone.name} · {formatMoney(zone.price)}
+                          </option>
+                        ))}
+                    </select>
+                    {!delivery.zones?.some((zone) => zone.active) && (
+                      <p className="field-hint">
+                        No hay zonas de entrega disponibles. Contáctanos o
+                        selecciona retiro.
+                      </p>
+                    )}
+                  </div>
+                  <div className="field">
                     <label htmlFor="delivery-address">
                       Dirección de entrega
                     </label>
@@ -298,8 +336,8 @@ export function Checkout({
                   <div className="uber-notice">
                     <Icon name="pin" />
                     <p>
-                      {delivery.disclaimer ||
-                        "El costo del servicio de mensajería corre por cuenta del cliente y se paga por separado."}
+                      El envío se calcula según tu zona y se incluye en el total
+                      a pagar.
                     </p>
                   </div>
                 </>
@@ -311,8 +349,12 @@ export function Checkout({
                 <>
                   <p>
                     Realiza la transferencia por{" "}
-                    <strong>{cart.getFormattedTotal()}</strong> y adjunta una
-                    imagen legible del comprobante.
+                    <strong>
+                      {method === "uber" && !quote.zone
+                        ? "el total al seleccionar tu zona"
+                        : formatMoney(quote.total)}
+                    </strong>{" "}
+                    y adjunta una imagen legible del comprobante.
                   </p>
                   <div className="sinpe-account">
                     <div>
@@ -337,9 +379,12 @@ export function Checkout({
                       ? "Estás probando Snackyzz."
                       : "El pago aún no está disponible."}
                   </strong>
-                  {!demoCatalog && <p>
-                    El número SINPE todavía no está configurado. Escríbenos para consultar antes de hacer un pago.
-                  </p>}
+                  {!demoCatalog && (
+                    <p>
+                      El número SINPE todavía no está configurado. Escríbenos
+                      para consultar antes de hacer un pago.
+                    </p>
+                  )}
                 </div>
               )}
               <label
@@ -408,9 +453,7 @@ export function Checkout({
                 (!payment.configured && !demoCatalog)
               }
             >
-              {submitting
-                ? "Registrando tu pedido…"
-                : "Realizar pedido"}{" "}
+              {submitting ? "Registrando tu pedido…" : "Realizar pedido"}{" "}
               {submitting ? (
                 <span className="spinner" aria-hidden="true" />
               ) : (
@@ -424,7 +467,12 @@ export function Checkout({
           </fieldset>
         </form>
         <div className="cart-column">
-          <Cart cart={cart} checkout fulfillment={fulfillment} />
+          <Cart
+            cart={cart}
+            checkout
+            fulfillment={fulfillment}
+            zones={delivery.zones}
+          />
           <div className="delivery-note">
             <Icon name="mail" />
             <p>
