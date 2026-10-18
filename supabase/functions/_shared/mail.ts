@@ -1,7 +1,15 @@
 export type MailPayload = {from?:string; to:string[]; subject:string; text:string; html?:string; attachments?:{filename:string;content:string;content_type:string;content_id:string}[]};
 export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; confirmationComment?:string; items:{name:string;quantity:number;price:number}[] };
-export type NewOrderMail = OrderMail & {createdAt?:string;phone?:string;fulfillmentLabel?:string;fulfillmentAddress?:string;
-  deliveryDate?:string|null;deliverySlotStart?:string|null;deliverySlotEnd?:string|null;deliveryFee?:number};
+export type NewOrderMail = OrderMail & {createdAt?:string;phone?:string;fulfillmentType?:string;fulfillmentLabel?:string;fulfillmentAddress?:string;
+  deliveryDate?:string|null;deliverySlotStart?:string|null;deliverySlotEnd?:string|null;deliveryZoneName?:string;deliveryFee?:number};
+const colones = new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',maximumFractionDigits:0});
+const localDateTime = new Intl.DateTimeFormat('es-CR',{timeZone:'America/Costa_Rica',dateStyle:'long',timeStyle:'short'});
+const calendarDate = new Intl.DateTimeFormat('es-CR',{timeZone:'UTC',dateStyle:'long'});
+const clockTime = new Intl.DateTimeFormat('es-CR',{timeZone:'UTC',hour:'numeric',minute:'2-digit',hour12:true});
+function deliveryTime(value:string): string {
+  const match = /^(\d{2}):(\d{2})/.exec(value);
+  return match ? clockTime.format(new Date(Date.UTC(2000,0,1,Number(match[1]),Number(match[2])))) : value;
+}
 export function adminRecipients(value: string): string[] {
   const recipients = [...new Set(value.split(',').map(email => email.trim()).filter(Boolean))];
   if (recipients.some(email => !/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(email))) return [];
@@ -12,20 +20,21 @@ export function newOrderMailPayload(order: NewOrderMail, from: string, recipient
     'Se registró una nueva orden pendiente de revisión.',
     '',
     `Orden: ${order.id}`,
-    ...(order.createdAt ? [`Registrada: ${order.createdAt}`] : []),
+    ...(order.createdAt ? [`Registrada: ${localDateTime.format(new Date(order.createdAt))} (hora de Costa Rica)`] : []),
     `Cliente: ${order.name}`,
     `Correo: ${order.email}`,
     ...(order.phone ? [`Teléfono: ${order.phone}`] : []),
     '',
     'Productos:',
-    ...order.items.map(item => `${item.quantity} × ${item.name} — ₡${item.quantity * item.price}`),
-    ...(order.deliveryFee ? [`Envío: ₡${order.deliveryFee}`] : []),
-    `Total: ₡${order.total}`,
+    ...order.items.map(item => `${item.quantity} × ${item.name} — ${colones.format(item.quantity * item.price)}`),
+    ...(order.fulfillmentType === 'uber' ? [`Envío: ${order.deliveryFee ? colones.format(order.deliveryFee) : 'gratis'}`] : []),
+    `Total: ${colones.format(order.total)}`,
     '',
     `Entrega: ${order.fulfillmentLabel ?? 'Sin especificar'}`,
+    ...(order.deliveryZoneName ? [`Zona: ${order.deliveryZoneName}`] : []),
     ...(order.fulfillmentAddress ? [`Dirección: ${order.fulfillmentAddress}`] : []),
-    ...(order.deliveryDate ? [`Fecha: ${order.deliveryDate}`] : []),
-    ...(order.deliverySlotStart ? [`Horario: ${order.deliverySlotStart}${order.deliverySlotEnd ? `–${order.deliverySlotEnd}` : ''}`] : []),
+    ...(order.deliveryDate ? [`Fecha: ${calendarDate.format(new Date(`${order.deliveryDate}T00:00:00Z`))}`] : []),
+    ...(order.deliverySlotStart ? [`Horario: ${deliveryTime(order.deliverySlotStart)}${order.deliverySlotEnd ? ` a ${deliveryTime(order.deliverySlotEnd)}` : ''}`] : []),
     '',
     'Revisa el comprobante SINPE y confirma o rechaza la orden en el panel de administración.',
   ];

@@ -40,15 +40,19 @@ test('new order alert contains the details needed for review', () => {
   const recipients = adminRecipients('owner@example.com, manager@example.com, owner@example.com');
   expect(recipients).toEqual(['owner@example.com','manager@example.com']);
   const payload = newOrderMailPayload({...order,status:'pending',createdAt:'2026-10-17T18:00:00Z',phone:'8888-8888',
-    fulfillmentLabel:'Envío con mensajero',fulfillmentAddress:'San José, Costa Rica',
-    deliveryDate:'2026-10-19',deliverySlotStart:'09:00',deliverySlotEnd:'12:00',deliveryFee:1000},
+    fulfillmentType:'uber',fulfillmentLabel:'Envío con mensajero',fulfillmentAddress:'San José, Costa Rica',
+    deliveryDate:'2026-10-19',deliverySlotStart:'09:00:00',deliverySlotEnd:'12:00:00',deliveryZoneName:'Zona Este',deliveryFee:1000},
   'orders@example.com',recipients);
   expect(payload.to).toEqual(recipients);
   expect(payload.subject).toContain('Nueva orden');
-  for (const value of [order.id,'2026-10-17T18:00:00Z',order.name,order.email,'8888-8888','1 × Cookie','₡1000','₡4500',
-    'Envío con mensajero','San José, Costa Rica','2026-10-19','09:00–12:00','pendiente de revisión']) {
-    expect(payload.text).toContain(value);
+  const readable = payload.text.replace(/\s/g,' ');
+  for (const value of [order.id,'17 de octubre de 2026 a las 12:00 p. m. (hora de Costa Rica)',order.name,order.email,
+    '8888-8888','1 × Cookie','₡2 500','Envío: ₡1 000','Total: ₡4 500','Envío con mensajero','Zona Este',
+    'San José, Costa Rica','19 de octubre de 2026','9:00 a. m. a 12:00 p. m.','pendiente de revisión']) {
+    expect(readable).toContain(value);
   }
+  expect(payload.text).not.toContain('2026-10-17T18:00:00Z');
+  expect(payload.text).not.toContain('09:00:00');
   expect(payload.text).not.toContain('confirmamos tu orden');
   expect(adminRecipients('owner@example.com, invalid-address')).toEqual([]);
 });
