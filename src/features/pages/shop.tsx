@@ -1,17 +1,18 @@
 import { BakingHero } from "./baking-hero";
 import "./baking-stereo.css";
 import { ProductCard, Cart, Icon } from "../../components/store/ui";
-import { collections, productBrand } from "../../lib/collections";
+import { collections, productBrand, hasBakingStereoProducts } from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
 export function Shop({
   products,
   cart,
   collection = "snackyzz",
 }: CatalogPageProps & { collection?: "snackyzz" | "baking-stereo" }) {
+  const showBakingStereo = hasBakingStereoProducts(products);
   const fresh = collection === "baking-stereo";
   const info = collections[collection];
   const visible = products.filter(
-    (product) => productBrand(product) === collection,
+    (product) => product.active !== false && productBrand(product) === collection,
   );
   return (
     <main
@@ -63,7 +64,7 @@ export function Shop({
                   ? "Aquí encontrarás los productos de Baking Stereo cuando estén disponibles."
                   : "Aquí encontrarás las cookies Snackyzz cuando estén disponibles."}
               </p>
-              <a
+              {(fresh || showBakingStereo) && <a
                 href={`#${fresh ? "shop" : "baking-stereo"}`}
                 className="text-link"
               >
@@ -71,10 +72,10 @@ export function Shop({
                   ? "Explorar las cookies Snackyzz"
                   : "Conocer Baking Stereo"}{" "}
                 <Icon name="arrow" />
-              </a>
+              </a>}
             </div>
           )}
-          <div className="collection-switch">
+          {(fresh || showBakingStereo) && <div className="collection-switch">
             <p>Dos marcas. Un mismo carrito.</p>
             <a
               href={`#${fresh ? "shop" : "baking-stereo"}`}
@@ -85,7 +86,7 @@ export function Shop({
                 : "Ver Snackyzz X Baking Stereo"}{" "}
               <Icon name="arrow" />
             </a>
-          </div>
+          </div>}
         </section>
         <div className="cart-column">
           <Cart cart={cart} />
