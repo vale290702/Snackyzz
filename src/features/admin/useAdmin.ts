@@ -131,7 +131,7 @@ export function useAdmin({
     const rev = revision.current;
     patch({ busy: true, error: "" });
     try {
-      let body: unknown = reason === undefined ? undefined : { reason };
+      let body: unknown = reason === undefined ? undefined : action === "confirm" ? {comment:reason} : { reason };
       if (refundReceipt) {
         const form = new FormData();
         form.set("reason", reason ?? "");

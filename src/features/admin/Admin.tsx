@@ -400,7 +400,7 @@ function Products({ controller: c }: { controller: AdminController }) {
                   <img src={safeImage(p.image)} alt="" />
                   <div>
                     <strong>{p.name}</strong>
-                    <span>{`${p.tag} · ${formatMoney(p.price)}`}</span>
+                    <span>{`${p.tag} · ${formatMoney(p.price)} · Stock: ${p.stock ?? 0}`}</span>
                     <small>
                       {`${productBrandLabel(p)} · Posición ${p.position}`}
                     </small>
@@ -475,6 +475,7 @@ function ProductForm({
     id: "",
     name: "",
     price: "",
+    stock: 0,
     description: "",
     tag: "",
     image: "",
@@ -542,6 +543,12 @@ function ProductForm({
             step="1"
             defaultValue={item.price}
           />
+        </div>
+        <div className="field">
+          <label htmlFor="product-stock">Stock disponible</label>
+          <input id="product-stock" name="stock" type="number" required min="0" max="1000000" step="1" defaultValue={item.stock ?? 0} />
+          <input type="hidden" name="expectedStock" value={item.stock ?? 0} />
+          <small>Unidades disponibles para nuevos pedidos. Los pedidos pendientes ya están reservados.</small>
         </div>
         <div className="field">
           <label htmlFor="product-position">Posición</label>
@@ -1174,6 +1181,8 @@ function OrderDetail({
   controller: AdminController;
 }) {
   const [rejecting, setRejecting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [comment, setComment] = useState("");
   const [reason, setReason] = useState("");
   const [refundReceipt, setRefundReceipt] = useState<File>();
   const [refundPreview, setRefundPreview] = useState("");
@@ -1279,7 +1288,23 @@ function OrderDetail({
           <p className="admin-confirm-note">
             {rejecting ? "Revisa el motivo antes de rechazar. Se enviará un correo al cliente." : "Confirma únicamente después de verificar el pago. Se enviará un correo al cliente."}
           </p>
-          {rejecting ? (
+          {confirming ? (
+            <form className="order-rejection-form order-confirmation-form" onSubmit={async event => {
+              event.preventDefault();
+              if (await c.action(o.id,"confirm",comment.trim())) setConfirming(false);
+            }}>
+              <div className="field">
+                <label htmlFor="confirmation-comment">Comentario para el cliente <span>(opcional)</span></label>
+                <textarea id="confirmation-comment" name="comment" rows={4} maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} disabled={busy} aria-describedby="confirmation-comment-help" />
+                <small id="confirmation-comment-help">Se incluirá en el correo de confirmación. Puedes indicar detalles de entrega u otras observaciones.</small>
+              </div>
+              <ErrorMessage message={c.state.error} />
+              <div className="order-decision-actions">
+                <button className="button button-dark" disabled={busy}>{busy ? "Confirmando…" : "Confirmar y notificar"}</button>
+                <button type="button" className="button button-outline" disabled={busy} onClick={() => setConfirming(false)}>Cancelar</button>
+              </div>
+            </form>
+          ) : rejecting ? (
             <form className="order-rejection-form" onSubmit={submitRejection}>
               <div className="field">
                 <label htmlFor="rejection-reason">Motivo del rechazo</label>
@@ -1308,7 +1333,7 @@ function OrderDetail({
             </form>
           ) : (
             <div className="order-decision-actions">
-              <button className="button button-dark" data-confirm-order={o.id} disabled={busy} onClick={() => void c.action(o.id,"confirm")}>
+              <button className="button button-dark" data-confirm-order={o.id} disabled={busy} onClick={() => setConfirming(true)}>
                 {busy ? "Guardando…" : "Confirmar pedido"} <Icon name="check" />
               </button>
               <button className="button button-outline" disabled={busy} onClick={() => setRejecting(true)}>Rechazar</button>
@@ -1324,6 +1349,7 @@ function OrderDetail({
             <p className="rejection-reason">{o.rejectionReason}</p>
             {o.refundReceiptUrl && <a href={o.refundReceiptUrl} target="_blank" rel="noreferrer"><img className="refund-receipt-preview" src={o.refundReceiptUrl} alt="Comprobante de devolución SINPE" /></a>}
           </div> : <p className="confirmed-note"><Icon name="check" /> Confirmado {date(o.confirmedAt)}</p>}
+          {o.status === "confirmed" && o.confirmationComment && <div className="rejection-summary"><strong>Comentario para el cliente</strong><p className="confirmation-comment rejection-reason">{o.confirmationComment}</p></div>}
           {retry && (
             <>
               <button

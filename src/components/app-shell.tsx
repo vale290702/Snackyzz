@@ -181,6 +181,9 @@ export default function AppShell() {
   const changeQuantity = (id: string, delta: number) => {
     const product = current.current.products.find(p => p.id === id);
     if (!product) return;
+    if (delta > 0 && cartRef.current.getQuantity(id) >= Math.min(99, product.stock ?? 0)) {
+      notify('No hay más unidades disponibles de este producto.'); return;
+    }
     cartRef.current.changeQuantity(id, delta);
     updateCart(value => value + 1);
     patch({ idempotencyKey: '' });
@@ -232,6 +235,7 @@ export default function AppShell() {
       patch({ lastOrder: { ...order, email: data.draft.email.trim(), demo: data.demoCatalog }, draft: { name: '', email: '', phone: '' }, fulfillment: { ...emptyFulfillment(), type: current.current.salesPoints.length ? 'pickup' : 'uber' }, receipt: null, receiptPreview: '', idempotencyKey: '' });
       adminRef.current.patch({ loaded: false });
       navigateTo('success');
+      void loadCatalog();
     } catch (error) { patch({ checkoutError: errorMessage(error) }); }
     finally {
       patch({ submitting: false });
@@ -277,7 +281,7 @@ export default function AppShell() {
       if (event.target !== event.currentTarget) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog();
-    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>Agregar al carrito <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
+    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" disabled={cart.getQuantity(product.id) >= Math.min(99, product.stock ?? 0)} data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>{(product.stock ?? 0) > 0 ? "Agregar al carrito" : "Agotado"} <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
     <div id="toast" className={`toast ${showCartBubble ? 'toast-with-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
   </StoreActionsProvider>;
 }

@@ -225,7 +225,7 @@ export function QuantityControl({
         data-qty="1"
         data-product={product.id}
         aria-label={`Agregar una ${product.name}`}
-        disabled={quantity >= 99}
+        disabled={quantity >= Math.min(99, product.stock ?? 0)}
         onClick={() => actions.changeQuantity(product.id, 1)}
       >
         <Icon name="plus" />
@@ -281,11 +281,12 @@ export function ProductCard({
         ) : (
           <button
             className="add-button"
+            disabled={(product.stock ?? 0) === 0}
             data-qty="1"
             data-product={product.id}
             onClick={() => actions.changeQuantity(product.id, 1)}
           >
-            Agregar al carrito <Icon name="plus" />
+            {(product.stock ?? 0) > 0 ? "Agregar al carrito" : "Agotado"} <Icon name="plus" />
           </button>
         )}
       </div>

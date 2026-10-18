@@ -26,7 +26,8 @@ Deno.serve(async (request: Request) => {
     if (receipt.size > MAX_BYTES) throw new InputError('El comprobante debe pesar como máximo 5 MB.');
     const original = new Uint8Array(await receipt.arrayBuffer());
     if (fulfillmentType === 'uber' && (!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate) || !/^\d{2}:\d{2}$/.test(deliverySlotStart))) throw new InputError('Selecciona la fecha y el horario de entrega.');
-    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart,deliveryZoneId},original);
+    const fingerprintFields = {...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart,deliveryZoneId};
+    const hash = await fingerprint(fingerprintFields,original);
     const bytes = await normalizeReceipt(original);
     const db = serviceClient();
     const path = `${crypto.randomUUID()}.jpg`;
@@ -45,6 +46,7 @@ Deno.serve(async (request: Request) => {
       if (error.code === 'P0001' || error.code?.startsWith('23')) {
         await db.storage.from('receipts').remove([path]);
       }
+      if (error.message.includes('Insufficient stock:')) throw new InputError(`No hay suficientes unidades de ${error.message.split('Insufficient stock:')[1].trim()}. Actualiza el carrito antes de realizar el pago.`,409);
       if (error.message.includes('Idempotency conflict')) throw new InputError('Esta solicitud ya se usó para otro pedido.',409);
       throw new InputError('No se pudo registrar el pedido. Revisa el carrito e intenta de nuevo.',error.code === 'P0001' ? 400 : 503);
     }

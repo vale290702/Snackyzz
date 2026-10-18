@@ -205,6 +205,7 @@ export type Database = {
           image: string
           name: string
           position: number
+          stock: number
           price: number
           tag: string
         }
@@ -217,6 +218,7 @@ export type Database = {
           image: string
           name: string
           position?: number
+          stock?: number
           price: number
           tag: string
         }
@@ -229,6 +231,7 @@ export type Database = {
           image?: string
           name?: string
           position?: number
+          stock?: number
           price?: number
           tag?: string
         }

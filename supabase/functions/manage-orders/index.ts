@@ -4,7 +4,7 @@ import { encodeBase64 } from 'jsr:@std/encoding/base64';
 import { InputError } from '../_shared/validation.ts';
 import { sendConfirmation, orderMailPayload, type MailPayload } from '../_shared/mail.ts';
 
-type Order = {id:string;name:string;email:string;total:number;receiptPath:string;status:string;rejectionReason?:string;refundReceiptPath?:string;
+type Order = {id:string;name:string;email:string;total:number;receiptPath:string;status:string;rejectionReason?:string;confirmationComment?:string;refundReceiptPath?:string;
   items:{name:string;quantity:number;price:number}[];[key:string]:unknown};
 async function withReceipt(db: ServiceClient,order: Order) {
   const {data,error} = await db.storage.from('receipts').createSignedUrl(order.receiptPath,600);
@@ -86,6 +86,9 @@ Deno.serve(async (request: Request) => {
       try { body = JSON.parse(text); } catch { throw new InputError('Solicitud inválida.'); }
     }
     if (!body || !['confirm','reject','retry-email'].includes(body.action) || !/^[0-9a-f-]{36}$/.test(body.orderId)) throw new InputError('Solicitud inválida.');
+    if (body.action === 'confirm' && body.comment != null && typeof body.comment !== 'string') throw new InputError('El comentario no es válido.');
+    const comment = typeof body.comment === 'string' ? body.comment.trim() : '';
+    if (body.action === 'confirm' && (comment.length > 1000 || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(comment))) throw new InputError('El comentario debe tener como máximo 1000 caracteres.');
     const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
     if (body.action === 'reject' && (reason.length < 5 || reason.length > 1000 || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(reason))) throw new InputError('Escribe un motivo de rechazo de 5 a 1000 caracteres.');
     let refundPath: string | null = null;
@@ -96,7 +99,7 @@ Deno.serve(async (request: Request) => {
       const upload = await db.storage.from('refund-receipts').upload(refundPath,image,{contentType:'image/jpeg',upsert:false});
       if (upload.error) throw new InputError('No se pudo guardar el comprobante. Inténtalo de nuevo.',503);
     }
-    const {data:claim,error} = await db.rpc('claim_order_notification',{p_order_id:body.orderId,p_action:body.action,p_reason:body.action === 'reject' ? reason : '',p_refund_path:refundPath});
+    const {data:claim,error} = await db.rpc('claim_order_notification',{p_order_id:body.orderId,p_action:body.action,p_reason:body.action === 'reject' ? reason : body.action === 'confirm' ? comment : '',p_refund_path:refundPath});
     if (error) {
       // Remove only after a definite transaction rejection. Connection failures
       // may happen after commit, so keep the receipt available in that case.

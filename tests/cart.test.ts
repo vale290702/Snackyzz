@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { createCartStore } from "../src/lib/cart.ts";
 
 const products = [
-  { id: "a", price: 2500 },
-  { id: "b", price: 2800 },
+  { id: "a", price: 2500, stock:99 },
+  { id: "b", price: 2800, stock:99 },
 ];
 function storage(value) {
   let data = value;
@@ -68,4 +68,12 @@ test("storage failures do not prevent shopping", () => {
   });
   assert.doesNotThrow(() => cart.changeQuantity("a", 1));
   assert.equal(cart.getTotal(), 2500);
+});
+test("cart respects stock and removes unavailable stored products", () => {
+  const cart = createCartStore({products:[{id:'a',price:2500,stock:2},{id:'b',price:2800,stock:0}],storage:storage('{"a":8,"b":2}')});
+  assert.equal(cart.getQuantity('a'),2);
+  assert.equal(cart.getQuantity('b'),0);
+  cart.changeQuantity('a',1);
+  cart.changeQuantity('b',1);
+  assert.equal(cart.getCount(),2);
 });

@@ -189,7 +189,7 @@ export async function api<T = unknown>(
   }
   if (action)
     return invoke<T>("manage-orders", {
-      body: { orderId: decodeURIComponent(action[1]), action: action[2], ...(body && typeof body === "object" && "reason" in body ? {reason: body.reason} : {}) },
+      body: { orderId: decodeURIComponent(action[1]), action: action[2], ...(body && typeof body === "object" && "reason" in body ? {reason: body.reason} : {}), ...(body && typeof body === "object" && "comment" in body ? {comment: body.comment} : {}) },
     });
   throw new ApiError("Solicitud no disponible.");
 }

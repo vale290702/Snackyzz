@@ -16,13 +16,14 @@ export function createCartStore({ storage, products = [] }: { storage?: CartStor
     }
   }
   const productMap = new Map(products.map((product) => [product.id, product]));
+  const limit = (id: string) => Math.min(99, Math.max(0, productMap.get(id)?.stock ?? 0));
   let quantities: Record<string, number> = Object.create(null);
   try {
     const stored = JSON.parse(storage?.getItem(STORAGE_KEY) ?? "{}");
     if (stored && typeof stored === "object" && !Array.isArray(stored)) {
       for (const [id, qty] of Object.entries(stored)) {
         if (productMap.has(id) && typeof qty === "number" && Number.isInteger(qty) && qty > 0)
-          quantities[id] = Math.min(qty, 99);
+          quantities[id] = Math.min(qty, limit(id));
       }
     }
   } catch {
@@ -37,7 +38,7 @@ export function createCartStore({ storage, products = [] }: { storage?: CartStor
   }
   function changeQuantity(id: string, change: number) {
     if (!productMap.has(id) || !Number.isInteger(change)) return;
-    const quantity = Math.min(99, Math.max(0, (quantities[id] ?? 0) + change));
+    const quantity = Math.min(limit(id), Math.max(0, (quantities[id] ?? 0) + change));
     if (quantity) quantities[id] = quantity;
     else delete quantities[id];
     persist();

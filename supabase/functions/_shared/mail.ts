@@ -1,5 +1,5 @@
 export type MailPayload = {from?:string; to:string[]; subject:string; text:string; html?:string; attachments?:{filename:string;content:string;content_type:string;content_id:string}[]};
-export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; items:{name:string;quantity:number;price:number}[] };
+export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; confirmationComment?:string; items:{name:string;quantity:number;price:number}[] };
 export function orderMailPayload(order: OrderMail, from: string, refundImage?: string): MailPayload {
   const rejected = order.status === 'rejected';
   const payload: MailPayload = {from,to:[order.email],
@@ -8,6 +8,7 @@ export function orderMailPayload(order: OrderMail, from: string, refundImage?: s
       ? `Hola ${order.name},\n\nTu orden no pudo ser aceptada.\n\nMotivo del rechazo:\n${order.rejectionReason}\n\nOrden: ${order.id}\n\nSi tienes alguna consulta sobre tu pedido o pago, escríbenos a Snackyzz.cookies@gmail.com.\n\nSnackyzz`
       : `Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${i.quantity*i.price}`).join('\n')}\n\nTotal: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
   };
+  if (!rejected && order.confirmationComment?.trim()) payload.text += `\n\nComentario de Snackyzz:\n${order.confirmationComment.trim()}`;
   if (rejected && refundImage) {
     const escape = (value:string) => value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
     payload.text += '\n\nComprobante de devolución SINPE adjunto.';

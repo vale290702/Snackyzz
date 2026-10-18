@@ -3,6 +3,7 @@ begin;
 insert into public.delivery_zones(id,name,price) values('00000000-0000-0000-0000-000000000020','Zone test',2000);
 insert into public.sales_points(id,name,city,address) values('00000000-0000-0000-0000-000000000010','Pickup test','San José','Avenida 1');
 insert into public.products(id,name,price,description,tag,image,accent) values('zone-test-cookie','Cookie',2500,'Test','','/cookie.jpg','brown');
+update public.products set stock=99 where id='zone-test-cookie';
 insert into storage.objects(bucket_id,name) values('receipts','00000000-0000-0000-0000-000000000001.jpg'),('receipts','00000000-0000-0000-0000-000000000002.jpg');
 update public.store_settings set demo_catalog=true,delivery_lead_hours=0,delivery_schedule='{"mon":{"enabled":true,"start":"09:00","end":"18:00"},"tue":{"enabled":true,"start":"09:00","end":"18:00"},"wed":{"enabled":true,"start":"09:00","end":"18:00"},"thu":{"enabled":true,"start":"09:00","end":"18:00"},"fri":{"enabled":true,"start":"09:00","end":"18:00"},"sat":{"enabled":true,"start":"09:00","end":"18:00"},"sun":{"enabled":true,"start":"09:00","end":"18:00"}}';
 do $$
