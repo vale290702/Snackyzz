@@ -197,9 +197,6 @@ export function Footer({ contact = {} }: { contact?: Contact }) {
         <span>
           {`© ${new Date().getFullYear()} Snackyzz. Todos los derechos reservados.`}
         </span>
-        <a href="#admin">
-          Administración <Icon name="arrow" />
-        </a>
       </div>
     </footer>
   );
