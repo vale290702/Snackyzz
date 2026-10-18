@@ -1,11 +1,7 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { products as catalogProducts } from "../fixtures/products.ts";
-const products = catalogProducts.map((product, index) => ({
-  ...product,
-  active: true,
-  position: index + 1,
-}));
+
 
 async function capture(page, name) {
   if (process.env.CAPTURE_REVIEW) {
@@ -95,8 +91,11 @@ async function mockSupabase(
     productSaveFailure = false,
     zoneSaveFailure = false,
     rejectFailure = false,
+    confirmFailure = false,
+    stockOverrides = {},
   } = {},
 ) {
+  const products = catalogProducts.map((product,index) => ({...product,active:true,position:index+1,...(product.id in stockOverrides ? {stock:stockOverrides[product.id]} : {})}));
   const calls = [];
   let managedOrder = {...order};
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -165,10 +164,12 @@ async function mockSupabase(
         body = {orderId:form.get('orderId'),action:form.get('action'),reason:form.get('reason'),refundReceipt:form.get('refundReceipt')?.name};
       } else body = request.postDataJSON();
       calls.push({ kind: "manage", ...body });
+      if (body.action === "confirm" && confirmFailure) return reply({error:"No se pudo confirmar la orden."},503);
       if (body.action === "reject" && rejectFailure) return reply({error:"No se pudo rechazar la orden."},503);
       managedOrder = {
         ...managedOrder,
         status: body.action === "reject" ? "rejected" : body.action === "confirm" ? "confirmed" : managedOrder.status,
+        ...(body.action === "confirm" ? {confirmationComment:body.comment ?? ""} : {}),
         confirmedAt: body.action === "confirm" ? "2026-09-07T15:10:00Z" : managedOrder.confirmedAt,
         ...(body.action === "reject" ? {rejectedAt:"2026-10-11T18:00:00Z",rejectionReason:body.reason,...(body.refundReceipt ? {refundReceiptUrl:"/assets/cookie-chocolate.webp"} : {})} : {}),
         emailStatus: emailFailure && body.action !== "retry-email" ? "failed" : "sent",
@@ -493,6 +494,7 @@ test("admin reviews the receipt, confirms an order, and can retry a failed email
   ).toBeVisible();
   await capture(page, "admin");
   await page.getByRole("button", { name: "Confirmar pedido" }).click();
+  await page.getByRole("button", { name: "Confirmar y notificar" }).click();
   await expect(
     page.getByText("No se pudo enviar el correo", { exact: true }),
   ).toBeVisible();
@@ -1084,4 +1086,68 @@ test("refund upload rejects unsupported files without submitting", async ({page}
   await expect(page.getByText('Adjunta una imagen JPG o PNG de hasta 5 MB.',{exact:true})).toBeVisible();
   await expect(page.getByAltText('Vista previa del comprobante de devolución SINPE')).toHaveCount(0);
   expect(calls).toHaveLength(0);
+});
+
+test("stock limits product quantities and marks unavailable cookies", async ({page}) => {
+  await mockSupabase(page,{stockOverrides:{'choco-cloud':2,'double-choco':0}});
+  await page.goto('/#shop');
+  const cookie = page.locator('.product-card').filter({has:page.getByRole('heading',{name:'Choco Cloud',exact:true})});
+  const empty = page.locator('.product-card').filter({has:page.getByRole('heading',{name:'Double Choco',exact:true})});
+  await expect(empty.getByRole('button',{name:'Agotado',exact:true})).toBeDisabled();
+  await cookie.getByRole('button',{name:'Agregar al carrito',exact:true}).click();
+  await cookie.locator('[data-qty="1"]').click();
+  await expect(cookie.getByLabel('Cantidad',{exact:true})).toHaveText('2');
+  await expect(cookie.locator('[data-qty="1"]')).toBeDisabled();
+  await capture(page,'inventory-store');
+});
+test("admin can set available stock when creating a product", async ({page}) => {
+  const calls = await mockSupabase(page);
+  await page.goto('/#admin');
+  await page.getByLabel('Correo de administración',{exact:true}).fill('admin@example.invalid');
+  await page.getByLabel('Contraseña de administración',{exact:true}).fill('test-password');
+  await page.getByRole('button',{name:'Entrar al panel',exact:true}).click();
+  await page.getByRole('button',{name:'Productos',exact:true}).click();
+  await page.getByRole('button',{name:/Nuevo producto/}).click();
+  await expect(page.getByLabel('Stock disponible',{exact:true})).toHaveValue('0');
+  await page.getByLabel('Stock disponible',{exact:true}).fill('24');
+  await expect(page.getByLabel('Stock disponible',{exact:true})).toHaveValue('24');
+  expect(calls.filter(c=>c.kind==='product-save')).toHaveLength(0);
+  await capture(page,'inventory-admin');
+  await page.getByLabel('Nombre',{exact:true}).fill('Caramel Dream');
+  await page.getByLabel('Precio (₡)',{exact:true}).fill('3100');
+  await page.getByLabel('Etiqueta corta',{exact:true}).fill('Cookie');
+  await page.getByLabel('Descripción',{exact:true}).fill('Cookie de caramelo.');
+  await page.getByLabel('Imagen',{exact:true}).setInputFiles('tests/fixtures/receipt.png');
+  await page.getByRole('button',{name:'Guardar producto',exact:true}).click();
+  await expect(page.getByText('Caramel Dream',{exact:true})).toBeVisible();
+  expect(calls.find(c=>c.kind==='product-save').body).toMatch(/name="stock"\r?\n\r?\n24/);
+});
+
+test("confirmation comment is saved and preserved when retrying email", async ({page}) => {
+  const calls = await mockSupabase(page,{emailFailure:true});
+  await openAdminOrder(page);
+  await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();
+  expect(calls).toHaveLength(0);
+  const comment = 'Tu pedido llegará mañana entre 2 y 4 p. m.';
+  await page.getByLabel('Comentario para el cliente (opcional)',{exact:true}).fill(comment);
+  await capture(page,'confirmation-comment-form');
+  await page.getByRole('button',{name:'Confirmar y notificar',exact:true}).click();
+  await expect(page.locator('.confirmation-comment')).toHaveText(comment);
+  expect(calls[0].comment).toBe(comment);
+  await page.getByRole('button',{name:'Reintentar correo',exact:true}).click();
+  await expect(page.getByText('Correo enviado',{exact:true})).toBeVisible();
+  await expect(page.locator('.confirmation-comment')).toHaveText(comment);
+});
+test("confirmation failure keeps the comment and cancellation leaves the order pending", async ({page}) => {
+  const calls = await mockSupabase(page,{confirmFailure:true});
+  await openAdminOrder(page);
+  await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();
+  const field=page.getByLabel('Comentario para el cliente (opcional)',{exact:true});
+  await field.fill('Pasaremos a las 3 p. m.');
+  await page.getByRole('button',{name:'Confirmar y notificar',exact:true}).click();
+  await expect(page.locator('.order-confirmation-form')).toContainText('No se pudo confirmar la orden.');
+  await expect(field).toHaveValue('Pasaremos a las 3 p. m.');
+  await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  await expect(page.locator('.orders-list .status')).toHaveText('Pendiente');
+  expect(calls).toHaveLength(1);
 });

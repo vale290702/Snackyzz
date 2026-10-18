@@ -18,6 +18,7 @@ const products = [
   {
     id: "sealed",
     name: "Sealed fixture",
+    stock:99,
     price: 1000,
     description: "Sealed cookie",
     tag: "Cookie",
@@ -28,6 +29,7 @@ const products = [
     id: "fresh",
     name: "Fresh fixture",
     brand: "baking-stereo",
+    stock:99,
     price: 2000,
     description: "Fresh cookie",
     tag: "Cookie",

@@ -30,3 +30,9 @@ test('refund image is embedded and user content is escaped', () => {
   expect(payload.html).not.toContain('<script>');
   expect(payload.attachments).toEqual([{filename:'devolucion-sinpe.jpg',content:'aW1hZ2U=',content_type:'image/jpeg',content_id:'sinpe-refund'}]);
 });
+test('confirmation includes the saved admin comment and omits empty notes', () => {
+  const comment = 'Tu pedido llegará mañana entre 2 y 4 p. m.\nGracias por tu compra.';
+  expect(orderMailPayload({...order,status:'confirmed',confirmationComment:comment},'orders@example.com').text).toContain(`Comentario de Snackyzz:\n${comment}`);
+  expect(orderMailPayload({...order,status:'confirmed',confirmationComment:''},'orders@example.com').text).not.toContain('Comentario de Snackyzz:');
+  expect(orderMailPayload({...order,confirmationComment:comment},'orders@example.com').text).not.toContain(comment);
+});

@@ -4,6 +4,7 @@ export const products: Product[] = [
   {
     id: "choco-cloud",
     name: "Choco Cloud",
+    stock: 99,
     price: 2500,
     tag: "El clásico",
     accent: "classic",
@@ -14,6 +15,7 @@ export const products: Product[] = [
   {
     id: "double-choco",
     name: "Double Choco",
+    stock: 99,
     price: 2800,
     tag: "Para chocolate lovers",
     accent: "chocolate",
@@ -24,6 +26,7 @@ export const products: Product[] = [
   {
     id: "vanilla-crunch",
     name: "Vanilla Crunch",
+    stock: 99,
     price: 2500,
     tag: "Tu próximo favorito",
     accent: "vanilla",
@@ -35,6 +38,7 @@ export const products: Product[] = [
     id: "bs-chocolate-chip",
     brand: "baking-stereo",
     name: "Chocolate Chip",
+    stock: 99,
     price: 2800,
     tag: "Producto de muestra",
     accent: "classic",
@@ -46,6 +50,7 @@ export const products: Product[] = [
     id: "bs-double-chocolate",
     brand: "baking-stereo",
     name: "Double Chocolate",
+    stock: 99,
     price: 3000,
     tag: "Producto de muestra",
     accent: "chocolate",
@@ -57,6 +62,7 @@ export const products: Product[] = [
     id: "bs-white-chocolate",
     brand: "baking-stereo",
     name: "White Chocolate",
+    stock: 99,
     price: 2800,
     tag: "Producto de muestra",
     accent: "vanilla",

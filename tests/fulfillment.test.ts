@@ -12,6 +12,7 @@ import { renderAdmin } from "./render";
 const product = {
   id: "cookie",
   name: "Cookie",
+  stock:99,
   price: 2500,
   image: "/assets/choco-cloud.webp",
 };
