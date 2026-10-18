@@ -48,6 +48,7 @@ Set these Edge Function secrets in the Dashboard (or with `supabase secrets set`
 | `ALLOWED_ORIGINS` | Comma-separated exact frontend origins, e.g. `http://localhost:5174,https://your-store.example`; no trailing slash |
 | `RESEND_API_KEY`  | Resend API key allowed to send email                                                                               |
 | `FROM_EMAIL`      | Sender on a domain verified with Resend, e.g. `Snackyzz <orders@your-domain.example>`                              |
+| `ADMIN_ORDER_EMAILS` | Comma-separated admin email addresses notified when a new order is placed, e.g. `owner@example.com,manager@example.com` |
 
 Hosted Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the
 functions. Never put a service-role key, Resend key or database password in a
@@ -125,6 +126,13 @@ active products and quantities from 1 to 99; client-supplied prices are ignored.
 Returns `201 {order:{id,status,total,createdAt}}` after both private upload and
 database commit. The same key and same normalized fields/original receipt bytes
 returns `200` with the same order. A changed payload on the same key returns `409`.
+
+After a new order commits, `create-order` sends a pending-order alert to
+`ADMIN_ORDER_EMAILS` with the customer, items, total, and fulfillment details.
+The receipt stays private in the admin panel. Reused submissions do not send
+another alert. A missing email configuration or provider failure is logged by
+the Edge Function; the already saved order still returns successfully.
+
 Keep the key on network failures. Keys must have 8–128 alphanumeric, `_` or `-`
 characters. Errors return JSON `{error: "Spanish explanation"}`.
 

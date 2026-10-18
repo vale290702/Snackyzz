@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { orderMailPayload, sendConfirmation } from '../supabase/functions/_shared/mail';
+import { adminRecipients, newOrderMailPayload, orderMailPayload, sendConfirmation } from '../supabase/functions/_shared/mail';
 const order = { id:'12345678-1234-1234-1234-123456789012',name:'Ana',email:'ana@example.com',total:4500,status:'rejected',rejectionReason:'El comprobante no coincide con el monto del pedido.',items:[{name:'Cookie',quantity:1,price:2500}] };
 test('rejection email includes saved reason and order identity', () => {
   const payload = orderMailPayload(order, 'Snackyzz <orders@example.com>');
@@ -35,4 +35,34 @@ test('confirmation includes the saved admin comment and omits empty notes', () =
   expect(orderMailPayload({...order,status:'confirmed',confirmationComment:comment},'orders@example.com').text).toContain(`Comentario de Snackyzz:\n${comment}`);
   expect(orderMailPayload({...order,status:'confirmed',confirmationComment:''},'orders@example.com').text).not.toContain('Comentario de Snackyzz:');
   expect(orderMailPayload({...order,confirmationComment:comment},'orders@example.com').text).not.toContain(comment);
+});
+test('new order alert contains the details needed for review', () => {
+  const recipients = adminRecipients('owner@example.com, manager@example.com, owner@example.com');
+  expect(recipients).toEqual(['owner@example.com','manager@example.com']);
+  const payload = newOrderMailPayload({...order,status:'pending',createdAt:'2026-10-17T18:00:00Z',phone:'8888-8888',
+    fulfillmentType:'uber',fulfillmentLabel:'Envío con mensajero',fulfillmentAddress:'San José, Costa Rica',
+    deliveryDate:'2026-10-19',deliverySlotStart:'09:00:00',deliverySlotEnd:'12:00:00',deliveryZoneName:'Zona Este',deliveryFee:1000},
+  'orders@example.com',recipients);
+  expect(payload.to).toEqual(recipients);
+  expect(payload.subject).toContain('Nueva orden');
+  const readable = payload.text.replace(/\s/g,' ');
+  for (const value of [order.id,'17 de octubre de 2026 a las 12:00 p. m. (hora de Costa Rica)',order.name,order.email,
+    '8888-8888','1 × Cookie','₡2 500','Envío: ₡1 000','Total: ₡4 500','Envío con mensajero','Zona Este',
+    'San José, Costa Rica','19 de octubre de 2026','9:00 a. m. a 12:00 p. m.','pendiente de revisión']) {
+    expect(readable).toContain(value);
+  }
+  expect(payload.text).not.toContain('2026-10-17T18:00:00Z');
+  expect(payload.text).not.toContain('09:00:00');
+  expect(payload.text).not.toContain('confirmamos tu orden');
+  expect(adminRecipients('owner@example.com, invalid-address')).toEqual([]);
+});
+test('new order alert has a separate stable provider key', async () => {
+  let providerKey = '';
+  const result = await sendConfirmation(newOrderMailPayload({...order,status:'pending'},'orders@example.com',['owner@example.com']),
+    order.id,'test-key',async (_url, options) => {
+      providerKey = new Headers(options?.headers).get('Idempotency-Key') || '';
+      return Response.json({id:'sent-test'});
+    },'new-order');
+  expect(providerKey).toBe(`snackyzz-new-order-${order.id}`);
+  expect(result.status).toBe('sent');
 });
