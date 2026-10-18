@@ -41,7 +41,7 @@ supabase functions deploy create-order
 supabase functions deploy manage-orders
 ```
 
-Then configure `ALLOWED_ORIGINS`, `RESEND_API_KEY`, and `FROM_EMAIL` as Edge Function secrets. Create the administrator in Supabase Auth and add its UUID to `public.admin_users`. Full setup, recovery rules, security details, and SQL examples are in [supabase/README.md](supabase/README.md).
+Then configure `ALLOWED_ORIGINS`, `RESEND_API_KEY`, `FROM_EMAIL`, and `ADMIN_ORDER_EMAILS` as Edge Function secrets. Create the administrator in Supabase Auth and add its UUID to `public.admin_users`. Full setup, recovery rules, security details, and SQL examples are in [supabase/README.md](supabase/README.md).
 
 The migration starts with three clearly labeled sample products, blank SINPE details, and no invented sales locations. Replace those values with confirmed business information before setting `demo_catalog=false`.
 

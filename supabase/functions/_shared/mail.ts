@@ -1,5 +1,36 @@
 export type MailPayload = {from?:string; to:string[]; subject:string; text:string; html?:string; attachments?:{filename:string;content:string;content_type:string;content_id:string}[]};
 export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; confirmationComment?:string; items:{name:string;quantity:number;price:number}[] };
+export type NewOrderMail = OrderMail & {createdAt?:string;phone?:string;fulfillmentLabel?:string;fulfillmentAddress?:string;
+  deliveryDate?:string|null;deliverySlotStart?:string|null;deliverySlotEnd?:string|null;deliveryFee?:number};
+export function adminRecipients(value: string): string[] {
+  const recipients = [...new Set(value.split(',').map(email => email.trim()).filter(Boolean))];
+  if (recipients.some(email => !/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(email))) return [];
+  return recipients;
+}
+export function newOrderMailPayload(order: NewOrderMail, from: string, recipients: string[]): MailPayload {
+  const lines = [
+    'Se registró una nueva orden pendiente de revisión.',
+    '',
+    `Orden: ${order.id}`,
+    ...(order.createdAt ? [`Registrada: ${order.createdAt}`] : []),
+    `Cliente: ${order.name}`,
+    `Correo: ${order.email}`,
+    ...(order.phone ? [`Teléfono: ${order.phone}`] : []),
+    '',
+    'Productos:',
+    ...order.items.map(item => `${item.quantity} × ${item.name} — ₡${item.quantity * item.price}`),
+    ...(order.deliveryFee ? [`Envío: ₡${order.deliveryFee}`] : []),
+    `Total: ₡${order.total}`,
+    '',
+    `Entrega: ${order.fulfillmentLabel ?? 'Sin especificar'}`,
+    ...(order.fulfillmentAddress ? [`Dirección: ${order.fulfillmentAddress}`] : []),
+    ...(order.deliveryDate ? [`Fecha: ${order.deliveryDate}`] : []),
+    ...(order.deliverySlotStart ? [`Horario: ${order.deliverySlotStart}${order.deliverySlotEnd ? `–${order.deliverySlotEnd}` : ''}`] : []),
+    '',
+    'Revisa el comprobante SINPE y confirma o rechaza la orden en el panel de administración.',
+  ];
+  return {from,to:recipients,subject:`Snackyzz · Nueva orden ${order.id.slice(0,8)} pendiente de revisión`,text:lines.join('\n')};
+}
 export function orderMailPayload(order: OrderMail, from: string, refundImage?: string): MailPayload {
   const rejected = order.status === 'rejected';
   const payload: MailPayload = {from,to:[order.email],
@@ -21,7 +52,7 @@ export type MailResult = {status:'sent'|'failed';providerId?:string;error?:strin
 export async function sendConfirmation(
   payload: MailPayload, orderId: string, key: string,
   transport: (input: string | URL | Request, init?: RequestInit) => Promise<Response> = fetch,
-  event: "confirm" | "reject" = "confirm",
+  event: "confirm" | "reject" | "new-order" = "confirm",
 ): Promise<MailResult> {
   if (!key || !payload.from) return {status:'failed',error:'Email provider is not configured'};
   try {

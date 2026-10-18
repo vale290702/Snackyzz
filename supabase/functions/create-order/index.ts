@@ -1,6 +1,7 @@
 import { boundedForm, cors, errorResponse, json, serviceClient } from '../_shared/http.ts';
 import { InputError, MAX_BYTES, fingerprint, validateFields } from '../_shared/validation.ts';
 import { normalizeReceipt } from '../_shared/receipt.ts';
+import { adminRecipients, newOrderMailPayload, sendConfirmation, type NewOrderMail } from '../_shared/mail.ts';
 
 Deno.serve(async (request: Request) => {
   let headers: Record<string,string> = {};
@@ -51,6 +52,25 @@ Deno.serve(async (request: Request) => {
       throw new InputError('No se pudo registrar el pedido. Revisa el carrito e intenta de nuevo.',error.code === 'P0001' ? 400 : 503);
     }
     if (data.reused) await db.storage.from('receipts').remove([path]);
+    if (!data.reused) {
+      // The order is durable at this point. Notification failures must not make
+      // checkout look unsuccessful or cause a customer to submit it again.
+      try {
+        const recipients = adminRecipients(Deno.env.get('ADMIN_ORDER_EMAILS') ?? '');
+        const from = Deno.env.get('FROM_EMAIL') ?? '';
+        const apiKey = Deno.env.get('RESEND_API_KEY') ?? '';
+        if (!recipients.length || !from || !apiKey) {
+          console.error(`Admin order notification is not configured for order ${data.order.id}`);
+        } else {
+          const {data:order,error:snapshotError} = await db.rpc('order_snapshot',{p_order_id:data.order.id});
+          if (snapshotError || !order) throw new Error('Order snapshot unavailable');
+          const result = await sendConfirmation(newOrderMailPayload(order as NewOrderMail,from,recipients),data.order.id,apiKey,fetch,'new-order');
+          if (result.status === 'failed') console.error(`Admin order notification failed for order ${data.order.id}: ${result.error}`);
+        }
+      } catch (error) {
+        console.error(`Admin order notification failed for order ${data.order.id}`,error);
+      }
+    }
     return json({order:data.order},data.reused ? 200 : 201,headers);
   } catch (error) { return errorResponse(error,headers); }
 });
