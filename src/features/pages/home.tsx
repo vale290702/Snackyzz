@@ -40,7 +40,6 @@ export function Home({ products, cart }: CatalogPageProps) {
               <br />
               una.
             </strong>
-            <span>COMER SOLO UNA</span>
           </div>
           {theme === "original" && (
             <span className="hero-caption">

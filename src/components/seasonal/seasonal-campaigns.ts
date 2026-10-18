@@ -41,7 +41,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     breakCta: "Arma tu pedido",
     footer: ["La vida se disfruta", "un bocado a la vez."],
     image: "/assets/hero-cookies.webp",
-    imageAlt: "Cookies con trozos de chocolate sobre un fondo naranja.",
+    imageAlt: "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, sobre un fondo naranja.",
   },
   valentines: {
     headline: "Amor a primera",
@@ -65,7 +65,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["El cariño se comparte", "un bocado a la vez."],
     image: "/assets/seasons/valentines.webp",
     imageAlt:
-      "Cookies con chocolate en una escena de San Valentín con tonos rosa y pétalos.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, en una escena de San Valentín con tonos rosa y pétalos.",
   },
   easter: {
     headline: "Un antojo que",
@@ -89,7 +89,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["Que florezcan los encuentros", "y los pequeños antojos."],
     image: "/assets/seasons/easter.webp",
     imageAlt:
-      "Cookies con chocolate en una escena de Pascua con huevos decorativos y flores.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, en una escena de Pascua con huevos decorativos y flores.",
   },
   halloween: {
     headline: "Caer en la tentación",
@@ -113,7 +113,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["Una noche para compartir.", "Una cookie más, por si acaso."],
     image: "/assets/seasons/halloween.webp",
     imageAlt:
-      "Cookies con chocolate en una escena de Halloween con calabazas y tonos ciruela.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, en una escena de Halloween con calabazas y tonos ciruela.",
   },
   thanksgiving: {
     headline: "Gracias por compartir",
@@ -137,7 +137,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["Gracias por los encuentros.", "Y por compartir el antojo."],
     image: "/assets/seasons/thanksgiving.webp",
     imageAlt:
-      "Cookies con chocolate en una escena de otoño con hojas, trigo y tonos cobre.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, en una escena de otoño con hojas, trigo y tonos cobre.",
   },
   christmas: {
     headline: "La Navidad sabe mejor",
@@ -161,7 +161,7 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["Que sobren los encuentros", "y los momentos dulces."],
     image: "/assets/seasons/christmas.webp",
     imageAlt:
-      "Cookies con chocolate junto a un árbol de Navidad y detalles de pino y dorado.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, junto a un árbol de Navidad y detalles de pino y dorado.",
   },
   "new-year": {
     headline: "Nuevos comienzos.",
@@ -185,6 +185,6 @@ export const seasonalCampaigns: Record<SeasonalTheme, Campaign> = {
     footer: ["Por nuevos comienzos", "y más momentos juntos."],
     image: "/assets/seasons/new-year.webp",
     imageAlt:
-      "Cookies con chocolate en una escena de Año Nuevo con detalles y confeti dorados.",
+      "Mini cookies bañadas en chocolate blanco, con y sin sprinkles, en una escena de Año Nuevo con detalles y confeti dorados.",
   },
 };
