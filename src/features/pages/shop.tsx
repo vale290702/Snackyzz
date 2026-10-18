@@ -1,18 +1,25 @@
+import { useSeasonalCampaign } from "../../components/seasonal/seasonal";
 import { BakingHero } from "./baking-hero";
 import "./baking-stereo.css";
 import { ProductCard, Cart, Icon } from "../../components/store/ui";
-import { collections, productBrand, hasBakingStereoProducts } from "../../lib/collections";
+import {
+  collections,
+  productBrand,
+  hasBakingStereoProducts,
+} from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
 export function Shop({
   products,
   cart,
   collection = "snackyzz",
 }: CatalogPageProps & { collection?: "snackyzz" | "baking-stereo" }) {
+  const { campaign } = useSeasonalCampaign();
   const showBakingStereo = hasBakingStereoProducts(products);
   const fresh = collection === "baking-stereo";
   const info = collections[collection];
   const visible = products.filter(
-    (product) => product.active !== false && productBrand(product) === collection,
+    (product) =>
+      product.active !== false && productBrand(product) === collection,
   );
   return (
     <main
@@ -25,7 +32,7 @@ export function Shop({
       ) : (
         <div className="page-heading collection-heading">
           <h1>{info.title}</h1>
-          <p>{info.description}</p>
+          <p>{campaign.shopDescription}</p>
         </div>
       )}
       {fresh && (
@@ -64,29 +71,33 @@ export function Shop({
                   ? "Aquí encontrarás los productos de Baking Stereo cuando estén disponibles."
                   : "Aquí encontrarás las cookies Snackyzz cuando estén disponibles."}
               </p>
-              {(fresh || showBakingStereo) && <a
+              {(fresh || showBakingStereo) && (
+                <a
+                  href={`#${fresh ? "shop" : "baking-stereo"}`}
+                  className="text-link"
+                >
+                  {fresh
+                    ? "Explorar las cookies Snackyzz"
+                    : "Conocer Baking Stereo"}{" "}
+                  <Icon name="arrow" />
+                </a>
+              )}
+            </div>
+          )}
+          {(fresh || showBakingStereo) && (
+            <div className="collection-switch">
+              <p>Dos marcas. Un mismo carrito.</p>
+              <a
                 href={`#${fresh ? "shop" : "baking-stereo"}`}
                 className="text-link"
               >
                 {fresh
-                  ? "Explorar las cookies Snackyzz"
-                  : "Conocer Baking Stereo"}{" "}
+                  ? "Ver las cookies Snackyzz"
+                  : "Ver Snackyzz X Baking Stereo"}{" "}
                 <Icon name="arrow" />
-              </a>}
+              </a>
             </div>
           )}
-          {(fresh || showBakingStereo) && <div className="collection-switch">
-            <p>Dos marcas. Un mismo carrito.</p>
-            <a
-              href={`#${fresh ? "shop" : "baking-stereo"}`}
-              className="text-link"
-            >
-              {fresh
-                ? "Ver las cookies Snackyzz"
-                : "Ver Snackyzz X Baking Stereo"}{" "}
-              <Icon name="arrow" />
-            </a>
-          </div>}
         </section>
         <div className="cart-column">
           <Cart cart={cart} />

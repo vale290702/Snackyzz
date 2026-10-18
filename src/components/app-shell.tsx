@@ -1,6 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
+import { seasonalCampaigns } from './seasonal/seasonal-campaigns';
+import { SeasonalSurface } from './seasonal/seasonal';
+import { seasonalThemes,normalizeSeasonalTheme,isSeasonalTheme,type SeasonalTheme } from '../../supabase/functions/_shared/seasonal-theme';
 import { createCartStore } from '../lib/cart';
 import { api } from '../lib/api';
 import { configured, supabase } from '../lib/supabase';
@@ -20,7 +23,7 @@ import type { Product, SalesPoint, Contact, Delivery, Payment, Fulfillment, Chec
 
 type OrderResult = { id: string; email: string; demo?: boolean };
 interface Catalog {
-  products: Product[]; salesPoints: SalesPoint[]; demoCatalog: boolean;
+  seasonalTheme: SeasonalTheme; products: Product[]; salesPoints: SalesPoint[]; demoCatalog: boolean;
   payment: Payment; contact: Contact; delivery: Delivery;
 }
 interface AppState extends Catalog {
@@ -31,7 +34,7 @@ interface AppState extends Catalog {
 }
 const emptyFulfillment = (): Fulfillment => ({ type: 'pickup', pickupLocationId: '', deliveryAddress: '', deliveryDate: '', deliverySlotStart: '' });
 const initialState = (): AppState => ({
-  products: [], salesPoints: [], selectedCity: 'Todos', demoCatalog: true,
+  seasonalTheme: 'original', products: [], salesPoints: [], selectedCity: 'Todos', demoCatalog: true,
   payment: { configured: false, number: '', recipient: '' },
   contact: { whatsapp: '', email: 'Snackyzz.cookies@gmail.com', instagram: 'Snackyzz.cookies' },
   delivery: { uberEnabled: true, disclaimer: 'El envío se calcula según tu zona y se incluye en el total a pagar.', leadHours: 6, slotHours: 3, schedule: {} },
@@ -44,6 +47,10 @@ const errorMessage = (error: unknown) => error instanceof Error ? error.message 
 
 export default function AppShell() {
   const [state, setState] = useState<AppState>(initialState);
+  const [previewTheme,setPreviewTheme]=useState<SeasonalTheme|null>(null);
+  const themeExcluded=state.activePage==='admin' || state.activePage==='baking-stereo';
+  const activeTheme=themeExcluded ? 'original' : normalizeSeasonalTheme(previewTheme ?? state.seasonalTheme);
+
   const current = useRef(state);
   const [renderRevision, setRenderRevision] = useState(0);
   const patch = useCallback((value: Partial<AppState>) => {
@@ -134,13 +141,14 @@ export default function AppShell() {
     };
   }, [loadCatalog, patch]);
   useLayoutEffect(() => {
-    document.title = `${titles[state.activePage]} | Snackyzz`;
+    const title=state.activePage==='home' && activeTheme!=='original' ? `${seasonalCampaigns[activeTheme].headline} ${seasonalCampaigns[activeTheme].emphasis}` : titles[state.activePage];
+    document.title = `${title} | Snackyzz`;
     if (pendingFocus.current) {
       pendingFocus.current = false;
       window.scrollTo({ top: 0, behavior: 'instant' });
       document.getElementById('main')?.focus({ preventScroll: true });
     }
-  }, [state.activePage, renderRevision]);
+  }, [state.activePage, renderRevision, activeTheme]);
   useLayoutEffect(() => {
     const element = cartDialog.current;
     if (cartOpen && element && !element.open) element.showModal();
@@ -272,11 +280,19 @@ export default function AppShell() {
       patch({activePage:'shop',detailId:null});
     }
   }, [state.catalogReady, state.activePage, showBakingStereo, patch]);
+  useEffect(()=>{
+    const preview=new URLSearchParams(window.location.search).get('themePreview');
+    if(isSeasonalTheme(preview)) setPreviewTheme(preview);
+  },[]);
   const props = { ...state, cart };
   const view = state.activePage === 'home' ? <Home {...props} /> : state.activePage === 'shop' ? <Shop {...props} /> : state.activePage === 'baking-stereo' ? <Shop {...props} collection={showBakingStereo ? "baking-stereo" : "snackyzz"} /> : state.activePage === 'sales' ? <Sales {...props} /> : state.activePage === 'about' ? <About /> : state.activePage === 'checkout' ? <Checkout {...props} /> : state.activePage === 'success' ? <Success {...props} /> : <Admin controller={admin} />;
   const product = state.products.find(p => p.id === state.detailId);
   const showCartBubble = !['admin', 'checkout', 'success'].includes(state.activePage) && !state.submitting;
-  return <StoreActionsProvider actions={actions}>
+  return <StoreActionsProvider actions={actions}><SeasonalSurface theme={activeTheme} page={state.activePage}>
+    {previewTheme!==null && !themeExcluded && <div className="season-preview-banner" role="status"><span>Vista previa · {seasonalThemes[previewTheme].name}. Solo tú ves este tema.</span><button type="button" className="season-preview-exit" disabled={state.submitting} onClick={()=>{
+      const url=new URL(window.location.href);url.searchParams.delete('themePreview');
+      window.history.replaceState(null,'',`${url.pathname}${url.search}${url.hash}`);setPreviewTheme(null);
+    }}>Salir de vista previa</button></div>}
     <div id="app" onClickCapture={guardNavigation}>{state.activePage === 'admin' ? view : <><Nav showBakingStereo={showBakingStereo} activePage={state.activePage} cartCount={cart.getCount()} resetKey={renderRevision} onCartOpen={openCart} cartDisabled={state.submitting} />{state.catalogError ? <div className="app-notice" role="status">{state.catalogError} <button data-reload-catalog="" onClick={() => void loadCatalog()}>Reintentar</button></div> : !configured ? <div className="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div> : null}{view}<Footer contact={state.contact} showBakingStereo={showBakingStereo} /></>}</div>
     {showCartBubble ? <button type="button" className="cart-bubble" aria-label={`Ver carrito, ${cart.getCount()} productos`} onClick={event => openCart(event.currentTarget)}><Icon name="bag" /><span aria-hidden="true">{cart.getCount()}</span></button> : null}
     <dialog className="cart-sheet" aria-labelledby="cart-sheet-title" ref={cartDialog} onClose={() => { setCartOpen(false); if (cartTrigger.current?.isConnected) cartTrigger.current.focus({ preventScroll: true }); }} onClick={event => { if (event.target === event.currentTarget) closeCart(); }}>
@@ -291,5 +307,5 @@ export default function AppShell() {
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog();
     }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" disabled={cart.getQuantity(product.id) >= Math.min(99, product.stock ?? 0)} data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>{(product.stock ?? 0) > 0 ? "Agregar al carrito" : "Agotado"} <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
     <div id="toast" className={`toast ${showCartBubble ? 'toast-with-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
-  </StoreActionsProvider>;
+  </SeasonalSurface></StoreActionsProvider>;
 }

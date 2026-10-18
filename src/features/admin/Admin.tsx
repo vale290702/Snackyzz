@@ -6,6 +6,7 @@ import { formatMoney } from "../../lib/cart";
 import { safeImage } from "../../lib/html";
 import type { AdminController } from "./useAdmin";
 import type { Order, Product, SalesPoint, Settings } from "./types";
+import { SeasonalSettings } from "./SeasonalSettings";
 export { useAdmin } from "./useAdmin";
 const date = (value?: string) =>
   value
@@ -661,6 +662,7 @@ function SettingsPanel({ controller: c }: { controller: AdminController }) {
             controller={c}
           />
           <div>
+            <SeasonalSettings key={settings.seasonal_theme ?? "original"} controller={c} />
             <DeliveryZones controller={c} />
             <section className="locations-admin">
               <div className="cart-title">

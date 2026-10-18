@@ -1,3 +1,4 @@
+import { normalizeSeasonalTheme } from "../../supabase/functions/_shared/seasonal-theme";
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
@@ -39,6 +40,7 @@ function scheduleValue(
 function storeSettings(row: SettingsRow = {}) {
   return {
     demoCatalog: Boolean(row.demo_catalog),
+    seasonalTheme: normalizeSeasonalTheme(row.seasonal_theme),
     payment: {
       number: row.sinpe_number ?? "",
       recipient: row.sinpe_recipient ?? "",
