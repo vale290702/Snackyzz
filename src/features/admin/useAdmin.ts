@@ -41,11 +41,11 @@ export function useAdmin({
   const current = useRef(state);
   current.current = state;
   const revision = useRef(0);
-  const patch = useCallback((value: Partial<AdminState>) => {
+  const patch = useCallback((value: Partial<AdminState>, preserveForms = false) => {
     current.current = {
       ...current.current,
       ...value,
-      formRevision: (current.current.formRevision ?? 0) + 1,
+      formRevision: (current.current.formRevision ?? 0) + (preserveForms ? 0 : 1),
     };
     setState(current.current);
   }, []);
@@ -217,7 +217,9 @@ export function useAdmin({
       await onCatalogChange();
       return;
     }
-    patch({ busy: true, error: "" });
+    const preserveForms = body.action === "save-theme";
+    const update = (value: Partial<AdminState>) => patch(value,preserveForms);
+    update({ busy: true, error: "" });
     try {
       const result = await api<{
         settings?: Settings;
@@ -226,17 +228,17 @@ export function useAdmin({
       }>("/admin/store/action", { body });
       if (result.zone) {
         const zone = result.zone;
-        patch({
+        update({
           zones: [
             ...current.current.zones.filter((item) => item.id !== zone.id),
             zone,
           ].sort((a, b) => a.name.localeCompare(b.name)),
         });
       }
-      if (result.settings) patch({ settings: result.settings });
+      if (result.settings) update({ settings: result.settings });
       if (result.location) {
         const location = result.location;
-        patch({
+        update({
           locations: (current.current.locations.some(
             (p) => p.id === location.id,
           )
@@ -247,14 +249,15 @@ export function useAdmin({
           ).sort((a, b) => a.position - b.position),
         });
       }
-      patch({ editingLocation: null });
+      if (!preserveForms) update({ editingLocation: null });
       notify(message);
       return true;
     } catch (error) {
-      reject(error);
+      if (error instanceof ApiError && [401,403].includes(error.status)) reset();
+      update({error: error instanceof Error ? error.message : String(error)});
       return false;
     } finally {
-      patch({ busy: false });
+      update({ busy: false });
       await onCatalogChange();
     }
   }

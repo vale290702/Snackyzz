@@ -1,3 +1,4 @@
+import { isSeasonalTheme } from "../_shared/seasonal-theme.ts";
 import { cors, errorResponse, json, serviceClient } from "../_shared/http.ts";
 import { InputError } from "../_shared/validation.ts";
 
@@ -44,6 +45,12 @@ Deno.serve(async(request:Request)=>{
       return json({settings:settings.data,locations:locations.data,zones:zones.data,emailConfigured:Boolean(Deno.env.get("RESEND_API_KEY")&&Deno.env.get("FROM_EMAIL"))},200,headers);
     }
     const body=await request.json();
+    if(body.action==="save-theme") {
+      if (!isSeasonalTheme(body.theme)) throw new InputError("Selecciona un tema de temporada válido.");
+      const {data,error}=await db.from("store_settings").update({seasonal_theme:body.theme}).eq("id",1).select().single();
+      if (error) throw new InputError("No se pudo guardar el tema. Inténtalo de nuevo.",503);
+      return json({settings:data},200,headers);
+    }
     if(body.action==="save-settings"){
       if (body.demoCatalog !== undefined && typeof body.demoCatalog !== "boolean") throw new InputError("Revisa el modo de prueba.");
       const values={

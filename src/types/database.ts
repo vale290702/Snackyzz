@@ -272,6 +272,7 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          seasonal_theme: string
           delivery_lead_hours: number
           delivery_schedule: Json
           delivery_slot_hours: number
@@ -286,6 +287,7 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          seasonal_theme?: string
           delivery_lead_hours?: number
           delivery_schedule?: Json
           delivery_slot_hours?: number
@@ -300,6 +302,7 @@ export type Database = {
           whatsapp?: string
         }
         Update: {
+          seasonal_theme?: string
           delivery_lead_hours?: number
           delivery_schedule?: Json
           delivery_slot_hours?: number

@@ -1,3 +1,5 @@
+import { seasonalCampaigns } from "../../src/components/seasonal/seasonal-campaigns.ts";
+import { seasonalPalettes } from "../../src/components/seasonal/seasonal-palettes.ts";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { products as catalogProducts } from "../fixtures/products.ts";
@@ -93,11 +95,14 @@ async function mockSupabase(
     rejectFailure = false,
     confirmFailure = false,
     stockOverrides = {},
+    seasonalTheme = "original",
+    themeSaveFailure = false,
   } = {},
 ) {
   const products = catalogProducts.map((product,index) => ({...product,active:true,position:index+1,...(product.id in stockOverrides ? {stock:stockOverrides[product.id]} : {})}));
   const calls = [];
   let managedOrder = {...order};
+  let storeSettings = {...settings,seasonal_theme:seasonalTheme};
   await page.route("https://*.supabase.co/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -110,7 +115,7 @@ async function mockSupabase(
       });
     if (path === "/rest/v1/products") return reply(products);
     if (path === "/rest/v1/sales_points") return reply([location]);
-    if (path === "/rest/v1/store_settings") return reply(settings);
+    if (path === "/rest/v1/store_settings") return reply(storeSettings);
     if (path === "/functions/v1/create-order") {
       calls.push({
         kind: "create",
@@ -204,13 +209,18 @@ async function mockSupabase(
     if (path === "/functions/v1/manage-store") {
       if (request.method() === "GET")
         return reply({
-          settings,
+          settings:storeSettings,
           locations: [location],
           zones,
           emailConfigured: false,
         });
       const body = request.postDataJSON();
       calls.push({ kind: "store-settings", ...body });
+      if(body.action==='save-theme') {
+        if(themeSaveFailure) return reply({error:'No se pudo guardar el tema.'},503);
+        storeSettings={...storeSettings,seasonal_theme:body.theme};
+        return reply({settings:storeSettings});
+      }
       if (body.action === "save-zone" && zoneSaveFailure) return reply({ error: "No se pudo guardar la zona." }, 503);
       if (body.action === "save-zone")
         return reply({
@@ -1171,4 +1181,104 @@ test("empty Baking Stereo is hidden and returns when an active product is added"
   await page.reload();
   await expect(page).toHaveURL(/#shop$/);
   await expect(page.locator('a[href="#baking-stereo"]')).toHaveCount(0);
+});
+
+test("seasonal preview is private and each theme stays out of Baking Stereo", async ({page}) => {
+ const calls=await mockSupabase(page);
+ for(const theme of ['valentines','easter','halloween','thanksgiving','christmas','new-year']) {
+  await page.goto(`/?themePreview=${theme}`);
+  await expect(page.locator('#app').locator('..')).toHaveAttribute('data-season',theme);
+  await expect(page.locator('.season-decor--hero')).toBeVisible();
+  const campaign=seasonalCampaigns[theme];
+  await expect(page.locator('.hero h1')).toHaveText(`${campaign.headline} ${campaign.emphasis}`);
+  await expect(page.locator('.hero .button-orange')).toHaveText(campaign.cta);
+  await expect(page.locator('.hero-visual > img')).toHaveAttribute('src',campaign.image);
+  await expect.poll(()=>page.locator('.hero-visual > img').evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
+  const palette=seasonalPalettes[theme];
+  const rgb=hex=>'rgb('+hex.match(/[a-f0-9]{2}/gi).map(value=>parseInt(value,16)).join(', ')+')';
+  await expect(page.locator('#app').locator('..')).toHaveCSS('background-color',rgb(palette.canvas));
+  await expect(page.locator('.hero .button-orange')).toHaveCSS('background-color',rgb(palette.action));
+  await expect(page.locator('.hero .button-orange')).toHaveCSS('color',rgb(palette.onAction));
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
+  await capture(page,`season-${theme}`);
+  await page.goto(`/?themePreview=${theme}#baking-stereo`);
+  await expect(page.getByRole('heading',{name:'Love at first bite',exact:true})).toBeVisible();
+  await expect(page.locator('#app').locator('..')).toHaveAttribute('data-season','original');
+  await expect(page.locator('.season-decor--header')).toHaveCount(0);
+  expect(await page.locator('#app').locator('..').evaluate(el=>getComputedStyle(el).getPropertyValue('--cream').trim())).toBe('#f9ede0');
+  await expect(page.locator('.season-preview-banner')).toHaveCount(0);
+ }
+ expect(calls).toHaveLength(0);
+ await page.goto('/?themePreview=not-real');
+ await expect(page.locator('#app').locator('..')).toHaveAttribute('data-season','original');
+ await expect(page.locator('.season-preview-banner')).toHaveCount(0);
+});
+test("admin previews, publishes and removes a seasonal theme", async ({page,context}) => {
+ const calls=await mockSupabase(page);
+ await page.goto('/#admin');
+ await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+ await page.getByLabel('Contraseña de administración').fill('test-password');
+ await page.getByRole('button',{name:'Entrar al panel'}).click();
+ await page.getByRole('button',{name:'Configuración',exact:true}).click();
+ const season=page.locator('.season-admin');
+ await page.getByLabel('WhatsApp con código de país',{exact:true}).fill('+506 7777 9999');
+ await season.getByLabel('Temporada',{exact:true}).selectOption('christmas');
+ expect((await season.locator('.season-shell').boundingBox()).height).toBeLessThan(350);
+ await expect(season.getByRole('status')).toContainText('Tema publicado: Original Snackyzz');
+ const [preview]=await Promise.all([context.waitForEvent('page'),season.getByRole('link',{name:/Vista previa/}).click()]);
+ await expect(preview).toHaveURL(/themePreview=christmas/);
+ await preview.close();
+ expect(calls.filter(c=>c.action==='save-theme')).toHaveLength(0);
+ await capture(page,'season-admin');
+ await season.getByRole('button',{name:'Aplicar tema',exact:true}).click();
+ await expect(season.getByRole('status')).toContainText('Tema publicado: Navidad');
+ await expect(page.getByLabel('WhatsApp con código de país',{exact:true})).toHaveValue('+506 7777 9999');
+ await page.goto('/#shop');
+ await expect(page.locator('#app').locator('..')).toHaveAttribute('data-season','christmas');
+ await expect(page.locator('.season-decor--hero')).toHaveCount(0);
+ await page.goto('/#admin');
+ await page.getByRole('button',{name:'Configuración',exact:true}).click();
+ await season.getByLabel('Temporada',{exact:true}).selectOption('original');
+ await season.getByRole('button',{name:'Aplicar tema',exact:true}).click();
+ await expect(season.getByRole('status')).toContainText('Tema publicado: Original Snackyzz');
+ expect(calls.filter(c=>c.action==='save-theme').map(c=>c.theme)).toEqual(['christmas','original']);
+});
+test("failed theme save preserves the published theme and the chosen preview", async ({page}) => {
+ await mockSupabase(page,{themeSaveFailure:true});
+ await page.goto('/#admin');
+ await page.getByLabel('Correo de administración').fill('admin@example.invalid');
+ await page.getByLabel('Contraseña de administración').fill('test-password');
+ await page.getByRole('button',{name:'Entrar al panel'}).click();
+ await page.getByRole('button',{name:'Configuración',exact:true}).click();
+ const season=page.locator('.season-admin');
+ await season.getByLabel('Temporada',{exact:true}).selectOption('halloween');
+ await season.getByRole('button',{name:'Aplicar tema',exact:true}).click();
+ await expect(season.getByRole('alert')).toBeVisible();
+ await expect(season.getByLabel('Temporada',{exact:true})).toHaveValue('halloween');
+ await expect(season.getByRole('status')).toContainText('Tema publicado: Original Snackyzz');
+});
+
+test("leaving seasonal checkout preview preserves customer input", async ({page}) => {
+ await mockSupabase(page);
+ await page.goto('/?themePreview=christmas#shop');
+ await page.getByRole('button',{name:'Agregar al carrito',exact:true}).first().click();
+ await goToCheckout(page);
+ await page.getByLabel('Nombre completo',{exact:true}).fill('Nombre conservado');
+ await page.getByRole('button',{name:'Salir de vista previa',exact:true}).click();
+ await expect(page.getByLabel('Nombre completo',{exact:true})).toHaveValue('Nombre conservado');
+ await expect(page.locator('.season-preview-banner')).toHaveCount(0);
+ await expect(page).not.toHaveURL(/themePreview/);
+});
+
+test("seasonal quantity controls keep readable foreground and background on hover",async({page})=>{
+ await mockSupabase(page);
+ await page.goto('/?themePreview=christmas#shop');
+ const card=page.locator('.product-card').first();
+ await card.getByRole('button',{name:'Agregar al carrito',exact:true}).click();
+ const plus=card.locator('.stepper button[data-qty="1"]');
+ await plus.hover();
+ const palette=seasonalPalettes.christmas;
+ const rgb=hex=>'rgb('+hex.match(/[a-f0-9]{2}/gi).map(value=>parseInt(value,16)).join(', ')+')';
+ await expect(plus).toHaveCSS('background-color',rgb(palette.action));
+ await expect(plus).toHaveCSS('color',rgb(palette.onAction));
 });

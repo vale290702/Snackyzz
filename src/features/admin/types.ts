@@ -16,6 +16,7 @@ export interface ScheduleDay {
   end: string;
 }
 export interface Settings {
+  seasonal_theme?: string;
   demo_catalog?: boolean;
   sinpe_number?: string;
   sinpe_recipient?: string;

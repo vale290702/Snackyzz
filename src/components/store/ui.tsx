@@ -1,4 +1,5 @@
 "use client";
+import { SeasonalDecor, useSeasonalCampaign } from "../seasonal/seasonal";
 import { useEffect, useState } from "react";
 import { productBrandLabel } from "../../lib/collections";
 import { deliveryQuote } from "../../lib/delivery-zones";
@@ -78,6 +79,7 @@ export function Nav({
   cartDisabled?: boolean;
   showBakingStereo?: boolean;
 }) {
+  const {campaign}=useSeasonalCampaign();
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     setMenuOpen(false);
@@ -94,9 +96,10 @@ export function Nav({
         Saltar al contenido
       </a>
       <div className="announcement">
-        Un pequeño break. Un gran antojo. <span>Eso es Snackyzz.</span>
+        {campaign.announcement} <span>{campaign.announcementEnd}</span>
       </div>
       <header className="site-header">
+        <SeasonalDecor placement="header" />
         <div className="nav-shell">
           <a href="#" className="brand" aria-label="Snackyzz, inicio">
             <Wordmark />
@@ -160,19 +163,19 @@ export function Nav({
   );
 }
 export function Footer({ contact = {}, showBakingStereo = false }: { contact?: Contact; showBakingStereo?: boolean }) {
+  const {campaign}=useSeasonalCampaign();
   const instagram = contact.instagram || "Snackyzz.cookies";
   const email = contact.email || "Snackyzz.cookies@gmail.com";
   return (
     <footer className="site-footer">
+      <SeasonalDecor placement="footer" />
       <div className="footer-top">
         <div>
           <a href="#" className="brand">
             <Wordmark />
           </a>
           <p>
-            La vida se disfruta
-            <br />
-            un bocado a la vez.
+            {campaign.footer[0]}<br/>{campaign.footer[1]}
           </p>
         </div>
         <div className="footer-links">

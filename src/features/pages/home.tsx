@@ -1,31 +1,34 @@
+import {
+  SeasonalDecor,
+  SeasonalFeature,
+  useSeasonalCampaign,
+} from "../../components/seasonal/seasonal";
 import { Icon, ProductCard } from "../../components/store/ui";
 import { productBrand } from "../../lib/collections";
 import type { CatalogPageProps } from "../../types/store";
 export function Home({ products, cart }: CatalogPageProps) {
+  const { theme, campaign } = useSeasonalCampaign();
   return (
     <main id="main" tabIndex={-1}>
       <section className="hero page-width">
         <div className="hero-copy">
           <h1>
-            Caer en el antojo
-            <br />
-            nunca supo <em>tan bien.</em>
+            <span className="campaign-headline">{campaign.headline}</span>{" "}
+            <em>{campaign.emphasis}</em>
           </h1>
-          <p>
-            Para ese “algo dulce”, para compartir.
-            <br />O para quedártelas todas. Tú decides.
-          </p>
+          <p className="campaign-description">{campaign.description}</p>
           <a href="#shop" className="button button-orange">
-            Encuentra tu cookie <Icon name="arrow" />
+            {campaign.cta} <Icon name="arrow" />
           </a>
           <div className="hero-footnote">
-            <Icon name="flower" /> Tu próximo break empieza aquí.
+            <Icon name="flower" /> {campaign.footnote}
           </div>
         </div>
         <div className="hero-visual">
+          <SeasonalDecor />
           <img
-            src="/assets/hero-cookies.webp"
-            alt="Cookies con trozos de chocolate sobre un fondo naranja."
+            src={campaign.image}
+            alt={campaign.imageAlt}
             width="1024"
             height="1024"
             fetchPriority="high"
@@ -39,25 +42,28 @@ export function Home({ products, cart }: CatalogPageProps) {
             </strong>
             <span>COMER SOLO UNA</span>
           </div>
-          <span className="hero-caption">
-            PEQUEÑOS MOMENTOS. GRANDES ANTOJOS.
-          </span>
+          {theme === "original" && (
+            <span className="hero-caption">
+              PEQUEÑOS MOMENTOS. GRANDES ANTOJOS.
+            </span>
+          )}
         </div>
       </section>
+      <SeasonalDecor placement="divider" />
       <div className="brand-ribbon" aria-hidden="true">
-        <span>UN BOCADO MÁS</span>
+        <span>{campaign.ribbon[0]}</span>
         <Icon name="flower" />
-        <span>JUST ONE MORE</span>
+        <span>{campaign.ribbon[1]}</span>
         <Icon name="flower" />
-        <span>UN BOCADO MÁS</span>
+        <span>{campaign.ribbon[0]}</span>
         <Icon name="flower" />
-        <span>JUST ONE MORE</span>
+        <span>{campaign.ribbon[1]}</span>
       </div>
       <section className="products-section page-width">
         <div className="section-heading">
           <div>
-            <h2>Elige tu debilidad.</h2>
-            <p>Muchas cookies. Ninguna decisión equivocada</p>
+            <h2>{campaign.productsTitle}</h2>
+            <p>{campaign.productsDescription}</p>
           </div>
           <a href="#shop" className="text-link">
             Ver todas las cookies <Icon name="arrow" />
@@ -73,23 +79,21 @@ export function Home({ products, cart }: CatalogPageProps) {
       </section>
       <section className="break-section page-width">
         <div className="break-symbol" aria-hidden="true">
-          s.
+          <SeasonalFeature />
         </div>
         <div>
           <h2>
-            El día pide
+            {campaign.breakTitle}
             <br />
-            un <em>snacky break.</em>
+            <em>{campaign.breakEmphasis}</em>
           </h2>
-          <p>
-            Entre un pendiente y otro, siempre hay espacio para algo rico. Haz
-            una pausa. Elige tu favorita. Disfruta el momento.
-          </p>
+          <p>{campaign.breakDescription}</p>
           <a href="#shop" className="text-link">
-            Arma tu pedido <Icon name="arrow" />
+            {campaign.breakCta} <Icon name="arrow" />
           </a>
         </div>
       </section>
+      <SeasonalDecor placement="divider" />
       <section className="location-teaser page-width">
         <div>
           <h2>Tu antojo, más cerca.</h2>
