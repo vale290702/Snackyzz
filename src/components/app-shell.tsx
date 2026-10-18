@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { configured, supabase } from '../lib/supabase';
 import { getRouteFromHash, navigateTo, type Route } from '../lib/router';
 import { safeImage } from '../lib/html';
-import { productBrandLabel } from '../lib/collections';
+import { productBrandLabel, hasBakingStereoProducts } from '../lib/collections';
 import { Nav, Footer, Icon, QuantityControl, Cart } from './store/ui';
 import { StoreActionsProvider } from './store/actions';
 import { Home } from '../features/pages/home';
@@ -264,12 +264,20 @@ export default function AppShell() {
     if (target?.getAttribute('href') === '#main') { event.preventDefault(); document.getElementById('main')?.focus(); return; }
     if (current.current.submitting && target?.getAttribute('href')?.startsWith('#')) { event.preventDefault(); event.stopPropagation(); notify('Estamos registrando tu pedido. Espera un momento.'); }
   };
+  const showBakingStereo = hasBakingStereoProducts(state.products);
+  useEffect(() => {
+    if (state.catalogReady && state.activePage === 'baking-stereo' && !showBakingStereo) {
+      window.history.replaceState(null, '', '#shop');
+      pendingFocus.current = true;
+      patch({activePage:'shop',detailId:null});
+    }
+  }, [state.catalogReady, state.activePage, showBakingStereo, patch]);
   const props = { ...state, cart };
-  const view = state.activePage === 'home' ? <Home {...props} /> : state.activePage === 'shop' ? <Shop {...props} /> : state.activePage === 'baking-stereo' ? <Shop {...props} collection="baking-stereo" /> : state.activePage === 'sales' ? <Sales {...props} /> : state.activePage === 'about' ? <About /> : state.activePage === 'checkout' ? <Checkout {...props} /> : state.activePage === 'success' ? <Success {...props} /> : <Admin controller={admin} />;
+  const view = state.activePage === 'home' ? <Home {...props} /> : state.activePage === 'shop' ? <Shop {...props} /> : state.activePage === 'baking-stereo' ? <Shop {...props} collection={showBakingStereo ? "baking-stereo" : "snackyzz"} /> : state.activePage === 'sales' ? <Sales {...props} /> : state.activePage === 'about' ? <About /> : state.activePage === 'checkout' ? <Checkout {...props} /> : state.activePage === 'success' ? <Success {...props} /> : <Admin controller={admin} />;
   const product = state.products.find(p => p.id === state.detailId);
   const showCartBubble = !['admin', 'checkout', 'success'].includes(state.activePage) && !state.submitting;
   return <StoreActionsProvider actions={actions}>
-    <div id="app" onClickCapture={guardNavigation}>{state.activePage === 'admin' ? view : <><Nav activePage={state.activePage} cartCount={cart.getCount()} resetKey={renderRevision} onCartOpen={openCart} cartDisabled={state.submitting} />{state.catalogError ? <div className="app-notice" role="status">{state.catalogError} <button data-reload-catalog="" onClick={() => void loadCatalog()}>Reintentar</button></div> : !configured ? <div className="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div> : null}{view}<Footer contact={state.contact} /></>}</div>
+    <div id="app" onClickCapture={guardNavigation}>{state.activePage === 'admin' ? view : <><Nav showBakingStereo={showBakingStereo} activePage={state.activePage} cartCount={cart.getCount()} resetKey={renderRevision} onCartOpen={openCart} cartDisabled={state.submitting} />{state.catalogError ? <div className="app-notice" role="status">{state.catalogError} <button data-reload-catalog="" onClick={() => void loadCatalog()}>Reintentar</button></div> : !configured ? <div className="app-notice">Vista previa · Los pedidos estarán disponibles cuando se conecte la tienda.</div> : null}{view}<Footer contact={state.contact} showBakingStereo={showBakingStereo} /></>}</div>
     {showCartBubble ? <button type="button" className="cart-bubble" aria-label={`Ver carrito, ${cart.getCount()} productos`} onClick={event => openCart(event.currentTarget)}><Icon name="bag" /><span aria-hidden="true">{cart.getCount()}</span></button> : null}
     <dialog className="cart-sheet" aria-labelledby="cart-sheet-title" ref={cartDialog} onClose={() => { setCartOpen(false); if (cartTrigger.current?.isConnected) cartTrigger.current.focus({ preventScroll: true }); }} onClick={event => { if (event.target === event.currentTarget) closeCart(); }}>
       <div className="cart-sheet-inner">

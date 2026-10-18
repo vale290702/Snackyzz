@@ -7,7 +7,7 @@ const renderShop = (props: Parameters<typeof Shop>[0]) =>
 import { Home } from "../src/features/pages/home";
 const renderHome = (props: Parameters<typeof Home>[0]) =>
   renderComponent(Home, props);
-import { Cart, Nav } from "../src/components/store/ui";
+import { Cart, Nav, Footer } from "../src/components/store/ui";
 const renderCart = (cart: Parameters<typeof Cart>[0]["cart"], options = {}) =>
   renderComponent(Cart, { cart, ...options });
 const renderNav = (props: Parameters<typeof Nav>[0]) =>
@@ -69,11 +69,25 @@ test("both collections retain a shared cart with identifiable brands", () => {
 test("collaboration is navigable and empty catalog is explicit", () => {
   assert.equal(getRouteFromHash("#baking-stereo"), "baking-stereo");
   assert.match(
-    renderNav({ activePage: "baking-stereo", cartCount: 0 }),
+    renderNav({ activePage: "baking-stereo", cartCount: 0, showBakingStereo:true }),
     /Snackyzz X Baking Stereo/,
   );
   assert.match(
     renderShop({ ...props(), products: [], collection: "baking-stereo" }),
     /Pronto saldrán del horno/,
   );
+});
+test("empty collaboration is hidden from navigation, footer and store links", () => {
+  assert.doesNotMatch(renderNav({activePage:'shop',cartCount:0,showBakingStereo:false}), /href="#baking-stereo"/);
+  assert.doesNotMatch(renderComponent(Footer,{showBakingStereo:false}), /href="#baking-stereo"/);
+  const sealedOnly=products.filter(p=>p.id==='sealed');
+  assert.doesNotMatch(renderShop({...props(),products:sealedOnly}), /href="#baking-stereo"/);
+});
+
+import { hasBakingStereoProducts } from "../src/lib/collections";
+test("only active collaboration products enable the section, regardless of stock", () => {
+ assert.equal(hasBakingStereoProducts([]),false);
+ assert.equal(hasBakingStereoProducts(products.map(p=>({...p,active:false}))),false);
+ assert.equal(hasBakingStereoProducts(products.map(p=>({...p,stock:0}))),true);
+ assert.match(renderComponent(Footer,{showBakingStereo:true}),/href="#baking-stereo"/);
 });

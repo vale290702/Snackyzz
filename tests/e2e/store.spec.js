@@ -1151,3 +1151,24 @@ test("confirmation failure keeps the comment and cancellation leaves the order p
   await expect(page.locator('.orders-list .status')).toHaveText('Pendiente');
   expect(calls).toHaveLength(1);
 });
+test("empty Baking Stereo is hidden and returns when an active product is added", async ({page}) => {
+  await mockSupabase(page);
+  let available = false;
+  await page.route(/https:\/\/[^/]+\.supabase\.co\/rest\/v1\/products(?:\?|$)/,route => route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify(catalogProducts.filter(product=>available || product.brand!=='baking-stereo').map(product=>({...product,stock:0}))),
+  }));
+  await page.goto('/#baking-stereo');
+  await expect(page).toHaveURL(/#shop$/);
+  await expect(page.locator('a[href="#baking-stereo"]')).toHaveCount(0);
+  await expect(page.locator('.baking-hero')).toHaveCount(0);
+  await capture(page,'empty-collaboration-hidden');
+  available = true;
+  await page.reload();
+  await expect(page.locator('.site-footer a[href="#baking-stereo"]')).toBeVisible();
+  await page.locator('.site-footer a[href="#baking-stereo"]').click();
+  await expect(page.getByRole('heading',{name:'Love at first bite',exact:true})).toBeVisible();
+  available = false;
+  await page.reload();
+  await expect(page).toHaveURL(/#shop$/);
+  await expect(page.locator('a[href="#baking-stereo"]')).toHaveCount(0);
+});

@@ -19,3 +19,7 @@ export function productBrand(product: Product) {
 export function productBrandLabel(product: Product) {
   return collections[productBrand(product)]?.label || "Producto";
 }
+
+export function hasBakingStereoProducts(products: Product[]) {
+  return products.some(product => product.active !== false && productBrand(product) === "baking-stereo");
+}

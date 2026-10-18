@@ -69,12 +69,14 @@ export function Nav({
   resetKey,
   onCartOpen,
   cartDisabled = false,
+  showBakingStereo = false,
 }: {
   activePage: string;
   cartCount: number;
   resetKey?: number;
   onCartOpen: (trigger: HTMLElement) => void;
   cartDisabled?: boolean;
+  showBakingStereo?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
@@ -83,7 +85,7 @@ export function Nav({
   const links = [
     ["home", "Inicio"],
     ["shop", "Snackyzz"],
-    ["baking-stereo", "Snackyzz X Baking Stereo"],
+    ...(showBakingStereo ? [["baking-stereo", "Snackyzz X Baking Stereo"]] : []),
     ["sales", "Dónde encontrarnos"],
   ];
   return (
@@ -157,7 +159,7 @@ export function Nav({
     </>
   );
 }
-export function Footer({ contact = {} }: { contact?: Contact }) {
+export function Footer({ contact = {}, showBakingStereo = false }: { contact?: Contact; showBakingStereo?: boolean }) {
   const instagram = contact.instagram || "Snackyzz.cookies";
   const email = contact.email || "Snackyzz.cookies@gmail.com";
   return (
@@ -176,7 +178,7 @@ export function Footer({ contact = {} }: { contact?: Contact }) {
         <div className="footer-links">
           <h2>¿Se te antoja?</h2>
           <a href="#shop">Snackyzz</a>
-          <a href="#baking-stereo">Snackyzz X Baking Stereo</a>
+          {showBakingStereo && <a href="#baking-stereo">Snackyzz X Baking Stereo</a>}
           <a href="#sales">Dónde encontrarnos</a>
           <a href="#about">Sobre Snackyzz</a>
         </div>
