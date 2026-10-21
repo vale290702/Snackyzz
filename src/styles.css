@@ -752,15 +752,6 @@ main:focus {
   padding: 18px 0;
   color: var(--muted);
 }
-.footer-bottom a {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-}
-.footer-bottom .icon {
-  width: 16px;
-  height: 16px;
-}
 .footer-bottom .footer-powered-by {
   display: inline-flex;
   margin-left: auto;
@@ -2518,9 +2509,6 @@ small#receipt-help {
     gap: 15px;
     flex-direction: column;
     padding-block: 18px;
-  }
-  .footer-bottom a {
-    font-size: 11px;
   }
   .page-heading h1 {
     font-size: 42px;
