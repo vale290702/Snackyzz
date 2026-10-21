@@ -761,6 +761,34 @@ main:focus {
   width: 16px;
   height: 16px;
 }
+.footer-bottom .footer-powered-by {
+  display: inline-flex;
+  margin-left: auto;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 11px;
+}
+.footer-powered-label {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+.footer-powered-by picture,
+.footer-powered-by img {
+  display: block;
+  width: 1.82cap;
+  height: 1.3cap;
+}
+.footer-powered-by img {
+  object-fit: contain;
+}
+.footer-powered-by strong {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: inherit;
+  letter-spacing: 0.015em;
+}
 .inner-page {
   padding-top: 48px;
   padding-bottom: 90px;
