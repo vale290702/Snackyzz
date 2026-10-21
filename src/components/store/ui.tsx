@@ -202,6 +202,11 @@ export function Footer({ contact = {}, showBakingStereo = false }: { contact?: C
         <span>
           {`© ${new Date().getFullYear()} Snackyzz. Todos los derechos reservados.`}
         </span>
+        <a className="footer-powered-by" href="https://atrizon.com">
+          <span className="footer-powered-label">Powered by</span>
+          <strong>Atrizon</strong>
+          <img src="/assets/partners/atrizon-mark.svg" alt="" width="18" height="13" loading="lazy" decoding="async" />
+        </a>
       </div>
     </footer>
   );
