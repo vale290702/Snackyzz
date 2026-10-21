@@ -90,7 +90,7 @@ export default function AppShell() {
       setCart(next);
       patch({ ...catalog, catalogReady: true, fulfillment: !catalog.salesPoints.length && catalog.delivery.uberEnabled ? { ...current.current.fulfillment, type: 'uber' } : current.current.fulfillment });
     } catch (error) {
-      if (mounted.current && version === catalogVersion.current) patch({ catalogReady: false, catalogError: errorMessage(error) });
+      if (mounted.current && version === catalogVersion.current) patch({ catalogError: errorMessage(error) });
     }
   }, [patch]);
   const admin = useAdmin({ notify, onCatalogChange: loadCatalog });
@@ -288,6 +288,13 @@ export default function AppShell() {
   const view = state.activePage === 'home' ? <Home {...props} /> : state.activePage === 'shop' ? <Shop {...props} /> : state.activePage === 'baking-stereo' ? <Shop {...props} collection={showBakingStereo ? "baking-stereo" : "snackyzz"} /> : state.activePage === 'sales' ? <Sales {...props} /> : state.activePage === 'about' ? <About /> : state.activePage === 'checkout' ? <Checkout {...props} /> : state.activePage === 'success' ? <Success {...props} /> : <Admin controller={admin} />;
   const product = state.products.find(p => p.id === state.detailId);
   const showCartBubble = !['admin', 'checkout', 'success'].includes(state.activePage) && !state.submitting;
+  // The catalog owns the published theme. Do not SSR or paint the fallback
+  // storefront while that initial request is unresolved (including on retry).
+  if (configured && !state.catalogReady && !themeExcluded) {
+    return <main id="main" className="store-bootstrap" tabIndex={-1} aria-busy={!state.catalogError}>
+      {state.catalogError ? <div role="alert"><p>{state.catalogError}</p><button type="button" className="button button-outline" onClick={() => void loadCatalog()}>Reintentar</button></div> : <p role="status">Cargando tienda…</p>}
+    </main>;
+  }
   return <StoreActionsProvider actions={actions}><SeasonalSurface theme={activeTheme} page={state.activePage}>
     {previewTheme!==null && !themeExcluded && <div className="season-preview-banner" role="status"><span>Vista previa · {seasonalThemes[previewTheme].name}. Solo tú ves este tema.</span><button type="button" className="season-preview-exit" disabled={state.submitting} onClick={()=>{
       const url=new URL(window.location.href);url.searchParams.delete('themePreview');

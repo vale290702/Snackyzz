@@ -1282,3 +1282,35 @@ test("seasonal quantity controls keep readable foreground and background on hove
  await expect(plus).toHaveCSS('background-color',rgb(palette.action));
  await expect(plus).toHaveCSS('color',rgb(palette.onAction));
 });
+
+test("cold load waits for the published theme before showing the storefront", async ({ page }) => {
+  await mockSupabase(page, { seasonalTheme: "christmas" });
+  let releaseSettings;
+  const settingsReady = new Promise(resolve => { releaseSettings = resolve; });
+  await page.route("**/rest/v1/store_settings?*", async route => {
+    await settingsReady;
+    await route.fallback();
+  });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".hero")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Cargando tienda");
+  releaseSettings();
+  await expect(page.locator('.season-shell[data-season="christmas"] .hero')).toBeVisible();
+  await expect(page.locator(".hero h1")).toContainText("La Navidad sabe mejor");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('.season-shell[data-season="christmas"] .hero')).toBeVisible();
+});
+
+test("initial catalog failure offers retry without revealing the default theme", async ({ page }) => {
+  await mockSupabase(page, { seasonalTheme: "christmas" });
+  let fail = true;
+  await page.route("**/rest/v1/store_settings?*", route => fail
+    ? route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({message:"Unavailable"}) })
+    : route.fallback());
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Reintentar", exact: true })).toBeVisible();
+  await expect(page.locator(".hero")).toHaveCount(0);
+  fail = false;
+  await page.getByRole("button", { name: "Reintentar", exact: true }).click();
+  await expect(page.locator('.season-shell[data-season="christmas"] .hero')).toBeVisible();
+});

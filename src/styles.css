@@ -3144,3 +3144,14 @@ small#receipt-help {
 .refund-receipt-preview { display:block; max-width:100%; width:280px; max-height:340px; object-fit:contain; margin-top:16px; border-radius:8px; }
 .refund-receipt-field input[type="file"] { width:100%; font:inherit; color:var(--chocolate); }
 .refund-receipt-field input::file-selector-button { margin-right:12px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--chocolate); font:inherit; cursor:pointer; }
+
+/* Neutral startup surface until the published storefront theme is known. */
+.store-bootstrap {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  background: #fafaf9;
+  color: #44403c;
+}
