@@ -8,6 +8,7 @@ import { Results, SharedError, type SharedErrorCode } from "@/shared/lib/result"
 import { runAction, type ActionResult } from "@/shared/lib/run-action";
 
 import { PROOF_READ_PERMISSION, PROOF_READ_SECONDS } from "./read.constants";
+import type { CatalogImage } from "./read.types";
 import { MediaError, type MediaErrorCode } from "../../domain/errors";
 import { CATALOG_PURPOSES, PROOF_PURPOSES } from "../../domain/upload-policy";
 import { filesRepository } from "../files";
@@ -73,4 +74,37 @@ export async function publicImageUrl(
     const { bucket, objectPath } = file.location;
     return Results.ok(mediaStorage(client).publicUrl(bucket, objectPath));
   });
+}
+
+/**
+ * Resolves product images and brand logos for the catalog, as a shopper may see them.
+ * @param fileIds File ids held by catalog rows.
+ * @returns Each catalog image found, keyed by file id; proofs and unknown ids are left out.
+ * @throws When the database request fails.
+ */
+export async function findCatalogImages(
+  fileIds: readonly string[],
+): Promise<ReadonlyMap<string, CatalogImage>> {
+  const images = new Map<string, CatalogImage>();
+  if (fileIds.length === 0) {
+    return images;
+  }
+
+  // The anonymous client applies the same RLS a shopper gets, so this is safe in cached reads.
+  const client = createAnonClient();
+  const files = await filesRepository(client).findMany(fileIds);
+
+  for (const file of files) {
+    if (!CATALOG_PURPOSES.has(file.ref.purpose)) {
+      continue;
+    }
+
+    const { bucket, objectPath } = file.location;
+    images.set(file.ref.id, {
+      ref: file.ref,
+      url: mediaStorage(client).publicUrl(bucket, objectPath),
+    });
+  }
+
+  return images;
 }

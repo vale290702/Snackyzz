@@ -54,6 +54,13 @@ The numeric prefixes give a dependency order (FK targets first).
 - `private.rate_limits` and its service-only atomic function back upload admission. A service-only invoker in `public` bridges PostgREST; `private` remains unexposed. Callers supply HMAC keys, limits and windows. No raw IP storage and no scheduled cleanup in this item.
 - `media.test.sql` tests schema shape, enum, grants, policies and rate-limit behavior. Integration tests also exercise concurrent admission.
 
+## Implemented catalog
+
+- `30_catalog/` follows ER §5. Anonymous and signed-in shoppers read active rows; `catalog.manage` reads everything and writes through RLS with `created_by` / `updated_by` = `auth.uid()`. No delete grants except on `product_categories`. Price history is select-only (managers); its rows have `changed_at` instead of `created_at` / `updated_at`, and category links carry `created_*` only.
+- Invariants in SQL: partial unique indexes for one primary brand and one default variant per product; the deferrable constraint trigger `brands_guard_primary_brand` (`primary_brand_required`) keeps one while any brand is active; checks keep the primary brand and default variant from being archived; `private.require_file_purpose` (`file_purpose_mismatch`) keeps image columns to their media purpose.
+- Invoker entry points granted to `authenticated`: `catalog.set_primary_brand`, `catalog.set_default_variant`, `catalog.set_product_categories`. They raise `brand_not_found`, `variant_not_found` and `category_not_found`.
+- `seed.sql` adds the Snackyzz primary brand, Baking Stereo, two categories and sample products without `created_by`, so tests can remove the demo admins.
+
 ## Gotchas
 
 - PostgREST reads `[api].schemas` when the stack starts. After adding a schema there, run `supabase stop && supabase start`; `db reset` keeps the old list and the API answers `Invalid schema`.
@@ -65,3 +72,5 @@ The numeric prefixes give a dependency order (FK targets first).
 - PostgREST won't start while `config.toml` exposes a schema that doesn't exist yet. When adding a schema, run `supabase db start` (DB only) with a seed that doesn't use it, generate the migration, then `supabase start` and `db reset`.
 - Demo admins in `seed.sql`: `owner@snackyzz.test` and `staff@snackyzz.test`, local password `snackyzz-demo`.
 - Hosted projects need each new schema added to the Data API's exposed schemas too, not only `config.toml`.
+- pgTAP runs inside a transaction that never commits, so deferred constraint triggers never fire there; the catalog guard is `initially immediate` for that reason, and entry points defer it themselves.
+- Integration tests write catalog rows that can't be deleted. A test that empties `access.admins` sets `session_replication_role = replica` so audit FKs from other features don't block it.

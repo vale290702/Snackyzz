@@ -2,7 +2,7 @@
 
 ## Purpose and ownership
 
-Owns `media.files`, the media storage buckets and policies, upload validation and file URLs. Payments, refunds, products and brands will hold file FKs; attaching those records is outside this item.
+Owns `media.files`, the media storage buckets and policies, upload validation and file URLs. Products and brands hold file FKs (`catalog`); payments and refunds will.
 
 ## Public API (`index.ts`)
 
@@ -11,6 +11,7 @@ Owns `media.files`, the media storage buckets and policies, upload validation an
 - `registerUploadAction({ purpose, objectPath })` → `ActionResult<FileRef>` after checking the receipt, the bytes and the decoded image.
 - `getSignedReadUrl(fileId)` → `ActionResult<string>`: a proof URL valid for five minutes; requires `orders.view`.
 - `publicImageUrl(fileId)` → `ActionResult<string>` for catalog images, resolved with the anon client and RLS.
+- `findCatalogImages(fileIds)` → `ReadonlyMap<fileId, CatalogImage>` (`{ ref, url }`): batch lookup for catalog reads and image attachment; anon client, so proofs and unknown ids are left out. Safe inside `'use cache'`; throws on database failure.
 - All entry points run in `runAction`; Next redirects and 403 interrupts propagate.
 
 ## Layout
@@ -38,4 +39,4 @@ Depends on `access`, Supabase repositories and adapters, `sharp`, `jose` and `fi
 
 ## Follow-ups
 
-`FileDropzone` and `ProofPreview` ship with checkout and order review under the Forms and Server Actions standard, reusing `createUploadInputSchema`. Jobs own orphan payment-proof cleanup after 24 hours. Attachments to products, payments and refunds, and messaging uploads, are deferred. Telegram will need a trusted server ingestion entry point, since registration requires a browser receipt.
+`FileDropzone` and `ProofPreview` ship with checkout and order review under the Forms and Server Actions standard, reusing `createUploadInputSchema`. Jobs own orphan payment-proof cleanup after 24 hours. Attachments to payments and refunds, and messaging uploads, are deferred. Telegram will need a trusted server ingestion entry point, since registration requires a browser receipt.
