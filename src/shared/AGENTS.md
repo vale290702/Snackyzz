@@ -26,10 +26,10 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
   - `separator`: `Separator`
 - `@/shared/lib/cn`: `cn(...classes)` (clsx + tailwind-merge taught the brand radius, shadow and text tokens; used by `ui/`)
 - `@/shared/config/runtime`: `isProduction()`
-- `@/shared/lib/result`: `Result`, `ok`, `err`, `isOk`
-- `@/shared/lib/logger`: `logger`, `createLogger(context)`, `mask.email()`, `mask.phone()`
+- `@/shared/lib/result`: `Result`, `ok`, `err`, `isOk`, `SharedErrorCode`
+- `@/shared/lib/logger`: `logger`, `createLogger(context)`, `mask.email()`, `mask.phone()`, `Logger`, `LogData` (flat diagnostic fields); loggers expose `info`, `error`, `step`
 - `@/shared/lib/run-action`: `runAction(name, fn)`, `ActionResult`
-- `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext`
+- `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
 ## Invariants
@@ -41,6 +41,12 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - No user-facing strings in `ui/`; components take labels as props or children. `DialogContent` and `SheetContent` render their close button only when given `closeLabel`.
 - Only toasts cast a shadow (`shadow-float`). Cards, dialogs, sheets and listboxes stay flat.
 - Badges carry tones, not domain states: each feature maps its own states to `pending` / `positive` / `negative` / `neutral`.
+
+- Logger, action and capability modules are server-only. Pass only explicitly selected safe fields to logs; never raw payloads or secrets. Redaction is defense in depth, not permission to log sensitive input.
+- `runAction` returns expected Results unchanged, catches bugs as `unexpected`, and rethrows Next signals through `unstable_rethrow`. Stack frames are logged without exception messages/payloads; finish/duration also run on framework interrupts.
+- Capability context comes from trusted server code. `access` fills `permissions: ReadonlySet<P>` from SQL; no permission matrix lives here. Annotate `execute`'s context with the application's concrete context type.
+- Capabilities check permission before async Zod parsing, pass parsed output to `execute`, and let bugs propagate. `kind` is `query | mutation`; `source` is `admin_web | messaging`.
+- Shared error copy lives at `errors.shared.<code>`; feature errors stay in feature namespaces.
 
 ## Testing
 

@@ -1,1 +1,7 @@
-{}
+{
+  "shared": {
+    "unexpected": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+    "forbidden": "No tienes permiso para realizar esta acción.",
+    "invalid_input": "Revisa los datos e inténtalo de nuevo."
+  }
+}

@@ -122,7 +122,7 @@ export function useOrderActions(order: OrderDto) {
 }
 ```
 
-`runAction` (in `shared/lib/actions`) assigns a correlation id, logs start/finish/duration, catches unexpected throws, logs them with the stack, and returns `err("unexpected")`. Raw errors never reach the client.
+`runAction` (in `shared/lib/run-action`) assigns a correlation id, logs start/finish/duration, catches unexpected throws, logs them with the stack, and returns `err("unexpected")`. Raw errors never reach the client. Next.js control-flow signals are rethrown via `unstable_rethrow`; finish/duration are logged in all cases. Error logs retain stack frames but omit potentially sensitive exception messages and arbitrary thrown payloads.
 
 ## 4. Key flows
 
@@ -205,6 +205,7 @@ export const transitionOrder = defineCapability({
 
 - `defineCapability` (in `shared/lib`) checks the permission and parses the input before `execute` runs, so no front end can skip either.
 - The web Server Action `transitionOrderAction` and the Telegram flow both call `transitionOrder`. One implementation, two front ends.
+- `CapabilityContext<Client, Permission, Admin>` carries a typed client, admin and `permissions: ReadonlySet<Permission>` filled by trusted server code from `access.my_permissions()`. Shared code imports no feature or generated database types; annotate the capability's `execute` context with the concrete application type.
 - `context.source` (`admin_web` | `messaging`) ends up in `orders.order_events`, so the timeline shows where each decision came from.
 - MVP capabilities: `orders.get` (details for the alert and the review step), `orders.transition`.
 
@@ -333,6 +334,7 @@ type Result<T, E extends string = ErrorCode> =
   | { ok: false; error: E; meta?: Record<string, unknown> };
 ```
 
+- Shared boundary codes (`unexpected`, `forbidden`, `invalid_input`) are defined by `SharedErrorCode` in `shared/lib/result`; their Spanish copy lives at `errors.shared.<code>`.
 - Expected failures (`invalid_input`, `out_of_stock`, `invalid_transition`, `payment_not_configured`, `rate_limited`, …) are `Result` errors. Each feature declares its codes in `domain/errors.ts`.
 - SQL entry points raise with `errcode` values from the `P0` class and a stable message key (`raise exception using errcode = 'P0001', message = 'out_of_stock'`). Repositories map these to `Result` errors; unknown errors are rethrown.
 - Error codes map to copy through next-intl (`errors.<feature>.<code>`), the one place where user-facing error text lives.
