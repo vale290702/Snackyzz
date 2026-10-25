@@ -1,40 +1,80 @@
 {
   "name": "snackyzz",
-  "version": "0.2.0",
+  "version": "1.0.0-rework",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "next dev --hostname 127.0.0.1 --port 5174",
-    "build": "next build",
-    "start": "next start --hostname 127.0.0.1 --port 5174",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src tests",
-    "test": "vitest run",
-    "test:e2e": "playwright test",
-    "format": "prettier --write src tests *.ts *.json",
-    "format:check": "prettier --check src tests *.ts *.json"
-  },
   "engines": {
     "node": ">=22.12.0"
   },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port ${PORT:-5174}",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port ${PORT:-5174}",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit --project dom",
+    "test:watch": "vitest",
+    "test:db": "supabase test db",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db schema declarative sync --no-apply --name",
+    "db:types": "supabase gen types typescript --local --schema public > src/integrations/supabase/database.types.ts && prettier --write src/integrations/supabase/database.types.ts",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:unit && npm run build",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": "prettier --write"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
-    "next": "^16.3.6",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.5.0",
+    "lucide-react": "^1.61.0",
+    "next": "^16.4.3",
+    "next-intl": "^4.14.9",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@types/node": "^26.6.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.6",
-    "jsdom": "^30.1.1",
-    "prettier": "^3.9.6",
-    "typescript": "^6.0.3",
-    "vitest": "^5.0.2"
+    "eslint-config-next": "^16.4.3",
+    "eslint-plugin-boundaries": "^7.3.0",
+    "eslint-plugin-jsdoc": "^65.4.2",
+    "husky": "^9.1.7",
+    "jsdom": "^30.1.3",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   }
 }

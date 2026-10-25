@@ -37,7 +37,7 @@ To change a decision, edit this file and every doc that cites it in the same PR.
 |---|---|---|
 | DOM-01 | `catalog.brands` table. Exactly one **primary** brand (Snackyzz); collab brands are rows. Brand copy (title, tagline, label) moves from code into the table. | Answered ✅ |
 | DOM-02 | One order can mix brands. | Answered |
-| DOM-03 | Explicit state machine, transitions table, `order_events` history. Adds `ready_for_pickup`, `out_for_delivery`, `completed`, `cancelled`. See [order lifecycle](blueprint/docs/domain/order-lifecycle.md). | Answered ✅ |
+| DOM-03 | Explicit state machine, transitions table, `order_events` history. Adds `ready_for_pickup`, `out_for_delivery`, `completed`, `cancelled`. See [order lifecycle](../domain/order-lifecycle.md). | Answered ✅ |
 | DOM-04 | Orders can be cancelled (including after confirmation), not edited. | Answered |
 | DOM-05 | `orders.payments` separate from orders. SINPE Móvil only; one full payment per order. | Answered ✅ |
 | DOM-06 | Full refunds only, recorded on **reject** (payment had arrived) or **cancel** (after confirmation). | Answered |
@@ -51,7 +51,7 @@ To change a decision, edit this file and every doc that cites it in the same PR.
 | DOM-14 | Telegram is the **admin bot**: the MVP use case is receive order → Confirm / Reject from the bot (F-5). Step 2 adds summaries and commands; step 3 (post-MVP) an AI agent. Built from four channel-agnostic modules: `events`, `messaging`, `notifications`, `admin-chat`. | Answered ✅ |
 | DOM-15 | A generic **Theme** concept (`seasonal`, `anniversary`, `campaign`…). v1: one global, manually activated theme. Per-brand themes and scheduling are design only. | Answered |
 | DOM-16 | Spanish (`es-CR`) only for now, but all copy goes through **next-intl** so adding a locale only adds a messages folder. CRC only; no IVA. | Answered |
-| DOM-17 | Glossary confirmed; `SeasonalTheme` is renamed `Theme`. See [glossary](blueprint/docs/domain/glossary.md). | Answered |
+| DOM-17 | Glossary confirmed; `SeasonalTheme` is renamed `Theme`. See [glossary](../domain/glossary.md). | Answered |
 
 ## 3. Architecture
 
@@ -88,7 +88,7 @@ To change a decision, edit this file and every doc that cites it in the same PR.
 | DB-11 | Per-feature singleton `settings` tables plus typed hours tables. No JSONB config. | Answered ✅ |
 | DB-12 | `media.files`, referenced by FK. | Answered ✅ |
 | DB-13 | **Keep the idempotency key on the resource** (`orders.idempotency_key` + `request_fingerprint`). Transitions are idempotent by state (compare-and-set); webhooks dedupe in the inbound inbox. A generic `idempotency_keys` table waits for a third non-idempotent create (rule of three). See [ER design §9](02-er-design.md#idempotency-db-13). | Recommended |
-| DB-14 | App-wide **transactional outbox** (`events.domain_events`) feeding consumers; **Strategy + Registry** for channel adapters; admin actions as **capabilities** shared by the web admin, the bot and the future agent. See [architecture §5](03-architecture.md#5-telegram-admin-bot-and-notifications) and [ADR 0006](blueprint/docs/adr/0006-events-messaging-admin-chat.md). | Recommended |
+| DB-14 | App-wide **transactional outbox** (`events.domain_events`) feeding consumers; **Strategy + Registry** for channel adapters; admin actions as **capabilities** shared by the web admin, the bot and the future agent. See [architecture §5](03-architecture.md#5-telegram-admin-bot-and-notifications) and [ADR 0006](../adr/0006-events-messaging-admin-chat.md). | Recommended |
 | DB-15 | Generic tables split by concern: `events` (domain_events, event_receipts), `messaging` (channel_identities, link_tokens, outbound_messages, inbound_updates), `notifications` (notification_types, subscriptions, subscription_brands, admin_notification_settings), `admin_chat` (conversations, command_log). No order or Telegram columns in any of them. See [ER design §10](02-er-design.md#10-events-messaging-notifications--admin-chat-db-1415). | Answered |
 | DB-16 | RLS on every table, default deny, explicit grants, `private.has_permission()`, pgTAP per policy. | Answered ✅ |
 | DB-17 | Triggers only for mechanical work (`updated_at`, price history). Business effects happen explicitly in RPCs. | Answered ✅ |
@@ -191,4 +191,4 @@ Changes requested after the first draft (2026-10-24).
 | F-2 | Code must be readable and organized, not dense blocks. | Root `AGENTS.md` adds **Readability & formatting** rules with a rejected/accepted example; ER design §13 adds the SQL style; examples in the architecture doc were rewritten to match. |
 | F-3 | Components only render; hooks hold the logic. | New `hooks/` folder per feature; root and feature `AGENTS.md` define the component ↔ hook contract; the import rules forbid `ui/` from importing Server Actions; hooks get `renderHook` tests. |
 | F-4 | Points of sale (third-party stores) ≠ pickup locations (Snackyzz-managed). Per-location stock is optional, falling back to global stock. | New `retail` feature/schema (`points_of_sale`); `fulfillment.pickup_locations`; `inventory.stock_levels.pickup_location_id` nullable (null = global) with a fall-back reservation rule. This resolves the former O-4. |
-| F-5 | Notifications looked order-centric. Telegram should let admins manage orders (MVP: receive → Confirm/Reject), get summaries (step 2) and later ask an AI agent (step 3). It was WIP, so redesign freely. | Split into `events`, `messaging`, `notifications`, `admin-chat` + capabilities. Order specifics live only in event payloads and capabilities. MVP flow, linking and edge cases in architecture §5. ADR 0004 superseded by [0006](blueprint/docs/adr/0006-events-messaging-admin-chat.md). |
+| F-5 | Notifications looked order-centric. Telegram should let admins manage orders (MVP: receive → Confirm/Reject), get summaries (step 2) and later ask an AI agent (step 3). It was WIP, so redesign freely. | Split into `events`, `messaging`, `notifications`, `admin-chat` + capabilities. Order specifics live only in event payloads and capabilities. MVP flow, linking and edge cases in architecture §5. ADR 0004 superseded by [0006](../adr/0006-events-messaging-admin-chat.md). |

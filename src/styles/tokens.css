@@ -1,0 +1,27 @@
+/* Brand tokens from DESIGN.md. Change DESIGN.md first, then mirror it here. */
+
+@theme {
+  --color-orange: #ed781a;
+  --color-orange-deep: #d95907;
+  --color-chocolate: #3c1907;
+  --color-cream: #f9ede0;
+  --color-paper: #fff9f2;
+  --color-muted-brown: #795541;
+  --color-warm-line: #dcc6b2;
+  --color-cream-tint: #efddca;
+  --color-warm-red: #a8321c;
+
+  --radius-control: 7px;
+  --radius-surface: 12px;
+  --radius-round: 30px;
+
+  --text-display: clamp(2.8rem, 5.4vw, 5rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 700;
+
+  --container-page: 77.5rem;
+
+  --breakpoint-sm: 35rem;
+  --breakpoint-md: 50rem;
+}

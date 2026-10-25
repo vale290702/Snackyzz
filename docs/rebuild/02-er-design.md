@@ -519,7 +519,7 @@ create table orders.order_deliveries (
 - `payments`: `check (method <> 'sinpe_movil' or proof_file_id is not null)`.
 - `refunds.amount = payments.amount` is enforced in `private.transition_order` (full refunds, DOM-06).
 - `order_events`: `check ((actor_type = 'admin') = (actor_admin_id is not null))`; index `(order_id, id)`; no `update`/`delete` grants to anyone.
-- `order_status_transitions` is reference data (`*_data.sql`) and the **single source of truth** for the state machine; the admin UI reads it to render actions. See [order lifecycle](blueprint/docs/domain/order-lifecycle.md).
+- `order_status_transitions` is reference data (`*_data.sql`) and the **single source of truth** for the state machine; the admin UI reads it to render actions. See [order lifecycle](../domain/order-lifecycle.md).
 
 ### Idempotency (DB-13)
 
@@ -798,7 +798,7 @@ $$;
 - Meaningful aliases (`items`, `pickups`), never single letters.
 - One function = one job (≤ ~50 lines). Extract helpers into `private` instead of growing a function.
 - Prefixes: `p_` parameters, `v_` variables.
-- Formatted by `prettier-plugin-sql` in lint-staged (dependency to approve with the scaffold).
+- Formatted by hand. `prettier-plugin-sql` was evaluated in the scaffold and rejected: it flattens `create function` headers and splits `grant` statements. Generated migrations use the CLI formatter (`[experimental.pgdelta] format_options`, lowercase keywords).
 
 ## 14. Migrating from today's schema (G-04)
 

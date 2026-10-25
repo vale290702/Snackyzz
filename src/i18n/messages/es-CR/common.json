@@ -1,0 +1,18 @@
+{
+  "brand": {
+    "name": "Snackyzz",
+    "tagline": "Galletas para pausas pequeñas y antojos grandes."
+  },
+  "home": {
+    "title": "Snackyzz",
+    "comingSoon": "Estamos horneando una nueva versión de la tienda."
+  },
+  "notFound": {
+    "title": "No encontramos esta página",
+    "backHome": "Volver al inicio"
+  },
+  "globalError": {
+    "title": "Algo salió mal",
+    "retry": "Intentar de nuevo"
+  }
+}
