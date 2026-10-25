@@ -6,3 +6,10 @@ export const ContactMask = {
   Phone: "****",
   VisiblePhoneDigits: 4,
 } as const;
+
+/**
+ * Character cleanup for formatted phone numbers before masking.
+ */
+export const ContactPattern = {
+  NonDigit: /\D/g,
+} as const;

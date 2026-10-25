@@ -32,7 +32,7 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`, `CapabilityDefinition`, `Capability`, `CapabilityKind`, `CapabilitySource`
 - `logger` also exports `LogSanitizer.text/fields`, `LogLevel`, `LogLevelValue`; `run-action` also exports `ErrorDiagnostics.stackFrames`, `ActionEvent/Outcome`, `ActionOperation`, `ActionOutcomeValue`.
 - `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
-- Implementations use role suffixes (`*.helper.ts`, `*.factory.ts`, `*.runner.ts`); supporting files use `*.types.ts` and `*.constants.ts`. Tests sit beside their implementation with matching names. Documentation uses multiline JSDoc blocks.
+- Implementations use role suffixes (`*.helper.ts`, `*.factory.ts`, `*.runner.ts`); supporting files use `*.types.ts`, `*.constants.ts` and `*.schema.ts`. Tests sit beside their implementation with matching names. Documentation uses multiline JSDoc blocks.
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
 ## Invariants
@@ -46,6 +46,7 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - Badges carry tones, not domain states: each feature maps its own states to `pending` / `positive` / `negative` / `neutral`.
 
 - Logger, action and capability modules are server-only. Pass only explicitly selected safe fields to logs; never raw payloads or secrets. Redaction is defense in depth, not permission to log sensitive input.
+- `Mask.email` validates whole values with Zod and fully hides invalid addresses. Embedded log-text scans use named patterns in `logger/log-sanitizer.constants.ts`; sensitive fields are redacted regardless of value validity.
 - `runAction` returns expected Results unchanged, catches bugs as `unexpected`, and rethrows Next signals through `unstable_rethrow`. Stack frames are logged without exception messages/payloads; finish/duration also run on framework interrupts.
 - Capability context comes from trusted server code. `access` fills `permissions: ReadonlySet<Permission>` from SQL; no permission matrix lives here. Annotate `execute`'s context with the application's concrete context type.
 - Capabilities check permission before async Zod parsing, pass parsed output to `execute`, and let bugs propagate. `kind` is `query | mutation`; `source` is `admin_web | messaging`.

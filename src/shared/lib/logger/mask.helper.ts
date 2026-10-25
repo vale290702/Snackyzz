@@ -1,4 +1,5 @@
-import { ContactMask } from "./mask.constants";
+import { ContactMask, ContactPattern } from "./mask.constants";
+import { emailMaskSchema } from "./mask.schema";
 
 /**
  * Stateless contact masking helpers for explicitly selected diagnostic fields.
@@ -12,12 +13,14 @@ export class Mask {
    * @returns A masked address, or a fully hidden malformed value.
    */
   static email(value: string): string {
-    const match = /^([^@\s]+)@([^@\s]+\.[^@\s]+)$/.exec(value);
-    if (!match) return ContactMask.Email;
+    const parsed = emailMaskSchema.safeParse(value);
+    if (!parsed.success) return ContactMask.Email;
 
-    const local = match[1] ?? "";
+    const separatorIndex = parsed.data.lastIndexOf("@");
+    const local = parsed.data.slice(0, separatorIndex);
+    const domain = parsed.data.slice(separatorIndex + 1);
     const prefix = local.length > 1 ? local.charAt(0) : "";
-    return `${prefix}${ContactMask.Email}@${match[2]}`;
+    return `${prefix}${ContactMask.Email}@${domain}`;
   }
 
   /**
@@ -26,7 +29,7 @@ export class Mask {
    * @returns A masked number; short or empty values are fully hidden.
    */
   static phone(value: string): string {
-    const digits = value.replace(/\D/g, "");
+    const digits = value.replace(ContactPattern.NonDigit, "");
     if (digits.length <= ContactMask.VisiblePhoneDigits) return ContactMask.Phone;
 
     const suffix = digits.slice(-ContactMask.VisiblePhoneDigits);

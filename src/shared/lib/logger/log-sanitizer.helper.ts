@@ -1,4 +1,4 @@
-import { LogRedaction } from "./log-sanitizer.constants";
+import { LogPattern, LogRedaction } from "./log-sanitizer.constants";
 import type { LogData } from "./logger.types";
 import { Mask } from "./mask.helper";
 
@@ -15,9 +15,9 @@ export class LogSanitizer {
    */
   static text(value: string): string {
     return value
-      .replace(/https?:\/\/[^\s)]+/gi, LogRedaction.Url)
-      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, (email) => Mask.email(email))
-      .replace(/(?<![\w-])\+?\d[\d ()-]{6,}\d(?![\w-])/g, (phone) => Mask.phone(phone));
+      .replace(LogPattern.EmbeddedUrl, LogRedaction.Url)
+      .replace(LogPattern.EmbeddedEmail, (email) => Mask.email(email))
+      .replace(LogPattern.EmbeddedPhone, (phone) => Mask.phone(phone));
   }
 
   /**
@@ -34,18 +34,18 @@ export class LogSanitizer {
   }
 
   private static field(key: string, value: LogData[string]): LogData[string] {
-    if (/token|secret|password|authorization|cookie|proof|api.?key/i.test(key)) {
+    if (LogPattern.SensitiveField.test(key)) {
       return LogRedaction.SensitiveValue;
     }
 
-    if (/phone/i.test(key)) {
+    if (LogPattern.PhoneField.test(key)) {
       const text = String(value);
-      return /^\*{4}\d{4}$/.test(text) ? text : Mask.phone(text);
+      return LogPattern.MaskedPhone.test(text) ? text : Mask.phone(text);
     }
 
-    if (/email/i.test(key)) {
+    if (LogPattern.EmailField.test(key)) {
       const text = String(value);
-      const masked = /^(?:[^@\s])?\*{3}@[^@\s]+$/.test(text);
+      const masked = LogPattern.MaskedEmail.test(text);
       return masked ? LogSanitizer.text(text) : Mask.email(text);
     }
 
