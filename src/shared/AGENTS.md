@@ -59,6 +59,7 @@ Unit tests for every `lib/` module. Component tests for primitives with behavior
 
 ## Gotchas
 
+- `next build` imports every route, so env parsing runs at build time: a build without the variables fails. CI sets schema-valid placeholders in `.github/workflows/ci.yml`; each Vercel environment needs real values. Add new variables to both.
 - Don't add a helper here "because two features might need it". Wait for the third use (AG-02).
 - Money formatting needs the locale; take a formatter from next-intl, don't hard-code `es-CR`.
 - The shadcn CLI writes `import { cn } from "cn"` with this `components.json`. Fix it to `@/shared/lib/cn` after every `shadcn add`, then run `eslint --fix` and Prettier (it also emits `import * as React` and no semicolons).

@@ -12,6 +12,13 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Env is parsed at import (shared/config), and `next build` imports every route. These
+    # placeholders only satisfy the schemas; no CI step talks to Supabase.
+    env:
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:5174
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-publishable-key
+      SUPABASE_SECRET_KEY: ci-placeholder-secret-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
