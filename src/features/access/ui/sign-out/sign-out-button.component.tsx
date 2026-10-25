@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { useErrorMessage } from "@/i18n/use-error-message.hook";
 import { Button } from "@/shared/ui/button";
 
 import { useSignOutButton } from "../../hooks/sign-out/use-sign-out-button.hook";
@@ -11,8 +12,9 @@ import { useSignOutButton } from "../../hooks/sign-out/use-sign-out-button.hook"
  * @returns A one-button form, with an alert when signing out failed.
  */
 export function SignOutButton() {
-  const { formAction, isPending, errorMessage } = useSignOutButton();
+  const { formAction, isPending, formError } = useSignOutButton();
   const translate = useTranslations("access.signOut");
+  const errorMessage = useErrorMessage("access")(formError);
 
   return (
     <form action={formAction} className="flex flex-col items-end gap-2">

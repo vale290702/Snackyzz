@@ -3,6 +3,7 @@
 import { ArrowRight, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useErrorMessage } from "@/i18n/use-error-message.hook";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
@@ -17,8 +18,13 @@ const PASSWORD_ERROR_ID = "admin-password-error";
  * @returns The sign-in form.
  */
 export function SignInForm() {
-  const { formAction, isPending, email, emailError, passwordError, formError } = useSignInForm();
+  const { formAction, isPending, values, fieldErrors, formError } = useSignInForm();
   const translate = useTranslations("access.signIn");
+  const errorMessage = useErrorMessage("access");
+
+  const emailError = errorMessage(fieldErrors.email);
+  const passwordError = errorMessage(fieldErrors.password);
+  const formErrorMessage = errorMessage(formError);
 
   return (
     <form
@@ -46,7 +52,7 @@ export function SignInForm() {
             type="email"
             autoComplete="username"
             required
-            defaultValue={email}
+            defaultValue={values.email ?? ""}
             aria-invalid={Boolean(emailError)}
             aria-describedby={emailError ? EMAIL_ERROR_ID : undefined}
           />
@@ -70,12 +76,12 @@ export function SignInForm() {
         </Field>
       </FieldGroup>
 
-      {formError && (
+      {formErrorMessage && (
         <p
           role="alert"
           className="my-5 rounded-control bg-destructive/15 px-4.5 py-4 text-sm text-destructive"
         >
-          {formError}
+          {formErrorMessage}
         </p>
       )}
 

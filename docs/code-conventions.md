@@ -74,27 +74,40 @@ Every form that submits to a Server Action follows one recipe. The shared pieces
 1. **Domain schema** in `domain/<purpose>/<purpose>.schema.ts`: a `z.object` whose keys are the form's `name` attributes. Every issue message is an error code from `<purpose>.constants.ts`, never copy: `z.email({ error: SignInFieldError.EmailInvalid })`. Object-level rules (`.refine`) also use a code; they show as the form error. The schema must stay client-safe (no `server-only`, env or I/O).
 2. **Error codes and copy**: field codes in `domain/<purpose>/<purpose>.constants.ts`, action failures in `domain/errors/errors.constants.ts`. Add copy for both under `errors.<feature>` in `errors.json`, and extend the feature's key test in `src/i18n/messages.test.ts`.
 3. **Server Action** in `server/<purpose>/<purpose>.actions.ts` (`"use server"`): takes `input: unknown`, re-parses it with the same schema inside `runAction` (or the capability does, for admin actions), and returns `ActionResult<Value, ErrorCode>`. It never trusts the hook's parse. Redirects happen after `runAction`, on success.
-4. **Feature hook** in `hooks/<purpose>/use-<component>.hook.ts` (`"use client"`): calls `useFormAction` and `useErrorMessage`, and returns flat, named, already-translated fields for its one component. No other state machinery.
-5. **Component** in `ui/<purpose>/<component>.component.tsx`: `<form action={formAction}>`, inputs whose `name` matches the schema keys, `defaultValue` from the restored values, `aria-invalid` / `aria-describedby` for field errors, and a `role="alert"` element for the form error. It never imports the Server Action.
+4. **Feature hook** in `hooks/<purpose>/use-<component>.hook.ts` (`"use client"`): binds the schema, the action, the field codes and `preserve` by returning `useFormAction({ … })`. It is the only place that imports the Server Action. It returns codes, never copy; add fields only for real client logic (derived values, extra handlers).
+5. **Component** in `ui/<purpose>/<component>.component.tsx`: calls its hook and `useErrorMessage("<feature>")`, then renders `<form action={formAction}>`, inputs whose `name` matches the schema keys, `defaultValue` from `values`, `aria-invalid` / `aria-describedby` for field errors, and a `role="alert"` element for the form error. It never imports the Server Action.
 
 ```ts
 export function useSignInForm() {
-  const form = useFormAction({
+  return useFormAction({
     schema: signInInputSchema,
     action: signInAction,
     fieldErrorCodes: Object.values(SignInFieldError),
     preserve: ["email"],
   });
+}
+```
+
+```tsx
+export function SignInForm() {
+  const { formAction, isPending, values, fieldErrors, formError } = useSignInForm();
+  const translate = useTranslations("access.signIn");
   const errorMessage = useErrorMessage("access");
 
-  return {
-    formAction: form.formAction,
-    isPending: form.isPending,
-    email: form.values.email ?? "",
-    emailError: errorMessage(form.fieldErrors.email),
-    passwordError: errorMessage(form.fieldErrors.password),
-    formError: errorMessage(form.formError),
-  };
+  const emailError = errorMessage(fieldErrors.email);
+
+  return (
+    <form action={formAction} aria-labelledby="sign-in-title">
+      {/* … */}
+      <Input
+        name="email"
+        defaultValue={values.email ?? ""}
+        aria-invalid={Boolean(emailError)}
+        aria-describedby={emailError ? EMAIL_ERROR_ID : undefined}
+      />
+      <FieldError id={EMAIL_ERROR_ID}>{emailError}</FieldError>
+    </form>
+  );
 }
 ```
 
@@ -102,22 +115,23 @@ A form with no fields (a sign-out or "retry" button) passes `schema: FormInput.n
 
 ### What `useFormAction` does
 
-On each submission it copies the `preserve` fields' raw text, reads every schema key from `FormData`, and parses it. Invalid input becomes an `invalid` state (one code per field, plus any object-level code as `formError`) and the action is **not** called. Valid input goes to the action; its `Result` becomes `failed` (`formError` is its code) or `succeeded` (`state.value`). It returns `{ formAction, isPending, state, values, fieldErrors, formError }`; `state` is the full `FormActionState` union (`FormActionStatus.Idle | Invalid | Failed | Succeeded`) for hooks that need to react to success, for example to close a dialog or show a toast.
+On each submission it copies the `preserve` fields' raw text, reads every schema key from `FormData`, and parses it. Invalid input becomes an `invalid` state (one code per field, plus any object-level code as `formError`) and the action is **not** called. Valid input goes to the action; its `Result` becomes `failed` (`formError` is its code) or `succeeded` (`state.value`). It returns `{ formAction, isPending, state, values, fieldErrors, formError }`; `state` is the full `FormActionState` union (`FormActionStatus.Idle | Invalid | Failed | Succeeded`) for hooks or components that render by status, or react to success (close a dialog, show a toast).
 
 ### Rules
 
-- **Codes in, copy out.** `useFormAction` deals in codes only; the feature hook translates with `useErrorMessage("<feature>")`, which reads `errors.shared` for `SharedError` codes and `errors.<feature>` otherwise. Its parameter type is the namespace's keys, so a code without copy fails `npm run typecheck`.
+- **Hooks return codes; components translate.** Code → copy is presentation, like labels: the component calls `useErrorMessage("<feature>")` next to `useTranslations`. The hook never translates, so hook tests assert codes. `useErrorMessage` which reads `errors.shared` for `SharedError` codes and `errors.<feature>` otherwise. Its parameter type is the namespace's keys, so a code without copy fails `npm run typecheck`.
 - **List every field code** in `fieldErrorCodes`. An issue message outside the list (Zod's own type errors, a missing field) shows as `invalid_input`.
 - **`preserve` is explicit and never holds secrets.** React resets a form after its action runs; list the fields the user should not retype after a failure (email, name, address). Never passwords, tokens or payment data.
 - **Progressive enhancement.** Submit through `<form action>`, not `onSubmit` + `fetch`, so the form works before hydration. Native constraints (`type="email"`, `required`) stay on the inputs; the schema is the source of truth.
-- **One hook, one component.** Do not return `form` itself or the raw `state` to the component unless it renders by status; return the named fields it uses.
+- **One hook, one component.** The hook is named after its component and returns `useFormAction`'s object as is; don't rename or re-map its fields. A hook with extra client logic spreads it and adds named fields: `return { ...form, canSubmit }`.
 - **Extend, don't fork.** A form that needs something new (multi-value fields such as checkbox groups, file uploads, nested objects, optimistic UI) extends `FormInput` / `useFormAction` in `shared/lib/form-action` with tests and updates this section. Do not hand-roll `useActionState` for a form, and do not add React Hook Form, TanStack Form or shadcn `Form` without a new ADR.
-- **Not a form?** Buttons that mutate without a form (toggles, drag and drop) call the Server Action from the hook inside `useTransition` and translate its `Result` with `useErrorMessage`.
+- **Not a form?** Buttons that mutate without a form (toggles, drag and drop) call the Server Action from the hook inside `useTransition`, return the `Result` code, and the component translates it with `useErrorMessage`.
 
 ### Testing
 
 - `<purpose>.schema.test.ts` (unit): each code is reported for its field.
-- `use-<component>.hook.test.tsx` (dom): `renderHook` with a `NextIntlClientProvider` wrapper and the action module mocked; submit with `act(async () => startTransition(() => result.current.formAction(formData)))`. Cover: initial state, invalid input (action not called, translated field errors, preserved values), an action failure (translated form error), a shared failure, and pending.
+- `use-<component>.hook.test.tsx` (dom): `renderHook` with the action module mocked (no intl wrapper needed); submit with `act(async () => startTransition(() => result.current.formAction(formData)))`. Cover: initial state, invalid input (action not called, field codes, preserved values, secrets not preserved), an action failure (its code), and pending.
+- `<component>.component.test.tsx` (dom): mock the hook module and render inside `NextIntlClientProvider` with the `es-CR` messages. Cover: translated field errors linked to their inputs (`toHaveAccessibleDescription`, `aria-invalid`), the restored `defaultValue`, and the translated `role="alert"` form error, including a shared code.
 - `<purpose>.actions.int.test.ts` (integration): the action against the local stack with malformed `unknown` input as well as valid input.
 - e2e for the user journey when the form is part of one.
 
@@ -125,6 +139,6 @@ On each submission it copies the `preserve` fields' raw text, reads every schema
 
 - [ ] Schema messages are codes; every code has copy and the key test covers it.
 - [ ] The action takes `unknown`, re-parses, and runs in `runAction` (and a capability for admin actions).
-- [ ] The hook uses `useFormAction` + `useErrorMessage`; `preserve` lists no secrets.
-- [ ] The component uses `<form action>`, `name` = schema keys, `defaultValue`, `aria-invalid` / `aria-describedby`, `role="alert"`.
-- [ ] Hook, schema and action tests from the list above.
+- [ ] The hook returns `useFormAction({ … })` and translates nothing; `preserve` lists no secrets.
+- [ ] The component translates with `useErrorMessage` and uses `<form action>`, `name` = schema keys, `defaultValue`, `aria-invalid` / `aria-describedby`, `role="alert"`.
+- [ ] Schema, hook, component and action tests from the list above.

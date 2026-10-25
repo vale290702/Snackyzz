@@ -11,7 +11,7 @@ All user-facing text and locale formatting, through next-intl. One place to find
 
 ## Public API
 
-- `useErrorMessage(namespace)` → `(code | null | undefined) => string | null`: `SharedError` codes read `errors.shared.<code>`, others `errors.<namespace>.<code>`. The code parameter is typed from the namespace's keys, so a code without copy fails typecheck. Feature hooks use it to translate `Result` and form codes ([Forms and Server Actions](../../docs/code-conventions.md#forms-and-server-actions)). Types: `ErrorNamespace`, `ErrorMessageCode<Namespace>`.
+- `useErrorMessage(namespace)` → `(code | null | undefined) => string | null`: `SharedError` codes read `errors.shared.<code>`, others `errors.<namespace>.<code>`. The code parameter is typed from the namespace's keys, so a code without copy fails typecheck. Feature components use it to translate the `Result` and form codes their hooks return ([Forms and Server Actions](../../docs/code-conventions.md#forms-and-server-actions)). Types: `ErrorNamespace`, `ErrorMessageCode<Namespace>`.
 
 ## Structure
 

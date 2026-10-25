@@ -25,7 +25,7 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 - `domain/sign-in/`: the client-safe `signInInputSchema` (issue messages are `SignInFieldError` codes) and its types. `domain/errors/`: `AccessError` codes; copy in `errors.access`.
 - `server/session/`: `session.loader.ts` verifies with `auth.getUser()`, then reads the admin and SQL permissions; `session.service.ts` caches per request and exposes guards; `session-refresh.runner.ts` refreshes cookies for `proxy.ts`. Types, path constants and matching tests are colocated.
 - `server/sign-in/`, `server/sign-out/`: `*.actions.ts` Server Actions wrapped in `runAction`. They manage the session itself, so they are not capabilities.
-- `hooks/` and `ui/` by purpose: `sign-in/` (`useSignInForm` ↔ `SignInForm`, `SignInWelcome`), `sign-out/` (`useSignOutButton` ↔ `SignOutButton`), `admin-header/`. Both hooks compose `useFormAction` and `useErrorMessage("access")`; sign-in is the reference implementation of [Forms and Server Actions](../../../docs/code-conventions.md#forms-and-server-actions) (it preserves only `email`).
+- `hooks/` and `ui/` by purpose: `sign-in/` (`useSignInForm` ↔ `SignInForm`, `SignInWelcome`), `sign-out/` (`useSignOutButton` ↔ `SignOutButton`), `admin-header/`. Both hooks return `useFormAction({ … })` (codes); `SignInForm` and `SignOutButton` translate with `useErrorMessage("access")`; sign-in is the reference implementation of [Forms and Server Actions](../../../docs/code-conventions.md#forms-and-server-actions) (it preserves only `email`).
 - `server/context/`: `context.factory.ts` builds capability contexts; `context.types.ts` owns context and input-option contracts.
 - `server/admin/`: `admin.repository.ts` owns database queries; `admin.schema.ts` parses rows and permissions against generated enums; `admin.types.ts` owns admin/role/permission types. This is access's role-suffixed implementation of the feature repository convention.
 - Each purpose group has an explicit `index.ts`. Other features still import only `features/access`; repositories stay internal. Keep orchestration functions linear, with no extra wrapper classes for session or context entry points.
@@ -48,7 +48,7 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 ## Testing
 
 - pgTAP: permission map per role; `has_permission` false for archived admins and anonymous users; last-owner guard.
-- Unit: guards and context builder with `next/navigation` and the session loader mocked; a staff context is refused `catalog.manage` by a capability; `signInInputSchema`; `useSignInForm` and `useSignOutButton` with `renderHook` and the actions mocked; `refreshAdminSession` redirects with the proxy client mocked.
+- Unit: guards and context builder with `next/navigation` and the session loader mocked; a staff context is refused `catalog.manage` by a capability; `signInInputSchema`; `useSignInForm` and `useSignOutButton` with `renderHook` and the actions mocked (codes); `SignInForm` and `SignOutButton` with their hooks mocked (translated, linked errors); `refreshAdminSession` redirects with the proxy client mocked.
 - Integration (needs `.env.local` with the local stack's URL and keys): `loadAdminSession` (staff permissions, archived, non-admin, signed out); `sign-in.actions.int.test.ts` runs both actions with an in-memory cookie jar (seeded admin, wrong password, non-admin, archived, sign-out).
 - e2e: `tests/e2e/admin-sign-in.spec.ts` (no-session redirect, wrong password, sign-in → sign-out).
 

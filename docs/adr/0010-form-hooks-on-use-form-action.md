@@ -13,7 +13,7 @@ The first form hook (`useSignInForm`) mixed a state type, its initial value, a c
 
 - `shared/lib/form-action` owns the generic steps. `FormInput.read` parses the schema's keys out of `FormData` into typed input or per-field codes; `FormInput.values` restores only listed fields; `FormSubmission` turns one submission into the next `FormActionState` (`idle | invalid | failed | succeeded`); `useFormAction(options)` wraps `useActionState` around it. It knows nothing about copy.
 - `i18n/use-error-message.hook.ts` owns translation: `useErrorMessage(namespace)` maps a code to `errors.shared` or `errors.<namespace>`, typed so a code without copy fails typecheck.
-- Feature hooks compose the two and return flat, translated fields. Forms submit through `<form action>`. The recipe, rules and tests are in `docs/code-conventions.md` ("Forms and Server Actions").
+- Feature hooks bind a schema, an action, field codes and preserved fields by returning `useFormAction({ … })`; they return codes. Components translate with `useErrorMessage`, next to their `useTranslations` labels, so code → copy stays presentation and adding a field adds no mapping in the hook. Forms submit through `<form action>`. The recipe, rules and tests are in `docs/code-conventions.md` ("Forms and Server Actions").
 
 ## Alternatives considered
 
@@ -23,4 +23,4 @@ The first form hook (`useSignInForm`) mixed a state type, its initial value, a c
 
 ## Consequences
 
-New forms are a schema, codes, copy, an action, a ~20-line hook and a component. Multi-value fields, uploads and nested objects are not supported yet; the first form that needs one extends `FormInput` and the conventions. Client-side parsing is feedback only: actions still parse `unknown` input on the server.
+New forms are a schema, codes, copy, an action, a one-call hook and a component. Hook tests assert codes without an intl provider; component tests (hook mocked) cover translated, linked errors. Multi-value fields, uploads and nested objects are not supported yet; the first form that needs one extends `FormInput` and the conventions. Client-side parsing is feedback only: actions still parse `unknown` input on the server.
