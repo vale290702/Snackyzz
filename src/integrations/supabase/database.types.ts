@@ -81,6 +81,303 @@ export type Database = {
       [_ in never]: never;
     };
   };
+  catalog: {
+    Tables: {
+      brands: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_primary: boolean;
+          label: string | null;
+          logo_file_id: string | null;
+          name: string;
+          slug: string;
+          sort_order: number;
+          tagline: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_primary?: boolean;
+          label?: string | null;
+          logo_file_id?: string | null;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          tagline?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_primary?: boolean;
+          label?: string | null;
+          logo_file_id?: string | null;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          tagline?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      categories: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      product_categories: {
+        Row: {
+          category_id: string;
+          created_at: string;
+          created_by: string | null;
+          product_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          category_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          product_id: string;
+        };
+        Update: {
+          category_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          product_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      product_variants: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          is_default: boolean;
+          is_stock_tracked: boolean;
+          name: string;
+          price: number;
+          product_id: string;
+          sku: string | null;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_default?: boolean;
+          is_stock_tracked?: boolean;
+          name: string;
+          price: number;
+          product_id: string;
+          sku?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          is_default?: boolean;
+          is_stock_tracked?: boolean;
+          name?: string;
+          price?: number;
+          product_id?: string;
+          sku?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          accent_color: string;
+          archived_at: string | null;
+          badge: string | null;
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          image_file_id: string | null;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          accent_color: string;
+          archived_at?: string | null;
+          badge?: string | null;
+          brand_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          id?: string;
+          image_file_id?: string | null;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          accent_color?: string;
+          archived_at?: string | null;
+          badge?: string | null;
+          brand_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          image_file_id?: string | null;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      variant_price_history: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          id: string;
+          price: number;
+          variant_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          price: number;
+          variant_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          price?: number;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "variant_price_history_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      set_default_variant: { Args: { p_variant_id: string }; Returns: undefined };
+      set_primary_brand: { Args: { p_brand_id: string }; Returns: undefined };
+      set_product_categories: {
+        Args: { p_category_ids: string[]; p_product_id: string };
+        Returns: undefined;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   media: {
     Tables: {
       files: {
@@ -282,6 +579,9 @@ export const Constants = {
         "reports.view",
       ],
     },
+  },
+  catalog: {
+    Enums: {},
   },
   media: {
     Enums: {

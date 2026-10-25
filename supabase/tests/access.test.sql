@@ -356,11 +356,12 @@ select lives_ok(
 
 -- Bootstrap: the first admin of an empty roster must be an active owner.
 
-alter table access.admins disable trigger admins_guard_active_owner_on_delete;
+-- Replica mode skips the owner guard and the foreign keys of rows other features attribute to admins.
+set local session_replication_role = replica;
 
 delete from access.admins;
 
-alter table access.admins enable trigger admins_guard_active_owner_on_delete;
+set local session_replication_role = origin;
 
 select throws_ok(
   $$ insert into access.admins (user_id, display_name, role) values ('10000000-0000-7000-8000-00000000000d', 'First', 'staff') $$,
