@@ -116,7 +116,9 @@ erDiagram
   admins ||--o{ files : uploads
 ```
 
-**Permission map**: one place, `private.role_permissions(role) returns text[]` (immutable):
+*(admin-edited: admins.)*
+
+**Permission map**: one place, `private.role_permissions(role) returns access.permission[]` (immutable). Permissions are the `access.permission` enum ([ADR 0008](../adr/0008-access-permissions-and-admin-sessions.md)):
 
 | Permission | owner | staff |
 |---|---|---|
@@ -126,7 +128,7 @@ erDiagram
 | `catalog.manage`, `fulfillment.manage`, `retail.manage`, `themes.manage` | ✓ | |
 | `settings.manage`, `admins.manage`, `reports.view` | ✓ | |
 
-`private.has_permission(text)` (stable, security definer, uses `(select auth.uid())`) is called by RLS policies. `access.my_permissions()` returns the array to the TypeScript DAL, so the matrix is never duplicated in TS. At least one non-archived `owner` must always exist.
+`private.has_permission(access.permission)` (stable, security definer, uses `(select auth.uid())`) is called by RLS policies. `access.my_permissions()` returns the array to the TypeScript DAL, so the matrix is never duplicated in TS. At least one non-archived `owner` must always exist (trigger `private.guard_active_owner`, error `owner_required`).
 
 **Buckets:** `payment-proofs`, `refund-proofs`, `message-attachments` (private); `catalog-images` (public read). A cleanup job deletes `payment_proof` files that no payment references after 24 h.
 

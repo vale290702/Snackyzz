@@ -29,7 +29,7 @@ messages/es-CR/
 - One namespace per feature, named exactly like the feature folder.
 - Keys are English, `camelCase`, grouped by screen or component: `checkout.payment.uploadHint`.
 - Shared boundary errors live under `errors.shared` and match `SharedErrorCode` from `shared/lib/result`.
-- Every error code in a feature's `domain/errors.ts` has a message in `errors.json`; a unit test enforces it.
+- Every error code in a feature's `domain/errors/errors.constants.ts` has a message in `errors.json`; a unit test enforces it.
 - Use ICU messages for plurals and variables (`{count, plural, one {# galleta} other {# galletas}}`). Never concatenate strings.
 - Money: `format.number(n, { style: "currency", currency: "CRC", maximumFractionDigits: 0 })`. Dates: `format.dateTime` with the configured time zone.
 - No locale prefix in URLs while there's one locale. Adding a locale = new folder + entry in `config.ts` (+ routing ADR if prefixes are needed).

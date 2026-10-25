@@ -20,7 +20,9 @@ These rules apply to every agent (Claude Code, Codex) and every human. Directory
 2. [`docs/domain/glossary.md`](docs/domain/glossary.md): use these names, no synonyms.
 3. For order, payment or stock work: [`docs/domain/order-lifecycle.md`](docs/domain/order-lifecycle.md).
 4. For schema work: [`docs/rebuild/02-er-design.md`](docs/rebuild/02-er-design.md). For cross-feature work: [`docs/rebuild/03-architecture.md`](docs/rebuild/03-architecture.md).
-5. For Next.js APIs: the guide in `node_modules/next/dist/docs/` (see top of this file).
+5. [`docs/code-conventions.md`](docs/code-conventions.md): canonical module layout, naming, helper/function rules and exceptions. Local guides add domain constraints; do not redefine these conventions.
+6. For any UI work: [`docs/rebuild/05-ui-parity.md`](docs/rebuild/05-ui-parity.md). Rebuilt screens keep today's design (G-09).
+7. For Next.js APIs: the guide in `node_modules/next/dist/docs/` (see top of this file).
 
 ## Principles, in priority order
 
@@ -56,9 +58,9 @@ Design principles we apply:
   4. Pure business rule → `domain/`.
   5. External system → `src/integrations/` adapter.
   6. Use-case orchestration → `server/` action or job.
-- **Data access** only through `server/repository.ts` of the owning feature. No `supabase.from()` anywhere else.
+- **Data access** only through `server/<purpose>/*.repository.ts` of the owning feature. No `supabase.from()` anywhere else.
 - **Features import each other only via `index.ts`.** `domain/` imports no I/O. `shared/` imports no features. ESLint enforces this.
-- **Admin actions are capabilities** (`defineCapability` in `features/<x>/server/capabilities.ts`): permission + Zod input + `execute`, defined once. Web Server Actions and the Telegram bot (`admin-chat`) both call them, so no front end can skip a check.
+- **Admin actions are capabilities** (`defineCapability` in `features/<x>/server/<purpose>/*.capability.ts`): permission + Zod input + `execute`, defined once. Web Server Actions and the Telegram bot (`admin-chat`) both call them, so no front end can skip a check.
 - **Every mutation is a Server Action** wrapped in `runAction()`: authorize → parse → execute (inside the capability for admin actions) → invalidate (`updateTag`) → side effects in `after()`.
 - **Features publish events** with `private.publish_event` in the same transaction as the change. Other features react by consuming `events.domain_events`, never by being called from the publisher.
 
@@ -81,45 +83,17 @@ Code is written for the next reader. Dense, unbroken blocks are rejected in revi
 - Imports in three groups separated by blank lines: packages, `@/` aliases, relative (ESLint `import/order`).
 - SQL follows the style in `docs/rebuild/02-er-design.md` §13: lowercase keywords, one column/condition per line, blank lines between statements.
 
-<!-- prettier-ignore -->
-```ts
-// ✗ Rejected: everything packed together, intent hidden
-export async function cancel(i: unknown) { const a = await requirePermission("orders.decide"); const p = schema.safeParse(i); if (!p.success) return err("invalid_input"); const r = await repo(a.client).transition({ ...p.data, to: "cancelled" }); if (r.ok) updateTag(tags.order(r.value.id)); return r; }
-
-// ✓ Accepted: one step per paragraph, names that explain
-export async function cancelOrderAction(input: unknown): Promise<ActionResult<OrderDto>> {
-  return runAction("orders.cancel", async (log) => {
-    const context = await getAdminContext({ source: "admin_web" });
-
-    const parsed = cancelOrderInput.safeParse(input);
-    if (!parsed.success) {
-      return err("invalid_input");
-    }
-
-    const result = await transitionOrder.run(context, {
-      ...parsed.data,
-      toStatus: "cancelled",
-    });
-    if (!result.ok) {
-      return result;
-    }
-    log.step("cancelled", { orderId: result.value.id });
-
-    updateTag(orderTags.detail(result.value.id));
-    return result;
-  });
-}
-```
+Use the layouts and callable API rules in [Code conventions](docs/code-conventions.md); the implemented `access/server/session` and `shared/lib/result` modules are reference examples.
 
 **Components and hooks**
 
 Components only render. Hooks hold the logic components need.
 
-| Layer                                | Responsibility                                                                                                                                                      | Must not                                                                                                         |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `features/<x>/ui/*.tsx` (component)  | Markup, styling, accessibility, wiring events to the handlers a hook returns                                                                                        | Fetch data, call Server Actions, hold business rules, compute derived business values, use `useEffect` for logic |
-| `features/<x>/hooks/use-*.ts` (hook) | Client state, derived values (via `domain/` functions), event handlers, Server Action calls (`useActionState`, `useTransition`), optimistic updates, `localStorage` | Render JSX or know about styling                                                                                 |
-| `app/**/page.tsx` (route)            | Load data on the server through feature queries and pass DTOs as props                                                                                              | Contain logic beyond loading data and composing components                                                       |
+| Layer                                    | Responsibility                                                                                                                                                      | Must not                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `features/<x>/ui/*.tsx` (component)      | Markup, styling, accessibility, wiring events to the handlers a hook returns                                                                                        | Fetch data, call Server Actions, hold business rules, compute derived business values, use `useEffect` for logic |
+| `features/<x>/hooks/**/*.hook.ts` (hook) | Client state, derived values (via `domain/` functions), event handlers, Server Action calls (`useActionState`, `useTransition`), optimistic updates, `localStorage` | Render JSX or know about styling                                                                                 |
+| `app/**/page.tsx` (route)                | Load data on the server through feature queries and pass DTOs as props                                                                                              | Contain logic beyond loading data and composing components                                                       |
 
 - One hook per interactive component, named after it: `CheckoutForm` ↔ `useCheckoutForm`. It returns a typed object (`{ state, actions }` or flat named fields).
 - Server Components in `ui/` receive data **as props**; they don't call queries themselves.
@@ -129,14 +103,14 @@ Components only render. Hooks hold the logic components need.
 ```tsx
 export function CheckoutForm({ context }: CheckoutFormProps) {
   const { fields, errors, isSubmitting, submit } = useCheckoutForm(context);
-  const t = useTranslations("checkout");
+  const translate = useTranslations("checkout");
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-6">
       <ContactFields values={fields.contact} errors={errors.contact} />
       <FulfillmentPicker value={fields.fulfillment} options={context.fulfillment} />
       <Button type="submit" disabled={isSubmitting}>
-        {t("submit")}
+        {translate("submit")}
       </Button>
     </form>
   );
@@ -155,12 +129,12 @@ export function CheckoutForm({ context }: CheckoutFormProps) {
 
 **Naming**
 
-- Glossary terms only. Files `kebab-case`, components `PascalCase`, hooks `use-*.ts`, actions `<verb><Noun>Action`, SQL entry points `<schema>.<verb>_<noun>`.
+- Glossary terms only. Files `kebab-case`, components `PascalCase`, hooks `use-*.hook.ts`, actions `<verb><Noun>Action`, SQL entry points `<schema>.<verb>_<noun>`.
 - Code, URLs, DB and logs in **English**. User-facing copy in **Spanish via next-intl**, never inline.
 
 **Errors**
 
-- Expected failures return `Result<T, ErrorCode>` (`ok()` / `err()` from `shared/lib/result`). Error codes live in each feature's `domain/errors.ts`; copy lives in `i18n/messages/es-CR/errors.json`.
+- Expected failures return `Result<Value, ErrorCode>` (`Results.ok()` / `Results.err()` from `shared/lib/result`). Error codes live in each feature's `domain/errors/errors.constants.ts`; copy lives in `i18n/messages/es-CR/errors.json`.
 - `throw` only for bugs. Never show raw error messages to users.
 
 **Logging**
@@ -185,6 +159,7 @@ export function listDeliveryWindows(input: DeliveryWindowInput): DeliveryWindow[
 
 **UI**
 
+- **Keep today's design** (G-09): a rebuilt screen matches the same screen on `main`. New functionality gets new components in the same design language; reorganize existing UI only for a clear UX gain, and list every visible difference under **Deviations** in the PR. See [`docs/rebuild/05-ui-parity.md`](docs/rebuild/05-ui-parity.md).
 - Compose `src/shared/ui` (shadcn) components; style with Tailwind token classes only. No hex values, no arbitrary values unless a token is missing; if one is, add the token.
 - Server Components by default; `'use client'` at the smallest leaf that needs it.
 - Accessible by default (WCAG 2.2 AA): semantic elements, labelled inputs, visible focus, keyboard paths.
@@ -209,13 +184,13 @@ No skipped or `.only` tests in commits. Use fixtures from `tests/fixtures`, not 
 
 ## Definition of Done
 
-- [ ] `npm run check` passes (typecheck, lint, format, unit, build).
+- [ ] `npm run check` passes (typecheck, lint, format, tooling, unit, build).
 - [ ] `npm run test:db` and the relevant `npm run test:e2e` specs pass locally when DB or journeys changed.
 - [ ] New behavior has tests per the table above.
 - [ ] Migration generated from the declarative schema; DB types regenerated.
 - [ ] The `AGENTS.md` of each touched directory still tells the truth (public API, invariants, gotchas).
 - [ ] No new TODO without an issue link. No stray `console.*`.
-- [ ] UI changes: screenshot in the PR.
+- [ ] UI changes: before/after screenshots (the `main` screen next to the rebuilt one, phone and desktop) and a Deviations list in the PR.
 - [ ] An ADR exists if the change needs one (see below).
 
 ## Stop and ask

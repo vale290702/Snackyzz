@@ -12,8 +12,8 @@ The order aggregate: orders, items, fulfillment subtypes, payments, refunds, the
 ## Public API (`index.ts`)
 
 - Types: `OrderDto`, `OrderStatus`, `OrderEvent`, `PlaceOrderRequest`, `TransitionInput`
-- Capabilities (`server/capabilities.ts`): `getOrder` (`orders.get`), `transitionOrder` (`orders.transition`). Used by the web Server Actions and by `admin-chat`.
-- Events (`domain/events.ts`): Zod payload schemas for `order.placed` v1 and `order.status_changed` v1, used by `notifications`.
+- Capabilities (`server/<purpose>/*.capability.ts`): `getOrder` (`orders.get`), `transitionOrder` (`orders.transition`). Used by the web Server Actions and by `admin-chat`.
+- Events (`domain/events/*.schema.ts`): Zod payload schemas for `order.placed` v1 and `order.status_changed` v1, used by `notifications`.
 - Server: `placeOrder(request)` (used by checkout), `transitionOrderAction`, `listOrders`, `getOrder`
 - Hooks: `useOrderQueue(orders)`, `useOrderActions(order)`
 - UI: `OrderQueue`, `OrderDetail`, `OrderStatusBadge`

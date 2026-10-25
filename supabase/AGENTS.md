@@ -54,3 +54,6 @@ The numeric prefixes give a dependency order (FK targets first).
 - Postgres has no `add constraint if not exists`; let the diff tool generate constraint changes.
 - Adding an enum value can't run inside a transaction that also uses it; put it in its own migration.
 - Never put production data in `seed.sql`.
+- PostgREST won't start while `config.toml` exposes a schema that doesn't exist yet. When adding a schema, run `supabase db start` (DB only) with a seed that doesn't use it, generate the migration, then `supabase start` and `db reset`.
+- Demo admins in `seed.sql`: `owner@snackyzz.test` and `staff@snackyzz.test`, local password `snackyzz-demo`.
+- Hosted projects need each new schema added to the Data API's exposed schemas too, not only `config.toml`.

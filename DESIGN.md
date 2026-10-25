@@ -131,6 +131,8 @@ Snackyzz feels like a confident food campaign translated into a practical store.
 
 Dense operational screens reduce the display scale while retaining the same palette, typography, and tactile controls. The system stays warm, direct, and legible across phone, tablet, and desktop.
 
+The rebuild keeps this design as it ships today on `main` (G-09). Where this file is silent, the screens on `main` are the reference; see `docs/rebuild/05-ui-parity.md`.
+
 **Key Characteristics:**
 
 - Cream canvas with chocolate structure and decisive orange actions.

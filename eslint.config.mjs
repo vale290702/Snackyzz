@@ -5,6 +5,7 @@ import boundaries from "eslint-plugin-boundaries";
 import jsdoc from "eslint-plugin-jsdoc";
 
 import { boundaryElements, boundaryPolicies } from "./eslint.boundaries.mjs";
+import conventions from "./eslint.conventions.mjs";
 
 const TEST_FILES = ["**/*.test.{ts,tsx}", "**/*.int.test.{ts,tsx}", "tests/**"];
 
@@ -32,6 +33,33 @@ export default defineConfig([
         },
       ],
     },
+  },
+
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/integrations/supabase/database.types.ts"],
+    plugins: { jsdoc },
+    rules: {
+      "jsdoc/multiline-blocks": ["error", { noSingleLineBlocks: true }],
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "typeParameter",
+          format: null,
+          custom: { regex: "^.{2,}$", match: true },
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "src/shared/lib/**/*.{ts,tsx}",
+      "src/integrations/**/*.{ts,tsx}",
+      "src/features/*/{domain,server,hooks,ui}/**/*.{ts,tsx}",
+    ],
+    ignores: ["src/integrations/supabase/database.types.ts"],
+    plugins: { conventions },
+    rules: { "conventions/role-suffix": "error" },
   },
 
   {

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   typedRoutes: true,
   devIndicators: false,
+  experimental: {
+    authInterrupts: true,
+  },
 };
 
 export default withNextIntl(nextConfig);

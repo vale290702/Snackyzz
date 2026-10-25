@@ -73,7 +73,7 @@ export const boundaryPolicies = [
       to: [
         sameFeatureLayer("domain/**"),
         sameFeatureLayer("hooks/**"),
-        sameFeatureLayer("server/actions.ts"),
+        sameFeatureLayer("server/**/*.actions.ts"),
         ANY_FEATURE_INDEX,
         element("shared-lib"),
         element("i18n"),

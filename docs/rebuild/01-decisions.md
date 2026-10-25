@@ -17,6 +17,7 @@ To change a decision, edit this file and every doc that cites it in the same PR.
    - The split for each item is in [Scope split](#scope-split).
 2. **Low volume** (G-07). Pick the simplest design that stays correct. No queues, multi-tenancy or caching layers beyond what Postgres and Next provide.
 3. **Two humans, Claude Code and Codex in parallel** (G-05). Module boundaries and per-directory `AGENTS.md` files are first-class deliverables.
+4. **Visual parity** (G-09). Rebuilt screens keep today's UI design. New functionality gets new components in the same design language; reorganizing is allowed only for a clear UX gain. See [05-ui-parity.md](05-ui-parity.md).
 
 ## 1. Goals
 
@@ -30,6 +31,7 @@ To change a decision, edit this file and every doc that cites it in the same PR.
 | G-06 | Done = every layer readable and easy to extend, plus the parity checklist passes. | Answered |
 | G-07 | Low volume local shop. | Answered |
 | G-08 | Integration branch **`rework`**, cut from `main`. Work items branch off `rework` and merge back into it (squash). When the rework is ready, one PR merges `rework` into `main` (merge commit). `main` is merged into `rework` whenever it changes. | Answered |
+| G-09 | Keep today's UI design (the app on `main`). New functionality may add components and views in the same design language; existing UI is reorganized only for a clear UX improvement, stated in the PR with before/after screenshots. Rules and reference map in [05-ui-parity.md](05-ui-parity.md). | Answered (2026-10-25) |
 
 ## 2. Domain
 
@@ -192,3 +194,4 @@ Changes requested after the first draft (2026-10-24).
 | F-3 | Components only render; hooks hold the logic. | New `hooks/` folder per feature; root and feature `AGENTS.md` define the component ↔ hook contract; the import rules forbid `ui/` from importing Server Actions; hooks get `renderHook` tests. |
 | F-4 | Points of sale (third-party stores) ≠ pickup locations (Snackyzz-managed). Per-location stock is optional, falling back to global stock. | New `retail` feature/schema (`points_of_sale`); `fulfillment.pickup_locations`; `inventory.stock_levels.pickup_location_id` nullable (null = global) with a fall-back reservation rule. This resolves the former O-4. |
 | F-5 | Notifications looked order-centric. Telegram should let admins manage orders (MVP: receive → Confirm/Reject), get summaries (step 2) and later ask an AI agent (step 3). It was WIP, so redesign freely. | Split into `events`, `messaging`, `notifications`, `admin-chat` + capabilities. Order specifics live only in event payloads and capabilities. MVP flow, linking and edge cases in architecture §5. ADR 0004 superseded by [0006](../adr/0006-events-messaging-admin-chat.md). |
+| F-6 | Keep the current UI design; only new functionality or a real UX improvement may change it. (2026-10-25) | Guiding constraint 4 and G-09; [05-ui-parity.md](05-ui-parity.md) maps today's screens to rebuilt routes and sets the PR evidence (before/after screenshots, Deviations list). Root `AGENTS.md` and the PR template point to it. |

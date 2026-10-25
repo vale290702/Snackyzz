@@ -7,7 +7,7 @@ The app-wide log of things that happened (`order.placed`, `order.status_changed`
 ## Owns / does not own
 
 - **Owns:** schema `events` (domain_events, event_receipts), `private.publish_event`, `events.pending_events`, the consumer runner, and `/api/jobs/events`.
-- **Does not own:** event payload schemas (each publisher owns them in `domain/events.ts`) or what consumers do.
+- **Does not own:** event payload schemas (each publisher owns them in `domain/events/*.schema.ts`) or what consumers do.
 
 ## Public API (`index.ts`)
 
