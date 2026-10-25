@@ -10,6 +10,9 @@ colors:
   muted-brown: "#795541"
   warm-line: "#DCC6B2"
   cream-tint: "#EFDDCA"
+  warm-red: "#A8321C"
+  leaf: "#3F5A1C"
+  honey: "#7F4A00"
 typography:
   display:
     fontFamily: "Fraunces, Georgia, serif"
@@ -91,6 +94,14 @@ Orange creates appetite and action; cream and chocolate carry almost every struc
 - **Warm Line:** Dividers and control outlines.
 - **Cream Tint:** Quiet section and selected-state layering.
 
+### Status
+
+- **Warm Red:** Errors, rejected and cancelled states.
+- **Leaf:** Confirmed and completed states.
+- **Honey:** States waiting on someone, such as pending review.
+
+Status colors appear as text on a 15% tint of themselves; both pairings keep 4.5:1 on paper and cream.
+
 **The Orange Has a Job Rule.** Use orange for appetite, action, or brand cadence; never scatter it as decoration.
 
 ## Typography
@@ -119,7 +130,7 @@ At 800px navigation compacts and working layouts tighten. At 560px every essenti
 
 ## Elevation & Depth
 
-The system is flat by default. Cream, paper, tint, thin warm dividers, photography, and overlap establish hierarchy. Only transient toasts use a soft ambient shadow.
+The system is flat by default. Cream, paper, tint, thin warm dividers, photography, and overlap establish hierarchy. Only transient toasts use a soft ambient shadow, tinted with chocolate rather than black.
 
 **The Tonal Depth Rule.** Prefer a change in warm surface tone before adding a border or shadow.
 

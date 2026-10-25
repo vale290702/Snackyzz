@@ -10,10 +10,14 @@
   --color-warm-line: #dcc6b2;
   --color-cream-tint: #efddca;
   --color-warm-red: #a8321c;
+  --color-leaf: #3f5a1c;
+  --color-honey: #7f4a00;
 
   --radius-control: 7px;
   --radius-surface: 12px;
   --radius-round: 30px;
+
+  --shadow-float: 0 12px 32px -12px rgb(60 25 7 / 0.32);
 
   --text-display: clamp(2.8rem, 5.4vw, 5rem);
   --text-display--line-height: 1.05;
