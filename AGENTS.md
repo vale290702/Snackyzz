@@ -72,6 +72,10 @@ Code is written for the next reader. Dense, unbroken blocks are rejected in revi
 - One statement per line. Split a function into **paragraphs** separated by a blank line, one per logical step (e.g. authorize · parse · execute · respond).
 - Prefer early returns over nested `if`/`else`. No nested ternaries.
 - Name intermediate values instead of chaining or nesting long expressions.
+- Prioritize readability and developer experience: use descriptive identifiers, including generic parameters (`Value`, `ErrorCode`, `Context`, `InputSchema`), rather than single-letter definitions.
+- Prefer named constants or enums for protocol values, error codes, states and repeated semantic strings. Typed `as const` objects preserve string-literal compatibility; tests may assert literal wire values independently.
+- Keep each file focused on one responsibility. Group related implementations, contracts, constants and tests in a directory named for their purpose. Use role suffixes: `*.helper.ts`, `*.factory.ts`, `*.runner.ts`, `*.types.ts`, `*.enum.ts`, and `*.constants.ts`; tests retain the role (`*.helper.test.ts`). Use `index.ts` for explicit public exports. Preserve framework-required filenames such as Next.js route conventions.
+- Prefer focused static helper classes for discoverable usage such as `Strings.humanize(value)` or `Results.ok(value)`. Keep operation entry points and stateful factories explicit; avoid catch-all utility classes.
 - Objects, parameter lists and JSX props with more than three entries go on multiple lines.
 - No end-of-line comments narrating steps. Well-named functions and variables replace them.
 - Imports in three groups separated by blank lines: packages, `@/` aliases, relative (ESLint `import/order`).
@@ -167,6 +171,7 @@ export function CheckoutForm({ context }: CheckoutFormProps) {
 **Comments & JSDoc**
 
 - Comments explain _why_, never _what_.
+- Write documentation comments as multiline JSDoc blocks, including short descriptions on types, constants and classes. Reserve line comments for local rationale and lint directives.
 - Exported functions and components get JSDoc with `@param` / `@returns` (and `@throws` when relevant). One or two short sentences, no multi-paragraph blocks, no code references.
 
 ```ts
