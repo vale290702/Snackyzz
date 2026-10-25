@@ -29,9 +29,10 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - `@/shared/lib/result`: `Results.ok/err/isOk`, `SharedError`, `Result`, `SharedErrorCode`; original `ok/err/isOk` aliases remain available
 - `@/shared/lib/logger`: `logger`, `createLogger(context)`, `Mask.email()`, `Mask.phone()` (`mask` remains an alias), `Logger`, `LogData` (flat diagnostic fields); loggers expose `info`, `error`, `step`
 - `@/shared/lib/run-action`: `runAction(name, operation)`, `ActionResult`
+- `@/shared/lib/form-action` (browser-safe): `useFormAction({ schema, action, fieldErrorCodes?, preserve? })` → `{ formAction, isPending, state, values, fieldErrors, formError }` (codes, never copy); `FormInput.none` (empty schema), `FormInput.read(schema, formData, codes)`, `FormInput.values(formData, fields)`; `FormSubmission.idle/submit/fieldErrors/formError`; `FormActionStatus`; types `FormActionState`, `FormActionOptions`, `FormAction`, `FieldErrors`, `FormValues`, `FormField`, `FormSchema`, `ParsedForm`, `InvalidForm`, `FormServerAction`. Usage: [Forms and Server Actions](../../docs/code-conventions.md#forms-and-server-actions).
 - `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`, `CapabilityDefinition`, `Capability`, `CapabilityKind`, `CapabilitySource`
 - `logger` also exports `LogSanitizer.text/fields`, `LogLevel`, `LogLevelValue`; `run-action` also exports `ErrorDiagnostics.toLogData/stackFrames`, `ActionEvent/Outcome`, `ActionOperation`, `ActionOutcomeValue`.
-- `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
+- `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `form-action/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
 - Follow [the canonical conventions](../../docs/code-conventions.md) for suffixes, helper classes, documentation and the existing config/UI exceptions.
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
@@ -51,6 +52,7 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - Capability context comes from trusted server code. `access` fills `permissions: ReadonlySet<Permission>` from SQL; no permission matrix lives here. Annotate `execute`'s context with the application's concrete context type.
 - Capabilities check permission before async Zod parsing, pass parsed output to `execute`, and let bugs propagate. `kind` is `query | mutation`; `source` is `admin_web | messaging`.
 - Capability `invalid_input` intentionally omits Zod issues. Feature forms should reuse client-safe domain input schemas for field feedback; the server independently validates every capability call. Server-only validation failures remain generic unless a feature defines a safe error contract.
+- `form-action` is browser-safe and copy-free: it maps schema issue messages to the listed codes (`invalid_input` otherwise) and never calls the action with invalid input. It restores only the fields in `preserve`; never list secrets. Server Actions still re-parse their `unknown` input.
 - Shared error copy lives at `errors.shared.<code>`; feature errors stay in feature namespaces.
 
 ## Testing

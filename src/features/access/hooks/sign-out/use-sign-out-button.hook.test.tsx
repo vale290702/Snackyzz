@@ -29,7 +29,7 @@ describe("useSignOutButton", () => {
 
     expect(result.current.errorMessage).toBeNull();
     await act(async () => {
-      startTransition(() => result.current.formAction());
+      startTransition(() => result.current.formAction(new FormData()));
     });
 
     expect(signOutAction).toHaveBeenCalledOnce();
@@ -41,7 +41,7 @@ describe("useSignOutButton", () => {
     const { result } = renderHook(useSignOutButton, { wrapper });
 
     await act(async () => {
-      startTransition(() => result.current.formAction());
+      startTransition(() => result.current.formAction(new FormData()));
     });
 
     expect(result.current.isPending).toBe(true);
