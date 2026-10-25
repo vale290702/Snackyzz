@@ -3,5 +3,12 @@
     "unexpected": "Ocurrió un error inesperado. Inténtalo de nuevo.",
     "forbidden": "No tienes permiso para realizar esta acción.",
     "invalid_input": "Revisa los datos e inténtalo de nuevo."
+  },
+  "access": {
+    "invalid_credentials": "Correo o contraseña incorrectos. Inténtalo de nuevo.",
+    "too_many_attempts": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+    "sign_out_failed": "No pudimos cerrar la sesión. Inténtalo de nuevo.",
+    "email_invalid": "Escribe un correo válido, como nombre@ejemplo.com.",
+    "password_required": "Escribe tu contraseña."
   }
 }

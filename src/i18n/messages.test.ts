@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { AccessError } from "@/features/access/domain/errors";
+import { SignInFieldError } from "@/features/access/domain/sign-in";
 import type { SharedErrorCode } from "@/shared/lib/result";
 
 import { defaultLocale, locales } from "./config";
@@ -31,6 +33,16 @@ describe("messages", () => {
 
     expect(Object.keys(copy).sort()).toEqual(["forbidden", "invalid_input", "unexpected"]);
     for (const message of Object.values(copy)) {
+      expect(message.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("provides Spanish copy for every access error and sign-in field code", async () => {
+    const messages = await loadMessages("es-CR");
+    const codes = [...Object.values(AccessError), ...Object.values(SignInFieldError)].sort();
+
+    expect(Object.keys(messages.errors.access).sort()).toEqual(codes);
+    for (const message of Object.values(messages.errors.access)) {
       expect(message.trim().length).toBeGreaterThan(0);
     }
   });

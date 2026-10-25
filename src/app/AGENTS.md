@@ -40,4 +40,5 @@ Covered by feature tests and `tests/e2e`. Pages have no unit tests of their own;
 ## Gotchas
 
 - `params` and `searchParams` are Promises in Next 16; `await` them.
-- `proxy.ts` (not middleware) is at `src/proxy.ts` and only performs the optimistic `/admin` redirect.
+- `proxy.ts` (not middleware) is at `src/proxy.ts`. On `/admin/**` it calls `refreshAdminSession` from `features/access`: it refreshes the Supabase session cookies and redirects signed-out navigations to sign-in. It is not authorization.
+- Pages that read the session (`getAdmin`, `requirePermission`) do so inside `<Suspense>`, so the rest of the page stays in the static shell.

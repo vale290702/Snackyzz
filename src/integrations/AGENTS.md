@@ -14,6 +14,7 @@ Thin, typed wrappers around external systems: Supabase clients, Resend (email) a
 - `supabase/server-client`: `createServerClient()` (user session from cookies, RLS applies)
 - `supabase/anon-client`: `createAnonClient()` (no cookies, for `'use cache'` public reads)
 - `supabase/service-client`: `createServiceClient()` (service role, **server-only**)
+- `supabase/proxy-client`: `createProxyClient(request)` → `{ client, commit(response) }` for `proxy.ts`: reads cookies from the request, writes refreshed ones back to it for the render, and `commit` copies them plus the no-store cache headers onto the response
 - `supabase/browser-client`: `createBrowserClient()`, auth and signed uploads only
 - `supabase/database-client.types.ts`: `DatabaseClient` (`SupabaseClient<Database>`), `Database`. Query other schemas with `client.schema("access")`.
 - `supabase/transport`: `SupabaseFetch.withTimeout`, the 10 s fetch adapter every client uses; implementation, constants and tests are colocated.
@@ -24,7 +25,7 @@ Follow [the canonical conventions](../../docs/code-conventions.md); provider ope
 
 ## Invariants
 
-- Server/anon/service client factories and their entry points import `server-only`. Browser factories and shared transport remain browser-safe; type-only and generated files need no runtime guard.
+- Server/proxy/anon/service client factories and their entry points import `server-only`. Browser factories and shared transport remain browser-safe; type-only and generated files need no runtime guard.
 - Each client purpose has its own directory, role-suffixed factory and `index.ts`. Never combine browser and service/server exports in a barrel. Keep the generated `database.types.ts` at its generator-owned path.
 - `supabase/service-client` may only be imported from `features/*/server/**` (ESLint rule). Callers authorize **before** using it.
 - Provider operation adapters return `Result` with a `retryable | permanent` error kind; they never throw for vendor 4xx/5xx. Client constructors and low-level fetch transport retain their native contracts.

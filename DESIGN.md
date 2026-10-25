@@ -20,6 +20,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.05
     letterSpacing: "-0.035em"
+  wordmark:
+    fontFamily: "Fraunces, Georgia, serif"
+    fontSize: "2.75rem"
+    fontWeight: 800
+    lineHeight: 1
+    letterSpacing: "-0.04em"
   title:
     fontFamily: "Fraunces, Georgia, serif"
     fontSize: "1.5rem"
@@ -184,6 +190,7 @@ Orange creates appetite and action; cream and chocolate carry almost every struc
 ### Hierarchy
 
 - **Display:** Bold, tightly tracked, balanced headlines; fluid sizing with a five-rem ceiling.
+- **Wordmark:** Lowercase "snackyzz" in extra-bold Fraunces at 44px (36px on phones), tracked to -0.04em, closed by a Deep Orange period.
 - **Headline:** Bold Fraunces section and workflow titles (30px) with compact leading.
 - **Title:** Product names and the headings of cards, dialogs, and sheets: Fraunces bold at 24px.
 - **Body:** 16px base, 1.6 line height, with supporting copy capped at 70 characters. Inputs, selects, and menu items stay at 16px on every width, so phones never zoom into a field.

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { forbidden, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { createServerClient } from "@/integrations/supabase/server-client";
@@ -14,6 +15,8 @@ import type { AdminSession } from "./session.types";
  * The request's admin session, resolved once per request from the session cookies.
  */
 export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
+  // Why: session checks compare token expiry with the clock, so they must never be prerendered.
+  await connection();
   const client = await createServerClient();
 
   return loadAdminSession(client);

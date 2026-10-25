@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   typedRoutes: true,
   devIndicators: false,
+  // Dev logs print Server Function arguments verbatim, which would include sign-in passwords.
+  logging: { serverFunctions: false },
   experimental: {
     authInterrupts: true,
   },
