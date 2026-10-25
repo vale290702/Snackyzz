@@ -14,7 +14,9 @@ Thin, typed wrappers around external systems: Supabase clients, Resend (email) a
 - `supabase/server-client.ts`: `createServerClient()` (user session from cookies, RLS applies)
 - `supabase/anon-client.ts`: `createAnonClient()` (no cookies, for `'use cache'` public reads)
 - `supabase/service-client.ts`: `createServiceClient()` (service role, **server-only**)
-- `supabase/browser-client.ts`: auth and signed uploads only
+- `supabase/browser-client.ts`: `createBrowserClient()`, auth and signed uploads only
+- `supabase/database-client.types.ts`: `DatabaseClient` (`SupabaseClient<Database>`), `Database`. Query other schemas with `client.schema("access")`.
+- `supabase/fetch-with-timeout.helper.ts`: `fetchWithTimeout`, the 10 s `fetch` every Supabase client uses
 - `resend/send-email.ts`: `sendEmail({ to, subject, html, text, idempotencyKey })` → `Result<{ id }, ProviderError>`
 - `telegram/bot-api.ts`: `sendMessage`, `editMessage`, `answerCallback`, `getFile`, `verifySecret`
 
@@ -24,7 +26,7 @@ Thin, typed wrappers around external systems: Supabase clients, Resend (email) a
 - `service-client.ts` may only be imported from `features/*/server/**` (ESLint rule). Callers authorize **before** using it.
 - Functions return `Result` with a `retryable | permanent` error kind; they never throw for vendor 4xx/5xx.
 - Request timeouts are always set (10 s default).
-- `database.types.ts` is generated (`npm run db:types`); never edit it.
+- `database.types.ts` is generated (`npm run db:types`, schemas `public,access`; add each new feature schema to the script); never edit it. Its `Constants` give Zod the enum values.
 
 ## Dependencies
 
@@ -38,3 +40,4 @@ Unit tests with a stubbed `fetch` for each wrapper: success, 4xx → permanent, 
 
 - Telegram ids exceed 2^31; keep them as strings end to end.
 - Resend supports an idempotency key header; pass the message `dedupe_key`.
+- `createServerClient()` is async (Next 16 `cookies()`); its `setAll` is a no-op in Server Components, which can't write cookies.
