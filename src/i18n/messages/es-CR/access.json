@@ -1,0 +1,32 @@
+{
+  "metaTitle": "Administración",
+  "header": {
+    "wordmark": "snackyzz<dot>.</dot>",
+    "section": "Administración"
+  },
+  "signIn": {
+    "welcome": {
+      "title": "Detrás de <br></br>cada <em>antojo.</em>",
+      "body": "El espacio para revisar pedidos <br></br>y dar el siguiente paso."
+    },
+    "title": "Hola, equipo Snackyzz.",
+    "description": "Ingresa para gestionar tus órdenes.",
+    "email": {
+      "label": "Correo de administración"
+    },
+    "password": {
+      "label": "Contraseña de administración"
+    },
+    "submit": "Entrar al panel",
+    "submitting": "Ingresando…"
+  },
+  "signOut": {
+    "submit": "Cerrar sesión",
+    "submitting": "Cerrando sesión…"
+  },
+  "home": {
+    "metaTitle": "Panel",
+    "title": "Hola, {name}.",
+    "description": "Las secciones del panel llegan pronto a esta versión."
+  }
+}

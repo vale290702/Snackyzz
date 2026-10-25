@@ -11,14 +11,14 @@ Browser ──► Next.js 16 on Vercel ─────────────�
             ├─ Route Handlers                                     ├─ Storage (proofs, catalog images)
             │   ├─ POST /api/webhooks/[channel]  (Telegram bot)   └─ pg_cron + pg_net ──┐
             │   └─ POST /api/jobs/[job]          (cron targets) ◄──────────────────────┘
-            └─ proxy.ts (optimistic /admin redirect only)
+            └─ proxy.ts (/admin session refresh + optimistic redirect)
                      │
                      └──► Providers: Resend (email), Telegram Bot API
 ```
 
 - **No Edge Functions** (ARC-05). One runtime (Node on Vercel), one toolchain, shared Zod schemas and types.
 - The browser talks to Supabase **only for Auth** (sign-in session cookies via `@supabase/ssr`) and **direct-to-Storage uploads with a signed URL**. All data reads and writes go through Next server code.
-- `proxy.ts` (Next 16's name for middleware) only redirects unauthenticated visitors away from `/admin`. It is **not** authorization; every Server Action and DAL function checks permissions itself.
+- `proxy.ts` (Next 16's name for middleware) refreshes the Supabase session cookies on `/admin/**` (Server Components can't write the rotated refresh token) and redirects visitors without a session to sign-in. It is **not** authorization; every Server Action and DAL function checks permissions itself.
 
 ## 2. Where logic lives
 

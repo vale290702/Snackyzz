@@ -33,6 +33,7 @@ Follow [the canonical conventions](../../docs/code-conventions.md). The layers b
 - **Admin actions are capabilities** (`server/<purpose>/*.capability.ts`, `defineCapability`): name, permission, Zod input, `execute`. Server Actions and `admin-chat` call `capability.run(context, input)`; never duplicate the logic in either.
 - Features that other features react to publish **domain events** from their SQL entry points and own the payload schemas in `domain/events/*.schema.ts`.
 - Every admin action uses `runAction()`: `getAdminContext` → capability permission check → capability Zod parse → execute → `updateTag` → `after()` side effects. Reuse the domain schema for client feedback; do not duplicate capability validation in the action.
+- **Forms** follow [Forms and Server Actions](../../docs/code-conventions.md#forms-and-server-actions): domain schema with code messages → action that re-parses `unknown` → hook returning `useFormAction({ … })` (codes) → component with `<form action>` that translates codes with `useErrorMessage`.
 - Error codes in `domain/errors/errors.constants.ts`; copy in `src/i18n/messages/es-CR/errors.json` under the feature's key.
 - Message namespace = feature name (`useTranslations("catalog")`).
 

@@ -24,6 +24,14 @@
   --text-display--letter-spacing: -0.035em;
   --text-display--font-weight: 700;
 
+  --text-wordmark: 2.75rem;
+  --text-wordmark--line-height: 1;
+  --text-wordmark--letter-spacing: -0.04em;
+  --text-wordmark--font-weight: 800;
+
+  --leading-display: 1.05;
+  --tracking-display: -0.035em;
+
   --container-page: 77.5rem;
 
   --breakpoint-sm: 35rem;

@@ -6,7 +6,9 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
-      text: ["display"],
+      text: ["display", "wordmark"],
+      leading: ["display"],
+      tracking: ["display"],
       radius: ["control", "surface", "round"],
       shadow: ["float"],
       container: ["page"],

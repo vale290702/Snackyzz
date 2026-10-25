@@ -17,6 +17,7 @@ const navigation = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => navigation);
+vi.mock("next/server", () => ({ connection: vi.fn(async () => undefined) }));
 vi.mock("@/integrations/supabase/server-client", () => ({
   createServerClient: vi.fn(async () => ({})),
 }));
