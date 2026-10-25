@@ -1,4 +1,5 @@
-import { LogPattern, LogRedaction } from "./log-sanitizer.constants";
+import { LogFieldKind, LogFieldRules, LogPattern, LogRedaction } from "./log-sanitizer.constants";
+import type { LogFieldKindValue, MaskedLogFieldKind } from "./log-sanitizer.types";
 import type { LogData } from "./logger.types";
 import { Mask } from "./mask.helper";
 
@@ -32,25 +33,25 @@ export class LogSanitizer {
     return Object.fromEntries(entries);
   }
 
+  private static readonly maskers: Record<MaskedLogFieldKind, (text: string) => string> = {
+    [LogFieldKind.Phone]: (text) => (LogPattern.MaskedPhone.test(text) ? text : Mask.phone(text)),
+    [LogFieldKind.Email]: (text) =>
+      LogPattern.MaskedEmail.test(text) ? LogSanitizer.text(text) : Mask.email(text),
+    [LogFieldKind.Plain]: (text) => LogSanitizer.text(text),
+  };
+
   private static field(key: string, value: LogData[string]): LogData[string] {
+    const kind = LogSanitizer.kindOf(key);
+    if (kind === LogFieldKind.Sensitive) return LogRedaction.SensitiveValue;
+
+    const maskable =
+      typeof value === "string" || (kind === LogFieldKind.Phone && typeof value === "number");
+    return maskable ? LogSanitizer.maskers[kind](String(value)) : value;
+  }
+
+  private static kindOf(key: string): LogFieldKindValue {
     const normalizedKey = key.replace(LogPattern.CamelCaseBoundary, "$1_$2").toLowerCase();
-    if (LogPattern.SensitiveField.test(normalizedKey)) {
-      return LogRedaction.SensitiveValue;
-    }
-
-    if (typeof value === "number") {
-      return LogPattern.PhoneField.test(normalizedKey) ? Mask.phone(String(value)) : value;
-    }
-    if (typeof value !== "string") return value;
-
-    if (LogPattern.PhoneField.test(normalizedKey)) {
-      return LogPattern.MaskedPhone.test(value) ? value : Mask.phone(value);
-    }
-
-    if (LogPattern.EmailField.test(normalizedKey)) {
-      return LogPattern.MaskedEmail.test(value) ? LogSanitizer.text(value) : Mask.email(value);
-    }
-
-    return LogSanitizer.text(value);
+    const rule = LogFieldRules.find(([, pattern]) => pattern.test(normalizedKey));
+    return rule?.[0] ?? LogFieldKind.Plain;
   }
 }

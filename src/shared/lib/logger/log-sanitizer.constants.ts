@@ -21,3 +21,22 @@ export const LogPattern = {
   MaskedPhone: /^\*{4}\d{4}$/,
   MaskedEmail: /^(?:[^@\s])?\*{3}@[^@\s]+$/,
 } as const;
+
+/**
+ * Redaction treatment selected from a diagnostic field's key.
+ */
+export const LogFieldKind = {
+  Sensitive: "sensitive",
+  Phone: "phone",
+  Email: "email",
+  Plain: "plain",
+} as const;
+
+/**
+ * Key classifiers checked in order; the first match selects the field kind.
+ */
+export const LogFieldRules = [
+  [LogFieldKind.Sensitive, LogPattern.SensitiveField],
+  [LogFieldKind.Phone, LogPattern.PhoneField],
+  [LogFieldKind.Email, LogPattern.EmailField],
+] as const;
