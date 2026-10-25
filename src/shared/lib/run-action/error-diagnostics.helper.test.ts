@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ErrorDiagnostics } from "./error-diagnostics";
+import { ErrorDiagnostics } from "./error-diagnostics.helper";
 
 describe("ErrorDiagnostics", () => {
   it("retains call locations without exception messages", () => {

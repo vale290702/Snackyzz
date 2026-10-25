@@ -1,9 +1,11 @@
 import type { z } from "zod";
 
 import type { CapabilityKind, CapabilitySource } from "./capability.constants";
-import type { Result, SharedErrorCode } from "./result.types";
+import type { Result, SharedErrorCode } from "../result";
 
-/** Trusted server context; access supplies permissions from SQL, never client input. */
+/**
+ * Trusted server context; access supplies permissions from SQL, never client input.
+ */
 export type CapabilityContext<
   Client = unknown,
   Permission extends string = string,
@@ -15,11 +17,15 @@ export type CapabilityContext<
   readonly source: (typeof CapabilitySource)[keyof typeof CapabilitySource];
 };
 
-/** The permission strings accepted by a concrete server context. */
+/**
+ * The permission strings accepted by a concrete server context.
+ */
 type ContextPermission<Context extends CapabilityContext> =
   Context["permissions"] extends ReadonlySet<infer Permission extends string> ? Permission : never;
 
-/** A use case's metadata, authorization requirement, parser and implementation. */
+/**
+ * A use case's metadata, authorization requirement, parser and implementation.
+ */
 export type CapabilityDefinition<
   Context extends CapabilityContext,
   InputSchema extends z.ZodType,
@@ -36,7 +42,9 @@ export type CapabilityDefinition<
   ) => Result<Value, ErrorCode> | Promise<Result<Value, ErrorCode>>;
 };
 
-/** The only executable entry point exposed by a capability. */
+/**
+ * The only executable entry point exposed by a capability.
+ */
 export type Capability<Context extends CapabilityContext, Value, ErrorCode extends string> = {
   run: (context: Context, input: unknown) => Promise<Result<Value, ErrorCode | SharedErrorCode>>;
 };

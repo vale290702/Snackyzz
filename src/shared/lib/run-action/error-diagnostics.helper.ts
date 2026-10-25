@@ -1,4 +1,6 @@
-/** Safe diagnostics for unexpected exceptions, excluding arbitrary payloads. */
+/**
+ * Safe diagnostics for unexpected exceptions, excluding arbitrary payloads.
+ */
 export class ErrorDiagnostics {
   private constructor() {}
 

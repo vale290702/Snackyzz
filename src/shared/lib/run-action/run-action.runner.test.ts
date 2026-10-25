@@ -1,8 +1,8 @@
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { err, ok } from "./result";
-import { runAction } from "./run-action";
+import { runAction } from ".";
+import { err, ok } from "../result";
 
 beforeEach(() => {
   // Why: bypass Vitest's buffered console to observe JSON lines at the stdout boundary.

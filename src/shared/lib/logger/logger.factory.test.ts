@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createLogger, logger, mask } from "./logger";
+import { createLogger, logger, mask } from ".";
 
 beforeEach(() => {
   // Why: bypass Vitest's buffered console to observe JSON lines at the stdout boundary.

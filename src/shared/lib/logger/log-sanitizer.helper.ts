@@ -1,8 +1,10 @@
 import { LogRedaction } from "./log-sanitizer.constants";
 import type { LogData } from "./logger.types";
-import { Mask } from "./mask";
+import { Mask } from "./mask.helper";
 
-/** Defensive redaction for explicitly selected diagnostic fields. */
+/**
+ * Defensive redaction for explicitly selected diagnostic fields.
+ */
 export class LogSanitizer {
   private constructor() {}
 

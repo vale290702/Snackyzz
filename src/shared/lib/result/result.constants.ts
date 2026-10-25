@@ -1,4 +1,6 @@
-/** Stable failures owned by shared server boundaries. */
+/**
+ * Stable failures owned by shared server boundaries.
+ */
 export const SharedError = {
   Unexpected: "unexpected",
   Forbidden: "forbidden",

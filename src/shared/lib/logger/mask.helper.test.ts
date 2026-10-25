@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { Mask } from "./mask";
+import { Mask } from "./mask.helper";
 
 describe("Mask", () => {
   it("masks malformed and short contact values without exposing them", () => {

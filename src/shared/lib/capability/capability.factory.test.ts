@@ -1,13 +1,8 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 
-import {
-  CapabilityKind,
-  CapabilitySource,
-  defineCapability,
-  type CapabilityContext,
-} from "./capability";
-import { err, ok } from "./result";
+import { CapabilityKind, CapabilitySource, defineCapability, type CapabilityContext } from ".";
+import { err, ok } from "../result";
 
 type Context = CapabilityContext<
   { fetch: () => number },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LogSanitizer } from "./log-sanitizer";
+import { LogSanitizer } from "./log-sanitizer.helper";
 
 describe("LogSanitizer", () => {
   it("redacts a copy without mutating the supplied diagnostic fields", () => {

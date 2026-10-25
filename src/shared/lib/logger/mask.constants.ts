@@ -1,4 +1,6 @@
-/** Contact placeholders and retained suffix length. */
+/**
+ * Contact placeholders and retained suffix length.
+ */
 export const ContactMask = {
   Email: "***",
   Phone: "****",

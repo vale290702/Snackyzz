@@ -1,6 +1,8 @@
 import { ContactMask } from "./mask.constants";
 
-/** Stateless contact masking helpers for explicitly selected diagnostic fields. */
+/**
+ * Stateless contact masking helpers for explicitly selected diagnostic fields.
+ */
 export class Mask {
   private constructor() {}
 

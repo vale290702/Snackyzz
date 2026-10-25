@@ -1,10 +1,14 @@
-/** Supported capability operations. */
+/**
+ * Supported capability operations.
+ */
 export const CapabilityKind = {
   Query: "query",
   Mutation: "mutation",
 } as const;
 
-/** Trusted entry channels recorded with capability execution. */
+/**
+ * Trusted entry channels recorded with capability execution.
+ */
 export const CapabilitySource = {
   AdminWeb: "admin_web",
   Messaging: "messaging",

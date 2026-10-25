@@ -30,8 +30,9 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - `@/shared/lib/logger`: `logger`, `createLogger(context)`, `Mask.email()`, `Mask.phone()` (`mask` remains an alias), `Logger`, `LogData` (flat diagnostic fields); loggers expose `info`, `error`, `step`
 - `@/shared/lib/run-action`: `runAction(name, operation)`, `ActionResult`
 - `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`, `CapabilityDefinition`, `Capability`, `CapabilityKind`, `CapabilitySource`
-- Pure helpers: `mask` exports `Mask`; `log-sanitizer` exports `LogSanitizer.text/fields`; `error-diagnostics` exports `ErrorDiagnostics.stackFrames`.
-- Contracts live in the owning `*.types.ts`; protocol values live in `*.constants.ts` (`SharedError`, `CapabilityKind/Source`, `LogLevel`, `ActionEvent/Outcome`). Public entry modules re-export the common contracts.
+- `logger` also exports `LogSanitizer.text/fields`, `LogLevel`, `LogLevelValue`; `run-action` also exports `ErrorDiagnostics.stackFrames`, `ActionEvent/Outcome`, `ActionOperation`, `ActionOutcomeValue`.
+- `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
+- Implementations use role suffixes (`*.helper.ts`, `*.factory.ts`, `*.runner.ts`); supporting files use `*.types.ts` and `*.constants.ts`. Tests sit beside their implementation with matching names. Documentation uses multiline JSDoc blocks.
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
 ## Invariants
@@ -61,4 +62,4 @@ Unit tests for every `lib/` module. Component tests for primitives with behavior
 - The shadcn CLI writes `import { cn } from "cn"` with this `components.json`. Fix it to `@/shared/lib/cn` after every `shadcn add`, then run `eslint --fix` and Prettier (it also emits `import * as React` and no semicolons).
 - The sonner component pulls in `next-themes` on `add`; uninstall it, there is no dark mode.
 - Radix primitives in jsdom need the pointer-capture, `scrollIntoView` and `ResizeObserver` stubs in `vitest.setup.ts`.
-- When you add a token scale (radius, shadow, text size) to `tokens.css`, add its names to `extendTailwindMerge` in `lib/cn.ts`, or `cn()` won't resolve overrides.
+- When you add a token scale (radius, shadow, text size) to `tokens.css`, add its names to `extendTailwindMerge` in `lib/cn/cn.helper.ts`, or `cn()` won't resolve overrides.

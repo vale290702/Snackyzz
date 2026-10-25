@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { err, isOk, ok, Results } from "./result";
+import { err, isOk, ok, Results } from ".";
 
 describe("result", () => {
   it("wraps a value", () => {

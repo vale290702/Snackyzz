@@ -3,11 +3,7 @@ import "server-only";
 import type { z } from "zod";
 
 import type { Capability, CapabilityContext, CapabilityDefinition } from "./capability.types";
-import { Results } from "./result";
-import { SharedError } from "./result.constants";
-
-export { CapabilityKind, CapabilitySource } from "./capability.constants";
-export type { Capability, CapabilityContext, CapabilityDefinition } from "./capability.types";
+import { Results, SharedError } from "../result";
 
 /**
  * Defines one use case whose entry point always authorizes before parsing.

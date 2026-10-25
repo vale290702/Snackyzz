@@ -1,11 +1,8 @@
 import "server-only";
 
-import { LogSanitizer } from "./log-sanitizer";
+import { LogSanitizer } from "./log-sanitizer.helper";
 import { LogLevel } from "./logger.constants";
 import type { LogData, Logger, LogLevelValue } from "./logger.types";
-
-export type { LogData, Logger } from "./logger.types";
-export { Mask, Mask as mask } from "./mask";
 
 function write(level: LogLevelValue, name: string, context: LogData, data: LogData): void {
   const record = {
@@ -35,5 +32,7 @@ export function createLogger(context: LogData): Logger {
   };
 }
 
-/** Default server logger for diagnostics outside an action. */
+/**
+ * Default server logger for diagnostics outside an action.
+ */
 export const logger = createLogger({});

@@ -1,9 +1,8 @@
 import type { Result } from "./result.types";
 
-export { SharedError } from "./result.constants";
-export type { Result, SharedErrorCode } from "./result.types";
-
-/** Constructors and guards for expected operation outcomes. */
+/**
+ * Constructors and guards for expected operation outcomes.
+ */
 export class Results {
   private constructor() {}
 
@@ -45,11 +44,17 @@ export class Results {
   }
 }
 
-/** Compatibility entry point for successful results. */
+/**
+ * Compatibility entry point for successful results.
+ */
 export const ok = Results.ok;
 
-/** Compatibility entry point for expected failures. */
+/**
+ * Compatibility entry point for expected failures.
+ */
 export const err = Results.err;
 
-/** Compatibility entry point for successful-result narrowing. */
+/**
+ * Compatibility entry point for successful-result narrowing.
+ */
 export const isOk = Results.isOk;

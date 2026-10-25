@@ -342,7 +342,7 @@ type Result<T, E extends string = ErrorCode> =
 
 ## 8. Logging (AG-06)
 
-- `shared/lib/logger.ts` writes JSON lines to stdout (Vercel captures them) with `{ level, msg, action, correlationId, ...context, durationMs }`. Swapping in a provider later only changes the transport.
+- `shared/lib/logger` (transport in `logger/logger.factory.ts`) writes JSON lines to stdout (Vercel captures them) with `{ level, msg, action, correlationId, ...context, durationMs }`. Swapping in a provider later only changes the transport.
 - **Must log:** every Server Action start, each named step, outcome; every job run with counts; every webhook (accepted/rejected/duplicate); every send attempt with channel, status, attempt number.
 - **Never log:** payment proof URLs, full emails/phones (mask as `a***@gmail.com`, `****1234`), tokens, secrets.
 
