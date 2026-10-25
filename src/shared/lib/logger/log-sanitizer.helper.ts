@@ -38,20 +38,19 @@ export class LogSanitizer {
       return LogRedaction.SensitiveValue;
     }
 
-    if (
-      LogPattern.PhoneField.test(normalizedKey) &&
-      (typeof value === "string" || typeof value === "number")
-    ) {
-      const text = String(value);
-      return LogPattern.MaskedPhone.test(text) ? text : Mask.phone(text);
+    if (typeof value === "number") {
+      return LogPattern.PhoneField.test(normalizedKey) ? Mask.phone(String(value)) : value;
+    }
+    if (typeof value !== "string") return value;
+
+    if (LogPattern.PhoneField.test(normalizedKey)) {
+      return LogPattern.MaskedPhone.test(value) ? value : Mask.phone(value);
     }
 
-    if (LogPattern.EmailField.test(normalizedKey) && typeof value === "string") {
-      const text = value;
-      const masked = LogPattern.MaskedEmail.test(text);
-      return masked ? LogSanitizer.text(text) : Mask.email(text);
+    if (LogPattern.EmailField.test(normalizedKey)) {
+      return LogPattern.MaskedEmail.test(value) ? LogSanitizer.text(value) : Mask.email(value);
     }
 
-    return typeof value === "string" ? LogSanitizer.text(value) : value;
+    return LogSanitizer.text(value);
   }
 }

@@ -1,4 +1,4 @@
-import { ErrorDiagnostic } from "./error-diagnostics.constants";
+import { errorIdentifiersSchema } from "./error-diagnostics.schema";
 import type { LogData } from "../logger";
 
 /**
@@ -10,34 +10,34 @@ export class ErrorDiagnostics {
   /**
    * Selects bounded error identifiers without logging messages, details or arbitrary payloads.
    * @param error Unexpected thrown value, including plain database error objects.
-   * @returns Stack frames, a safe error name, thrown type and a SQLSTATE when present.
+   * @returns Stack frames, a safe error name, thrown type and a SQLSTATE (null when unavailable).
    */
-  static describe(error: unknown): LogData {
-    const diagnostics: Record<string, string> = {
-      name: ErrorDiagnostic.UnknownName,
+  static toLogData(error: unknown): LogData {
+    const identifiers = errorIdentifiersSchema.parse({
+      name: ErrorDiagnostics.readDataProperty(error, "name"),
+      code: ErrorDiagnostics.readDataProperty(error, "code"),
+    });
+
+    return {
+      ...identifiers,
       thrownType: typeof error,
       stack: ErrorDiagnostics.stackFrames(error),
     };
-    if (typeof error !== "object" || error === null) return diagnostics;
+  }
 
-    const ownName = Object.getOwnPropertyDescriptor(error, "name");
-    const inheritedName =
-      error instanceof Error
-        ? Object.getOwnPropertyDescriptor(Object.getPrototypeOf(error), "name")
-        : undefined;
-    const name: unknown = (ownName ?? inheritedName)?.value;
-    if (typeof name === "string" && ErrorDiagnostic.NamePattern.test(name)) {
-      diagnostics.name = name;
-    } else if (error instanceof Error) {
-      diagnostics.name = Error.name;
+  private static readDataProperty(error: unknown, property: string): unknown {
+    if (typeof error !== "object" || error === null) return undefined;
+
+    // Why: logging must not invoke accessors on a thrown object.
+    const ownProperty = Object.getOwnPropertyDescriptor(error, property);
+    if (ownProperty) return ownProperty.value;
+
+    if (error instanceof Error) {
+      const prototype = Object.getPrototypeOf(error);
+      return Object.getOwnPropertyDescriptor(prototype, property)?.value;
     }
 
-    const code: unknown = Object.getOwnPropertyDescriptor(error, "code")?.value;
-    if (typeof code === "string" && ErrorDiagnostic.SqlStatePattern.test(code)) {
-      diagnostics.code = code;
-    }
-
-    return diagnostics;
+    return undefined;
   }
 
   /**

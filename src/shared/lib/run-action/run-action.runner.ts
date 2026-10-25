@@ -36,7 +36,7 @@ export async function runAction<Value, ErrorCode extends string = string>(
 
     outcome = ActionOutcome.UnexpectedFailure;
     errorCode = SharedError.Unexpected;
-    log.error(ActionEvent.Unexpected, ErrorDiagnostics.describe(error));
+    log.error(ActionEvent.Unexpected, ErrorDiagnostics.toLogData(error));
     return Results.err(SharedError.Unexpected);
   } finally {
     log.info(ActionEvent.Finish, {
