@@ -42,7 +42,7 @@ src/features/orders/
 ├─ AGENTS.md
 ├─ index.ts            # public API: what other features and app/ may import
 ├─ domain/             # pure: Zod schemas, types, rules, error codes. Imports only shared/lib and other domains' types
-├─ server/             # "server-only": actions.ts, queries.ts, repository.ts, jobs.ts
+├─ server/             # "server-only": purpose folders with *.actions.ts, *.query.ts, *.repository.ts, *.job.ts
 ├─ hooks/              # use-*.ts: client state, handlers, Server Action calls (the logic behind ui/)
 └─ ui/                 # components: render only; client components marked 'use client' at the leaf
 ```
@@ -56,9 +56,9 @@ app/page.tsx ──(server queries)──► DTO props ──► ui/Component �
 
 - **Components** (`ui/`) only render: markup, styling, accessibility, and wiring events to handlers from their hook.
 - **Hooks** (`hooks/`) hold everything a component needs: state, derived values (computed by `domain/` functions), event handlers, Server Action calls with `useActionState`/`useTransition`, optimistic updates. One hook per interactive component (`OrderActions` ↔ `useOrderActions`).
-- **Repository** (`server/repository.ts`): the only file that touches `supabase-js` for this feature. Takes a client, returns domain types (DTOs) parsed with Zod, never raw rows.
-- **Queries** (`server/queries.ts`): read use cases for Server Components. Authorize, call the repository, return minimal DTOs (Next's Data Access Layer pattern).
-- **Actions** (`server/actions.ts`): `'use server'` mutations. Every action follows the same steps:
+- **Repository** (`server/<purpose>/*.repository.ts`): the only modules that touch `supabase-js` for this feature. Takes a client, returns domain types (DTOs) parsed with Zod, never raw rows.
+- **Queries** (`server/<purpose>/*.query.ts`): read use cases for Server Components. Authorize, call the repository, return minimal DTOs (Next's Data Access Layer pattern).
+- **Actions** (`server/<purpose>/*.actions.ts`): `'use server'` mutations. Every action follows the same steps:
 
 ```ts
 /**
@@ -336,7 +336,7 @@ type Result<T, E extends string = ErrorCode> =
 
 - Forms reuse client-safe domain input schemas for field-level feedback. Capabilities still validate independently on the server and return generic `invalid_input`, without raw Zod issues or input values; feature-specific server validation needs an explicitly safe error contract.
 - Shared boundary codes (`unexpected`, `forbidden`, `invalid_input`) are defined by `SharedErrorCode` in `shared/lib/result`; their Spanish copy lives at `errors.shared.<code>`.
-- Expected failures (`invalid_input`, `out_of_stock`, `invalid_transition`, `payment_not_configured`, `rate_limited`, …) are `Result` errors. Each feature declares its codes in `domain/errors.ts`.
+- Expected failures (`invalid_input`, `out_of_stock`, `invalid_transition`, `payment_not_configured`, `rate_limited`, …) are `Result` errors. Each feature declares its codes in `domain/errors/errors.constants.ts`.
 - SQL entry points raise with `errcode` values from the `P0` class and a stable message key (`raise exception using errcode = 'P0001', message = 'out_of_stock'`). Repositories map these to `Result` errors; unknown errors are rethrown.
 - Error codes map to copy through next-intl (`errors.<feature>.<code>`), the one place where user-facing error text lives.
 - `throw` is only for bugs and broken invariants.
@@ -372,3 +372,5 @@ type Result<T, E extends string = ErrorCode> =
 - Tailwind v4; tokens from `DESIGN.md` go in `src/styles/tokens.css` (`@theme`): brand palette (`--color-cream #F9EDE0`, `--color-chocolate #3C1907`, `--color-orange #ED781A`, `--color-orange-deep #D95907`), type scale, radii, spacing.
 - shadcn/ui components are generated into `src/shared/ui/` and restyled with tokens. Feature UI composes them and never restyles them ad hoc.
 - Themes (`features/themes`) override a documented subset of tokens through a `data-theme` attribute on `<html>`; components never check the active theme.
+
+For module filenames, purpose folders and helper/function choices, follow [Code conventions](../code-conventions.md).

@@ -41,7 +41,7 @@ The target tree for the rebuild repo (DIR-01). Every directory marked 📄 has a
 │  │  ├─ media/ 📄              # uploads, file metadata, signed URLs
 │  │  ├─ reporting/ 📄          # sales reports (SQL functions + admin UI)
 │  │  └─ marketing/ 📄          # home/about content sections (owns no tables)
-│  │     # every feature: index.ts · domain/ · server/ (incl. capabilities.ts) · hooks/ · ui/ (create only what you need)
+│  │     # every feature: index.ts · domain/ · server/ (purpose groups incl. *.capability.ts) · hooks/ · ui/ (create only what you need)
 │  ├─ shared/ 📄
 │  │  ├─ ui/                   # shadcn primitives, restyled with tokens
 │  │  ├─ lib/                  # result, logger, run-action, money, dates, errors, ids
@@ -120,13 +120,15 @@ Route Handlers in `app/api` are the composition root: they pass consumers and in
 | Thing | Convention | Example |
 |---|---|---|
 | Files & folders | `kebab-case` | `delivery-windows.ts` |
-| React components | `PascalCase` export, file in kebab-case | `order-card.tsx` → `export function OrderCard` |
-| Hooks | `use-*.ts` in `hooks/`, named after the component they serve | `checkout-form.tsx` ↔ `use-checkout-form.ts` |
-| Server Actions | `<verb><Noun>Action` in `server/actions.ts` | `transitionOrderAction` |
-| Queries | `get<Noun>` / `list<Nouns>` in `server/queries.ts` | `listPendingOrders` |
+| React components | `PascalCase` export, file in kebab-case | `order-card.component.tsx` → `export function OrderCard` |
+| Hooks | `use-*.hook.ts` in `hooks/`, named after the component they serve | `checkout-form.component.tsx` ↔ `use-checkout-form.hook.ts` |
+| Server Actions | `<verb><Noun>Action` in `server/<purpose>/*.actions.ts` | `transitionOrderAction` |
+| Queries | `get<Noun>` / `list<Nouns>` in `server/<purpose>/*.query.ts` | `listPendingOrders` |
 | Zod schemas | `<noun>Schema` / `<verb><Noun>Input` | `placeOrderInput` |
 | Tests | `<file>.test.ts(x)` next to the file; `*.int.test.ts` for tests hitting local Supabase | `delivery-windows.test.ts` |
 | SQL entry points | `<schema>.<verb>_<noun>` | `orders.place_order` |
-| Capabilities | `<feature>.<verb>` name, `camelCase` export in `server/capabilities.ts` | `orders.transition` → `transitionOrder` |
+| Capabilities | `<feature>.<verb>` name, `camelCase` export in `server/<purpose>/*.capability.ts` | `orders.transition` → `transitionOrder` |
 | Domain events | `<aggregate>.<past_tense>` + version | `order.placed` v1 |
 | Route folders | English, kebab-case (ARC-03) | `app/(store)/shop` |
+
+Module layout, role suffixes and function/class rules are defined in [Code conventions](../code-conventions.md).

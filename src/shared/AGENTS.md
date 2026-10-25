@@ -32,7 +32,7 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`, `CapabilityDefinition`, `Capability`, `CapabilityKind`, `CapabilitySource`
 - `logger` also exports `LogSanitizer.text/fields`, `LogLevel`, `LogLevelValue`; `run-action` also exports `ErrorDiagnostics.toLogData/stackFrames`, `ActionEvent/Outcome`, `ActionOperation`, `ActionOutcomeValue`.
 - `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
-- Implementations use role suffixes (`*.helper.ts`, `*.factory.ts`, `*.runner.ts`); supporting files use `*.types.ts`, `*.constants.ts` and `*.schema.ts`. Tests sit beside their implementation with matching names. Documentation uses multiline JSDoc blocks.
+- Follow [the canonical conventions](../../docs/code-conventions.md) for suffixes, helper classes, documentation and the existing config/UI exceptions.
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
 ## Invariants
