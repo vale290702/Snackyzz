@@ -14,6 +14,8 @@ Use `CapabilityContext<Client, Permission, Admin>` with a SQL-supplied `Readonly
 
 Keep the logger transport private and server-only. Callers select flat safe diagnostic fields; common sensitive keys, URLs and contact patterns receive defensive redaction. Unexpected action failures log stack frames, omitting messages and arbitrary payloads that may contain secrets. Next signals propagate through `unstable_rethrow`; finish and duration are always logged.
 
+Keep descriptive generic names and separate contracts (`*.types.ts`) and named values (`*.constants.ts`) from behavior. Typed constant objects preserve existing string unions. Focused static helpers (`Results`, `Mask`, `LogSanitizer`, `ErrorDiagnostics`) make call sites discoverable; operation entry points remain functions. Existing imports and helper aliases remain compatible.
+
 ## Alternatives considered
 
 - Import feature types into shared — violates enforced boundaries.

@@ -2,23 +2,12 @@ import "server-only";
 
 import type { z } from "zod";
 
-import { err, type Result, type SharedErrorCode } from "./result";
+import type { Capability, CapabilityContext, CapabilityDefinition } from "./capability.types";
+import { Results } from "./result";
+import { SharedError } from "./result.constants";
 
-/** Trusted server context; access supplies permissions from SQL, never from client input. */
-export type CapabilityContext<Client = unknown, P extends string = string, Admin = unknown> = {
-  readonly client: Client;
-  readonly permissions: ReadonlySet<P>;
-  readonly admin: Admin;
-  readonly source: "admin_web" | "messaging";
-};
-
-type Definition<C extends CapabilityContext, S extends z.ZodType, T, E extends string> = {
-  name: string;
-  kind: "query" | "mutation";
-  permission: C["permissions"] extends ReadonlySet<infer P extends string> ? P : never;
-  input: S;
-  execute: (context: C, input: z.output<S>) => Result<T, E> | Promise<Result<T, E>>;
-};
+export { CapabilityKind, CapabilitySource } from "./capability.constants";
+export type { Capability, CapabilityContext, CapabilityDefinition } from "./capability.types";
 
 /**
  * Defines one use case whose entry point always authorizes before parsing.
@@ -27,22 +16,22 @@ type Definition<C extends CapabilityContext, S extends z.ZodType, T, E extends s
  * @throws Bugs propagate to the action or job boundary.
  */
 export function defineCapability<
-  C extends CapabilityContext,
-  S extends z.ZodType,
-  T,
-  E extends string,
+  Context extends CapabilityContext,
+  InputSchema extends z.ZodType,
+  Value,
+  ErrorCode extends string,
 >(
-  definition: Definition<C, S, T, E>,
-): { run: (context: C, input: unknown) => Promise<Result<T, E | SharedErrorCode>> } {
+  definition: CapabilityDefinition<Context, InputSchema, Value, ErrorCode>,
+): Capability<Context, Value, ErrorCode> {
   return {
     async run(context, input) {
       if (!context.permissions.has(definition.permission)) {
-        return err("forbidden");
+        return Results.err(SharedError.Forbidden);
       }
 
       const parsed = await definition.input.safeParseAsync(input);
       if (!parsed.success) {
-        return err("invalid_input");
+        return Results.err(SharedError.InvalidInput);
       }
 
       return definition.execute(context, parsed.data);

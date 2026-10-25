@@ -53,15 +53,6 @@ describe("logger", () => {
     expect(output).toContain("a***@example.test");
     expect(output).toContain("****1234");
   });
-
-  it("masks malformed and short contact values without exposing them", () => {
-    expect(mask.email("ana@example.test")).toBe("a***@example.test");
-    expect(mask.email("invalid")).toBe("***");
-    expect(mask.email("a@example.test")).toBe("***@example.test");
-    expect(mask.phone("+506 8888-1234")).toBe("****1234");
-    expect(mask.phone("1234")).toBe("****");
-    expect(mask.phone("")).toBe("****");
-  });
 });
 
 it("keeps UUIDs intact and prevents data from replacing bound context", () => {

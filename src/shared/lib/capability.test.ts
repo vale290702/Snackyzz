@@ -1,7 +1,12 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 
-import { defineCapability, type CapabilityContext } from "./capability";
+import {
+  CapabilityKind,
+  CapabilitySource,
+  defineCapability,
+  type CapabilityContext,
+} from "./capability";
 import { err, ok } from "./result";
 
 type Context = CapabilityContext<
@@ -10,7 +15,7 @@ type Context = CapabilityContext<
   { id: string }
 >;
 
-function context(source: Context["source"] = "admin_web"): Context {
+function context(source: Context["source"] = CapabilitySource.AdminWeb): Context {
   return {
     client: { fetch: () => 42 },
     admin: { id: "fixture" },
@@ -25,7 +30,7 @@ describe("defineCapability", () => {
     const execute = vi.fn(() => ok(1));
     const capability = defineCapability({
       name: "sample.write",
-      kind: "mutation",
+      kind: CapabilityKind.Mutation,
       permission: "sample.write",
       input: z.string().transform(parse),
       execute,
@@ -40,7 +45,7 @@ describe("defineCapability", () => {
     const execute = vi.fn(() => ok(1));
     const capability = defineCapability({
       name: "sample.read",
-      kind: "query",
+      kind: CapabilityKind.Query,
       permission: "sample.read",
       input: z.number(),
       execute,
@@ -50,25 +55,25 @@ describe("defineCapability", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it.each(["admin_web", "messaging"] as const)(
+  it.each([CapabilitySource.AdminWeb, CapabilitySource.Messaging])(
     "passes parsed input and typed context from %s",
     async (source) => {
-      const ctx = context(source);
+      const capabilityContext = context(source);
       const execute = vi.fn((received: Context, input: number) => {
         expectTypeOf(received.client.fetch()).toEqualTypeOf<number>();
-        expect(received).toBe(ctx);
+        expect(received).toBe(capabilityContext);
         return ok(input + received.client.fetch());
       });
       const capability = defineCapability({
         name: "sample.read",
-        kind: "query",
+        kind: CapabilityKind.Query,
         permission: "sample.read",
         input: z.string().transform(Number),
         execute,
       });
 
-      expect(await capability.run(ctx, "8")).toEqual(ok(50));
-      expect(execute).toHaveBeenCalledWith(ctx, 8);
+      expect(await capability.run(capabilityContext, "8")).toEqual(ok(50));
+      expect(execute).toHaveBeenCalledWith(capabilityContext, 8);
     },
   );
 
@@ -76,7 +81,7 @@ describe("defineCapability", () => {
     const execute = vi.fn(() => err("sample_failure"));
     const capability = defineCapability({
       name: "sample.read",
-      kind: "query",
+      kind: CapabilityKind.Query,
       permission: "sample.read",
       input: z.string(),
       execute,

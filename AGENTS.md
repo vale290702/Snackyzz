@@ -72,6 +72,10 @@ Code is written for the next reader. Dense, unbroken blocks are rejected in revi
 - One statement per line. Split a function into **paragraphs** separated by a blank line, one per logical step (e.g. authorize · parse · execute · respond).
 - Prefer early returns over nested `if`/`else`. No nested ternaries.
 - Name intermediate values instead of chaining or nesting long expressions.
+- Prioritize readability and developer experience: use descriptive identifiers, including generic parameters (`Value`, `ErrorCode`, `Context`, `InputSchema`), rather than single-letter definitions.
+- Prefer named constants or enums for protocol values, error codes, states and repeated semantic strings. Typed `as const` objects preserve string-literal compatibility; tests may assert literal wire values independently.
+- Keep each file focused on one responsibility. Put supporting contracts in `<name>.types.ts`, enums in `<name>.enum.ts`, and constants in `<name>.constants.ts`, beside the owning implementation.
+- Prefer focused static helper classes for discoverable usage such as `Strings.humanize(value)` or `Results.ok(value)`. Keep operation entry points and stateful factories explicit; avoid catch-all utility classes.
 - Objects, parameter lists and JSX props with more than three entries go on multiple lines.
 - No end-of-line comments narrating steps. Well-named functions and variables replace them.
 - Imports in three groups separated by blank lines: packages, `@/` aliases, relative (ESLint `import/order`).

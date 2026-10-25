@@ -3,49 +3,42 @@ import "server-only";
 import { unstable_rethrow } from "next/navigation";
 import { randomUUID } from "node:crypto";
 
-import { createLogger, type Logger } from "./logger";
-import { err, type Result, type SharedErrorCode } from "./result";
+import { ErrorDiagnostics } from "./error-diagnostics";
+import { createLogger } from "./logger";
+import { Results } from "./result";
+import { SharedError } from "./result.constants";
+import { ActionEvent, ActionOutcome } from "./run-action.constants";
+import type { ActionOperation, ActionOutcomeValue, ActionResult } from "./run-action.types";
 
-/** Client-safe outcome with feature codes and shared boundary failures. */
-export type ActionResult<T, E extends string = string> = Result<T, E | SharedErrorCode>;
-
-function stackFrames(error: unknown): string {
-  if (!(error instanceof Error)) return "";
-
-  // Why: exception messages and arbitrary thrown payloads can contain credentials or input.
-  return (error.stack ?? "")
-    .split("\n")
-    .filter((line) => /^\s+at /.test(line))
-    .join("\n");
-}
+export type { ActionResult } from "./run-action.types";
 
 /**
  * Correlates action diagnostics and converts unexpected failures to a safe error code.
  * @param name Stable action name, never user input.
- * @param fn Operation returning expected failures as Results and logging named steps.
+ * @param operation Operation returning expected failures as Results and logging named steps.
  * @returns The operation's result or an unexpected error.
  * @throws Next.js control-flow signals are rethrown for the framework to handle.
  */
-export async function runAction<T, E extends string = string>(
+export async function runAction<Value, ErrorCode extends string = string>(
   name: string,
-  fn: (log: Logger) => Result<T, E> | Promise<Result<T, E>>,
-): Promise<ActionResult<T, E>> {
+  operation: ActionOperation<Value, ErrorCode>,
+): Promise<ActionResult<Value, ErrorCode>> {
   const log = createLogger({ action: name, correlationId: randomUUID() });
   const started = performance.now();
-  let outcome = "interrupted";
-  log.info("start");
+  let outcome: ActionOutcomeValue = ActionOutcome.Interrupted;
+  log.info(ActionEvent.Start);
 
   try {
-    const result = await fn(log);
-    outcome = result.ok ? "ok" : "error";
+    const result = await operation(log);
+    outcome = result.ok ? ActionOutcome.Success : ActionOutcome.ExpectedFailure;
     return result;
   } catch (error) {
     unstable_rethrow(error);
 
-    outcome = "unexpected";
-    log.error("unexpected", { stack: stackFrames(error) });
-    return err("unexpected");
+    outcome = ActionOutcome.UnexpectedFailure;
+    log.error(ActionEvent.Unexpected, { stack: ErrorDiagnostics.stackFrames(error) });
+    return Results.err(SharedError.Unexpected);
   } finally {
-    log.info("finish", { outcome, durationMs: performance.now() - started });
+    log.info(ActionEvent.Finish, { outcome, durationMs: performance.now() - started });
   }
 }

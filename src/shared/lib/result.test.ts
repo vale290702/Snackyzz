@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { err, isOk, ok } from "./result";
+import { err, isOk, ok, Results } from "./result";
 
 describe("result", () => {
   it("wraps a value", () => {
-    const result = ok(42);
+    const result = Results.ok(42);
 
     expect(result).toEqual({ ok: true, value: 42 });
-    expect(isOk(result)).toBe(true);
+    expect(Results.isOk(result)).toBe(true);
   });
 
   it("wraps an error without meta", () => {
-    const result = err("out_of_stock");
+    const result = Results.err("out_of_stock");
 
     expect(result).toEqual({ ok: false, error: "out_of_stock" });
     expect("meta" in result).toBe(false);
-    expect(isOk(result)).toBe(false);
+    expect(Results.isOk(result)).toBe(false);
   });
 
   it("keeps meta when given", () => {
@@ -25,4 +25,10 @@ describe("result", () => {
       meta: { field: "phone" },
     });
   });
+});
+
+it("keeps the original function entry points available", () => {
+  expect(ok).toBe(Results.ok);
+  expect(err).toBe(Results.err);
+  expect(isOk).toBe(Results.isOk);
 });
