@@ -25,10 +25,10 @@ describe("result", () => {
       meta: { field: "phone" },
     });
   });
-});
 
-it("keeps the original function entry points available", () => {
-  expect(ok).toBe(Results.ok);
-  expect(err).toBe(Results.err);
-  expect(isOk).toBe(Results.isOk);
+  it("keeps the original function entry points available", () => {
+    expect(ok).toBe(Results.ok);
+    expect(err).toBe(Results.err);
+    expect(isOk).toBe(Results.isOk);
+  });
 });

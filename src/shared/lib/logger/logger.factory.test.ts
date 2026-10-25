@@ -4,12 +4,13 @@ import { createLogger, logger, mask } from ".";
 
 beforeEach(() => {
   // Why: bypass Vitest's buffered console to observe JSON lines at the stdout boundary.
-  vi.stubGlobal("console", { log: (line: string) => process.stdout.write(line + "\n") });
+  vi.spyOn(globalThis.console, "log").mockImplementation((line: string) => {
+    process.stdout.write(line + "\n");
+  });
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
 });
 
 describe("logger", () => {
@@ -53,26 +54,26 @@ describe("logger", () => {
     expect(output).toContain("a***@example.test");
     expect(output).toContain("****1234");
   });
-});
 
-it("keeps UUIDs intact and prevents data from replacing bound context", () => {
-  const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-  const correlationId = "66d355c1-1234-4124-9f54-c6bda0c7fc12";
-  createLogger({ correlationId }).step("done", { correlationId: "override", level: "fake" });
+  it("keeps UUIDs intact and prevents data from replacing bound context", () => {
+    const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const correlationId = "66d355c1-1234-4124-9f54-c6bda0c7fc12";
+    createLogger({ correlationId }).step("done", { correlationId: "override", level: "fake" });
 
-  expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
-    correlationId,
-    level: "info",
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+      correlationId,
+      level: "info",
+    });
   });
-});
 
-it("masks numeric phone fields and short raw contact fields", () => {
-  const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-  logger.info("contact", { phone: 88881234, backupPhone: "1234", email: "invalid" });
+  it("masks numeric phone fields and short raw contact fields", () => {
+    const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    logger.info("contact", { phone: 88881234, backupPhone: "1234", email: "invalid" });
 
-  expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
-    phone: "****1234",
-    backupPhone: "****",
-    email: "***",
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+      phone: "****1234",
+      backupPhone: "****",
+      email: "***",
+    });
   });
 });

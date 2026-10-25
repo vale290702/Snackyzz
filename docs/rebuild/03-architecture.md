@@ -334,6 +334,7 @@ type Result<T, E extends string = ErrorCode> =
   | { ok: false; error: E; meta?: Record<string, unknown> };
 ```
 
+- Forms reuse client-safe domain input schemas for field-level feedback. Capabilities still validate independently on the server and return generic `invalid_input`, without raw Zod issues or input values; feature-specific server validation needs an explicitly safe error contract.
 - Shared boundary codes (`unexpected`, `forbidden`, `invalid_input`) are defined by `SharedErrorCode` in `shared/lib/result`; their Spanish copy lives at `errors.shared.<code>`.
 - Expected failures (`invalid_input`, `out_of_stock`, `invalid_transition`, `payment_not_configured`, `rate_limited`, …) are `Result` errors. Each feature declares its codes in `domain/errors.ts`.
 - SQL entry points raise with `errcode` values from the `P0` class and a stable message key (`raise exception using errcode = 'P0001', message = 'out_of_stock'`). Repositories map these to `Result` errors; unknown errors are rethrown.
@@ -344,6 +345,7 @@ type Result<T, E extends string = ErrorCode> =
 
 - `shared/lib/logger` (transport in `logger/logger.factory.ts`) writes JSON lines to stdout (Vercel captures them) with `{ level, msg, action, correlationId, ...context, durationMs }`. Swapping in a provider later only changes the transport.
 - **Must log:** every Server Action start, each named step, outcome; every job run with counts; every webhook (accepted/rejected/duplicate); every send attempt with channel, status, attempt number.
+- Phone values must use phone-named fields or explicit masking; free-text digit sequences stay intact so dates and identifiers remain useful. Contact and sensitive-value key suffixes are masked without hiding status fields. Action finish logs include stable failure codes and rounded milliseconds; unexpected diagnostics retain bounded names and SQLSTATE codes while excluding raw messages.
 - **Never log:** payment proof URLs, full emails/phones (mask as `a***@gmail.com`, `****1234`), tokens, secrets.
 
 ## 9. Caching & rendering

@@ -23,19 +23,26 @@ export async function runAction<Value, ErrorCode extends string = string>(
   const log = createLogger({ action: name, correlationId: randomUUID() });
   const started = performance.now();
   let outcome: ActionOutcomeValue = ActionOutcome.Interrupted;
+  let errorCode: string | undefined;
   log.info(ActionEvent.Start);
 
   try {
     const result = await operation(log);
     outcome = result.ok ? ActionOutcome.Success : ActionOutcome.ExpectedFailure;
+    if (!result.ok) errorCode = result.error;
     return result;
   } catch (error) {
     unstable_rethrow(error);
 
     outcome = ActionOutcome.UnexpectedFailure;
-    log.error(ActionEvent.Unexpected, { stack: ErrorDiagnostics.stackFrames(error) });
+    errorCode = SharedError.Unexpected;
+    log.error(ActionEvent.Unexpected, ErrorDiagnostics.describe(error));
     return Results.err(SharedError.Unexpected);
   } finally {
-    log.info(ActionEvent.Finish, { outcome, durationMs: performance.now() - started });
+    log.info(ActionEvent.Finish, {
+      outcome,
+      durationMs: Math.round(performance.now() - started),
+      ...(errorCode === undefined ? {} : { error: errorCode }),
+    });
   }
 }

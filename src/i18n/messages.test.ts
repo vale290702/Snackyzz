@@ -24,14 +24,14 @@ describe("messages", () => {
       expect(keys, locale).toEqual(expectedKeys);
     }
   });
-});
 
-it("provides Spanish copy for every shared error code", async () => {
-  const messages = await loadMessages("es-CR");
-  const copy: Record<SharedErrorCode, string> = messages.errors.shared;
+  it("provides Spanish copy for every shared error code", async () => {
+    const messages = await loadMessages("es-CR");
+    const copy: Record<SharedErrorCode, string> = messages.errors.shared;
 
-  expect(Object.keys(copy).sort()).toEqual(["forbidden", "invalid_input", "unexpected"]);
-  for (const message of Object.values(copy)) {
-    expect(message.trim().length).toBeGreaterThan(0);
-  }
+    expect(Object.keys(copy).sort()).toEqual(["forbidden", "invalid_input", "unexpected"]);
+    for (const message of Object.values(copy)) {
+      expect(message.trim().length).toBeGreaterThan(0);
+    }
+  });
 });

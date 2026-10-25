@@ -9,15 +9,14 @@ export class LogSanitizer {
   private constructor() {}
 
   /**
-   * Masks recognizable contacts and removes URLs in diagnostic text.
+   * Masks embedded emails and removes URLs; phones must be supplied as named fields.
    * @param value Safe diagnostic text, never arbitrary secrets or user payloads.
    * @returns Text with common sensitive patterns concealed.
    */
   static text(value: string): string {
     return value
       .replace(LogPattern.EmbeddedUrl, LogRedaction.Url)
-      .replace(LogPattern.EmbeddedEmail, (email) => Mask.email(email))
-      .replace(LogPattern.EmbeddedPhone, (phone) => Mask.phone(phone));
+      .replace(LogPattern.EmbeddedEmail, (email) => Mask.email(email));
   }
 
   /**
@@ -34,17 +33,21 @@ export class LogSanitizer {
   }
 
   private static field(key: string, value: LogData[string]): LogData[string] {
-    if (LogPattern.SensitiveField.test(key)) {
+    const normalizedKey = key.replace(LogPattern.CamelCaseBoundary, "$1_$2").toLowerCase();
+    if (LogPattern.SensitiveField.test(normalizedKey)) {
       return LogRedaction.SensitiveValue;
     }
 
-    if (LogPattern.PhoneField.test(key)) {
+    if (
+      LogPattern.PhoneField.test(normalizedKey) &&
+      (typeof value === "string" || typeof value === "number")
+    ) {
       const text = String(value);
       return LogPattern.MaskedPhone.test(text) ? text : Mask.phone(text);
     }
 
-    if (LogPattern.EmailField.test(key)) {
-      const text = String(value);
+    if (LogPattern.EmailField.test(normalizedKey) && typeof value === "string") {
+      const text = value;
       const masked = LogPattern.MaskedEmail.test(text);
       return masked ? LogSanitizer.text(text) : Mask.email(text);
     }

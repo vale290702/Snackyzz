@@ -13,10 +13,11 @@ export const LogRedaction = {
 export const LogPattern = {
   EmbeddedUrl: /https?:\/\/[^\s)]+/gi,
   EmbeddedEmail: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
-  EmbeddedPhone: /(?<![\w-])\+?\d[\d ()-]{6,}\d(?![\w-])/g,
-  SensitiveField: /token|secret|password|authorization|cookie|proof|api.?key/i,
-  PhoneField: /phone/i,
-  EmailField: /email/i,
+  CamelCaseBoundary: /([a-z0-9])([A-Z])/g,
+  SensitiveField:
+    /(?:^|_)(?:token|secret|password|authorization|cookies?|proof(?:_url)?|api_?key)$/,
+  PhoneField: /(?:^|_)phone$/,
+  EmailField: /(?:^|_)email$/,
   MaskedPhone: /^\*{4}\d{4}$/,
   MaskedEmail: /^(?:[^@\s])?\*{3}@[^@\s]+$/,
 } as const;
