@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AccessError } from "@/features/access/domain/errors";
 import { SignInFieldError } from "@/features/access/domain/sign-in";
+import { MediaError } from "@/features/media/domain/errors";
 import type { SharedErrorCode } from "@/shared/lib/result";
 
 import { defaultLocale, locales } from "./config";
@@ -18,6 +19,12 @@ function collectKeys(value: unknown, prefix = ""): string[] {
 }
 
 describe("messages", () => {
+  it("provides Spanish copy for every media error", async () => {
+    const messages = await loadMessages(defaultLocale);
+
+    expect(Object.keys(messages.errors.media).sort()).toEqual(Object.values(MediaError).sort());
+  });
+
   it("every locale has the same keys as the default locale", async () => {
     const expectedKeys = collectKeys(await loadMessages(defaultLocale)).sort();
 

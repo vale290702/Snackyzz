@@ -19,6 +19,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-publishable-key
       SUPABASE_SECRET_KEY: ci-placeholder-secret-key
+      MEDIA_SIGNING_SECRET: ci-only-placeholder-not-a-production-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

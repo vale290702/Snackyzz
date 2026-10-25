@@ -17,3 +17,7 @@ Knowledge that code can't express: the domain language, business rules, architec
 - ADR required for: refactors, design changes, complex features, schema changes, architectural changes, new dependencies (AG-11). Approver: Alejandro Loaiza.
 - Keep documents short and link instead of repeating. Diagrams in Mermaid so they diff.
 - Directory `AGENTS.md` files describe _one directory_; cross-cutting rules go in the root `AGENTS.md` or here.
+
+## Media decisions
+
+ADR 0011 records storage layout, binary byte/pixel ceilings, revalidation, browser receipts and the approved private HMAC rate limiter, including deployment requirements and deferred work.

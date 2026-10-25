@@ -30,9 +30,10 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
 - `@/shared/lib/logger`: `logger`, `createLogger(context)`, `Mask.email()`, `Mask.phone()` (`mask` remains an alias), `Logger`, `LogData` (flat diagnostic fields); loggers expose `info`, `error`, `step`
 - `@/shared/lib/run-action`: `runAction(name, operation)`, `ActionResult`
 - `@/shared/lib/form-action` (browser-safe): `useFormAction({ schema, action, fieldErrorCodes?, preserve? })` → `{ formAction, isPending, state, values, fieldErrors, formError }` (codes, never copy; feature hooks return it as is and components translate); `FormInput.none` (empty schema), `FormInput.read(schema, formData, codes)`, `FormInput.values(formData, fields)`; `FormSubmission.idle/submit/fieldErrors/formError`; `FormActionStatus`; types `FormActionState`, `FormActionOptions`, `FormAction`, `FieldErrors`, `FormValues`, `FormField`, `FormSchema`, `ParsedForm`, `InvalidForm`, `FormServerAction`. Usage: [Forms and Server Actions](../../docs/code-conventions.md#forms-and-server-actions).
+- `@/shared/lib/client-ip` (server-only): `ClientIp.fromHeaders(headers, { allowLoopbackFallback })` → canonical IP or null, reading only Vercel's overwritten `TRUSTED_CLIENT_IP_HEADER`; `ClientIp.canonical(value)`; `LOOPBACK_IP`
 - `@/shared/lib/capability`: `defineCapability({ name, kind, permission, input, execute })` → `{ run(context, input) }` (checks permission, parses input, then executes), `CapabilityContext<Client, Permission, Admin>`, `CapabilityDefinition`, `Capability`, `CapabilityKind`, `CapabilitySource`
 - `logger` also exports `LogSanitizer.text/fields`, `LogLevel`, `LogLevelValue`; `run-action` also exports `ErrorDiagnostics.toLogData/stackFrames`, `ActionEvent/Outcome`, `ActionOperation`, `ActionOutcomeValue`.
-- `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `form-action/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
+- `lib/` groups code by purpose: `logger/`, `result/`, `run-action/`, `capability/`, `form-action/`, `client-ip/`, `cn/`. Each group exposes explicit public exports from `index.ts`; import the group path, not another group's implementation files.
 - Follow [the canonical conventions](../../docs/code-conventions.md) for suffixes, helper classes, documentation and the existing config/UI exceptions.
 - `@/shared/config/env.server` (`serverEnv`), `@/shared/config/env.public` (`publicEnv`), `@/shared/config/parse-env` (`parseEnv`). Each feature adds the variables it needs to these schemas and to `.env.example`.
 
@@ -61,6 +62,7 @@ Unit tests for every `lib/` module. Component tests for primitives with behavior
 
 ## Gotchas
 
+- `env.server` requires `MEDIA_SIGNING_SECRET` (at least 32 random characters); it signs media upload receipts and rate-limit keys.
 - `next build` imports every route, so env parsing runs at build time: a build without the variables fails. CI sets schema-valid placeholders in `.github/workflows/ci.yml`; each Vercel environment needs real values. Add new variables to both.
 - Don't add a helper here "because two features might need it". Wait for the third use (AG-02).
 - Money formatting needs the locale; take a formatter from next-intl, don't hard-code `es-CR`.
