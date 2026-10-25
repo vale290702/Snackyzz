@@ -1,5 +1,6 @@
 import "server-only";
 
+import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 
 import { Results, type Result } from "@/shared/lib/result";
@@ -7,7 +8,7 @@ import { Results, type Result } from "@/shared/lib/result";
 import type { UploadReceipt } from "./upload-receipt.types";
 import type { ImageDimensions, InspectedImage } from "./upload.types";
 import { MediaError, type MediaErrorCode } from "../../domain/errors";
-import { ImageSignature, UPLOAD_POLICIES } from "../../domain/upload-policy";
+import { UPLOAD_POLICIES } from "../../domain/upload-policy";
 
 /**
  * Checks an uploaded object against what its receipt promised, then decodes it fully.
@@ -28,10 +29,12 @@ export async function inspectUpload(
     return Results.err(MediaError.InvalidUpload);
   }
 
-  // Storage serves the object with the type the browser declared, so that must match as well.
+  // Detection reads the content, never the declared type, and keeps other formats (SVG, TIFF,
+  // HEIF…) away from the decoder. Storage serves the object with the type the browser declared,
+  // so that must match as well.
   const bytes = Buffer.from(await object.arrayBuffer());
-  const isPromisedType =
-    ImageSignature.detect(bytes) === receipt.mimeType && object.type === receipt.mimeType;
+  const detected = await fileTypeFromBuffer(bytes);
+  const isPromisedType = detected?.mime === receipt.mimeType && object.type === receipt.mimeType;
   if (!isPromisedType) {
     return Results.err(MediaError.InvalidFileType);
   }

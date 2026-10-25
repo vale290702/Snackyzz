@@ -1,13 +1,8 @@
 import type { z } from "zod";
 
-import type { uploadReceiptSchema } from "./upload-receipt.schema";
+import type { uploadReceiptClaimsSchema } from "./upload-receipt.schema";
 
 /**
- * A verified upload receipt.
+ * What the server promised a browser when it issued an upload URL.
  */
-export type UploadReceipt = z.output<typeof uploadReceiptSchema>;
-
-/**
- * The claims a receipt records; the expiry is added when it is issued.
- */
-export type UploadClaims = Omit<UploadReceipt, "expiresAt">;
+export type UploadReceipt = z.output<typeof uploadReceiptClaimsSchema>;

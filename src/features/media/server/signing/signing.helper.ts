@@ -1,13 +1,13 @@
 import "server-only";
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 
 import { serverEnv } from "@/shared/config/env.server";
 
 import type { SigningScopeValue } from "./signing.types";
 
 /**
- * HMAC-SHA256 signatures with the media secret. Rotating the secret invalidates them all.
+ * HMAC-SHA256 with the media secret. Rotating the secret resets rate keys and invalidates receipts.
  */
 export class MediaSigning {
   private constructor() {}
@@ -23,17 +23,11 @@ export class MediaSigning {
   }
 
   /**
-   * Checks a signature in constant time.
-   * @param scope What the signature must have been made for.
-   * @param message The signed message.
-   * @param signature The base64url signature to check.
-   * @returns Whether the signature is authentic.
+   * The secret as key bytes, for libraries that sign with it, such as jose for upload receipts.
+   * @returns The HMAC key.
    */
-  static verify(scope: SigningScopeValue, message: string, signature: string): boolean {
-    const expected = MediaSigning.digest(scope, message);
-    const actual = Buffer.from(signature, "base64url");
-
-    return actual.length === expected.length && timingSafeEqual(actual, expected);
+  static key(): Uint8Array {
+    return new TextEncoder().encode(serverEnv.MEDIA_SIGNING_SECRET);
   }
 
   private static digest(scope: SigningScopeValue, message: string): Buffer {

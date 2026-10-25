@@ -13,3 +13,8 @@ export const MAX_PENDING_RECEIPTS = 8;
  * Prefix of receipt cookie names; the rest is a digest of the object path.
  */
 export const RECEIPT_COOKIE_PREFIX = "media-upload-";
+
+/**
+ * Receipts are HMAC-signed JWTs; verification accepts no other algorithm.
+ */
+export const RECEIPT_ALGORITHM = "HS256";

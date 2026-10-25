@@ -25,5 +25,4 @@ export type {
   UploadPolicy,
   UploadPurpose,
 } from "./upload-policy.types";
-export { ImageSignature } from "./image-signature.helper";
 export { ObjectPath } from "./object-path.helper";

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MAX_PENDING_RECEIPTS, RECEIPT_LIFETIME_SECONDS } from "./upload-receipt.constants";
 import { issueReceipt, readReceipt } from "./upload-receipt.service";
-import type { UploadClaims } from "./upload-receipt.types";
+import type { UploadReceipt } from "./upload-receipt.types";
 import { FilePurpose, ImageMime } from "../../domain/upload-policy";
 
 const jar = vi.hoisted(() => new Map<string, string>());
@@ -21,7 +21,7 @@ vi.mock("@/shared/config/env.server", () => ({
 }));
 vi.mock("@/shared/config/runtime", () => ({ isProduction: () => true }));
 
-function claims(): UploadClaims {
+function claims(): UploadReceipt {
   return {
     objectPath: `payment_proof/2026/10/${randomUUID()}.jpg`,
     purpose: FilePurpose.PaymentProof,
@@ -44,7 +44,7 @@ describe("upload receipts", () => {
     const issued = claims();
     await issueReceipt(issued);
 
-    expect(await readReceipt(issued.objectPath)).toMatchObject(issued);
+    expect(await readReceipt(issued.objectPath)).toEqual(issued);
     expect(await readReceipt(claims().objectPath)).toBeNull();
   });
 
@@ -61,11 +61,14 @@ describe("upload receipts", () => {
   it("refuses a tampered payload", async () => {
     const issued = claims();
     await issueReceipt(issued);
-    const [name = "", value = ""] = [...jar][0] ?? [];
-    const [, signature] = value.split(".");
-    const forged = Buffer.from(JSON.stringify({ ...issued, sizeBytes: 999 })).toString("base64url");
+    const [name = "", token = ""] = [...jar][0] ?? [];
+    const [header, payload, signature] = token.split(".");
+    const claimsJson = JSON.parse(Buffer.from(payload ?? "", "base64url").toString());
+    const forged = Buffer.from(JSON.stringify({ ...claimsJson, sizeBytes: 999 })).toString(
+      "base64url",
+    );
 
-    jar.set(name, `${forged}.${signature}`);
+    jar.set(name, `${header}.${forged}.${signature}`);
 
     expect(await readReceipt(issued.objectPath)).toBeNull();
   });

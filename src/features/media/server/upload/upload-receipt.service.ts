@@ -1,5 +1,6 @@
 import "server-only";
 
+import { errors, jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { createHash } from "node:crypto";
 
@@ -7,11 +8,12 @@ import { isProduction } from "@/shared/config/runtime";
 
 import {
   MAX_PENDING_RECEIPTS,
+  RECEIPT_ALGORITHM,
   RECEIPT_COOKIE_PREFIX,
   RECEIPT_LIFETIME_SECONDS,
 } from "./upload-receipt.constants";
-import { uploadReceiptSchema } from "./upload-receipt.schema";
-import type { UploadClaims, UploadReceipt } from "./upload-receipt.types";
+import { uploadReceiptClaimsSchema } from "./upload-receipt.schema";
+import type { UploadReceipt } from "./upload-receipt.types";
 import { MediaSigning, SigningScope } from "../signing";
 
 type CookieJar = Awaited<ReturnType<typeof cookies>>;
@@ -19,18 +21,21 @@ type CookieJar = Awaited<ReturnType<typeof cookies>>;
 /**
  * Records in a signed HttpOnly cookie what this browser may register. Registration requires
  * the receipt, so nobody can register or delete an object issued to another caller.
- * @param claims The object path, purpose, format, size and uploader the URL was issued for.
+ * @param receipt The object path, purpose, format, size and uploader the URL was issued for.
  * @returns Once the cookie is set.
  */
-export async function issueReceipt(claims: UploadClaims): Promise<void> {
+export async function issueReceipt(receipt: UploadReceipt): Promise<void> {
+  const { objectPath, ...claims } = receipt;
+  const token = await new SignJWT(claims)
+    .setProtectedHeader({ alg: RECEIPT_ALGORITHM })
+    .setAudience(SigningScope.UploadReceipt)
+    .setSubject(objectPath)
+    .setExpirationTime(`${RECEIPT_LIFETIME_SECONDS}s`)
+    .sign(MediaSigning.key());
+
   const jar = await cookies();
   evictOldestReceipts(jar);
-
-  const receipt: UploadReceipt = {
-    ...claims,
-    expiresAt: Date.now() + RECEIPT_LIFETIME_SECONDS * 1000,
-  };
-  jar.set(receiptCookieName(claims.objectPath), encode(receipt), {
+  jar.set(receiptCookieName(objectPath), token, {
     httpOnly: true,
     secure: isProduction(),
     sameSite: "strict",
@@ -42,17 +47,30 @@ export async function issueReceipt(claims: UploadClaims): Promise<void> {
 /**
  * Reads this browser's receipt for an object.
  * @param objectPath The object the browser wants to register.
- * @returns The authentic, unexpired receipt, or null.
+ * @returns The authentic, unexpired receipt for exactly this object, or null.
  */
 export async function readReceipt(objectPath: string): Promise<UploadReceipt | null> {
-  const value = (await cookies()).get(receiptCookieName(objectPath))?.value;
-  if (!value) {
+  const token = (await cookies()).get(receiptCookieName(objectPath))?.value;
+  if (!token) {
     return null;
   }
 
-  const receipt = decode(value);
-  const isCurrent = receipt?.objectPath === objectPath && receipt.expiresAt > Date.now();
-  return isCurrent ? receipt : null;
+  try {
+    const { payload } = await jwtVerify(token, MediaSigning.key(), {
+      algorithms: [RECEIPT_ALGORITHM],
+      audience: SigningScope.UploadReceipt,
+      subject: objectPath,
+    });
+
+    return uploadReceiptClaimsSchema.parse(payload);
+  } catch (error) {
+    // Forged, tampered, expired or issued for another object.
+    if (error instanceof errors.JOSEError) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 function evictOldestReceipts(jar: CookieJar): void {
@@ -67,23 +85,4 @@ function evictOldestReceipts(jar: CookieJar): void {
 
 function receiptCookieName(objectPath: string): string {
   return RECEIPT_COOKIE_PREFIX + createHash("sha256").update(objectPath).digest("hex");
-}
-
-function encode(receipt: UploadReceipt): string {
-  const payload = Buffer.from(JSON.stringify(receipt)).toString("base64url");
-
-  return `${payload}.${MediaSigning.sign(SigningScope.UploadReceipt, payload)}`;
-}
-
-function decode(value: string): UploadReceipt | null {
-  const [payload = "", signature = ""] = value.split(".");
-  if (!MediaSigning.verify(SigningScope.UploadReceipt, payload, signature)) {
-    return null;
-  }
-
-  // An authentic payload was written by encode(), so it is valid JSON.
-  const parsed = uploadReceiptSchema.safeParse(
-    JSON.parse(Buffer.from(payload, "base64url").toString()),
-  );
-  return parsed.success ? parsed.data : null;
 }
