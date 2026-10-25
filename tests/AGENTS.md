@@ -36,6 +36,10 @@ Cross-feature end-to-end journeys (Playwright) and shared fixtures. Unit and int
 
 `npm run test:e2e` · `npx playwright test e2e/checkout.spec.ts --ui`
 
+## Media fixtures
+
+`fixtures/media/` contains synthetic images: a 4032×3024 JPEG, a 4096×4096 JPEG exceeding the pixel ceiling, and small PNG/WebP images. Media unit/integration tests remain colocated under the feature. No media e2e is added until checkout/order review provides a journey.
+
 ## Gotchas
 
 - Delivery windows depend on "now"; tests set the clock with Playwright's `page.clock`.

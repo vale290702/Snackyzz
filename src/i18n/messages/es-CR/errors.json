@@ -10,5 +10,16 @@
     "sign_out_failed": "No pudimos cerrar la sesión. Inténtalo de nuevo.",
     "email_invalid": "Escribe un correo válido, como nombre@ejemplo.com.",
     "password_required": "Escribe tu contraseña."
+  },
+  "media": {
+    "unsupported_purpose": "Este tipo de archivo todavía no está disponible.",
+    "invalid_file_type": "Selecciona una imagen del tipo permitido.",
+    "file_too_large": "La imagen supera el tamaño permitido.",
+    "invalid_dimensions": "La imagen supera las dimensiones permitidas.",
+    "invalid_image": "No se pudo leer la imagen. Selecciona otra.",
+    "invalid_upload": "La carga no es válida o venció. Vuelve a intentarlo.",
+    "rate_limited": "Has realizado demasiadas cargas. Espera unos minutos.",
+    "storage_unavailable": "No se pudo completar la carga. Vuelve a intentarlo.",
+    "file_not_found": "No se encontró el archivo."
   }
 }

@@ -130,7 +130,7 @@ export function useOrderActions(order: OrderDto) {
 
 1. The cart (client store over `localStorage`) holds `{variantId, quantity}` only, never prices.
 2. The customer picks **pickup at a Snackyzz pickup location** or **delivery**. Points of sale (third-party stores) never appear in checkout. Delivery windows are computed by `fulfillment/domain/delivery-windows.ts` from the settings and hours the page loaded. Availability is checked with `inventory.variant_availability(variantIds, pickupLocationId)`, using the location's own stock if it has any, otherwise global stock.
-3. Upload: `media` action `createProofUploadAction` → validates type/size claims → returns a signed upload URL → the browser uploads directly to the private bucket → `registerUploadAction` reads the object metadata, re-checks mime, size and pixel limits (Q-06), and inserts `media.files`.
+3. Upload: `media` action `createUploadAction({ purpose, mimeType, sizeBytes })` → validates the claims against the purpose's upload policy and the per-IP limit → returns a signed upload URL and sets a signed receipt cookie → the browser uploads directly to the private bucket → `registerUploadAction({ purpose, objectPath })` checks the receipt, re-reads the bytes, re-checks type, size and pixel limits (Q-06), and inserts `media.files`.
 4. `placeOrderAction`: rate-limit check → Zod-parse the request → re-validate the chosen window with the same domain function → compute the fingerprint → `orders.place_order` (service role). Prices, fees and stock are resolved **inside** the RPC from current DB values, so the client can't influence them.
 5. Success page shows the order number and states that payment is **under review** (placed ≠ confirmed).
 
