@@ -5,17 +5,19 @@ import type { DatabaseClient } from "@/integrations/supabase/database-client.typ
 import { CapabilityKind, CapabilitySource, defineCapability } from "@/shared/lib/capability";
 import { Results } from "@/shared/lib/result";
 
-import { ADMIN_SIGN_IN_PATH } from "./access.constants";
-import type { AdminContext, AdminSession } from "./admin.types";
-import { buildAdminContext, getAdminContext } from "./context";
-import { getAdminSession } from "./session";
+import { ADMIN_SIGN_IN_PATH, getAdminSession, type AdminSession } from "../session";
+import { buildAdminContext, getAdminContext } from "./context.factory";
+import type { AdminContext } from "./context.types";
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((path: string) => {
     throw new Error(`redirect:${path}`);
   }),
 }));
-vi.mock("./session", () => ({ getAdminSession: vi.fn() }));
+vi.mock("../session", async () => ({
+  ...(await import("../session/session.constants")),
+  getAdminSession: vi.fn(),
+}));
 
 const staffSession: AdminSession = {
   admin: {

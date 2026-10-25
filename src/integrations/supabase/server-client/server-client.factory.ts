@@ -5,8 +5,8 @@ import { cookies } from "next/headers";
 
 import { publicEnv } from "@/shared/config/env.public";
 
-import type { Database, DatabaseClient } from "./database-client.types";
-import { fetchWithTimeout } from "./fetch-with-timeout.helper";
+import type { Database, DatabaseClient } from "../database-client.types";
+import { SupabaseFetch } from "../transport";
 
 /**
  * Creates a client that acts as the signed-in user from the request cookies, so RLS applies.
@@ -33,7 +33,7 @@ export async function createServerClient(): Promise<DatabaseClient> {
           }
         },
       },
-      global: { fetch: fetchWithTimeout },
+      global: { fetch: SupabaseFetch.withTimeout },
     },
   );
 }

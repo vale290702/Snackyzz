@@ -5,9 +5,10 @@ import { cache } from "react";
 
 import { createServerClient } from "@/integrations/supabase/server-client";
 
-import { ADMIN_SIGN_IN_PATH } from "./access.constants";
-import type { Admin, AdminSession, Permission } from "./admin.types";
-import { loadAdminSession } from "./session-loader";
+import { ADMIN_SIGN_IN_PATH } from "./session.constants";
+import type { Admin, Permission } from "../admin";
+import { loadAdminSession } from "./session.loader";
+import type { AdminSession } from "./session.types";
 
 /**
  * The request's admin session, resolved once per request from the session cookies.

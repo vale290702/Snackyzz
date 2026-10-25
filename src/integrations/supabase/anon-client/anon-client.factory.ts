@@ -4,8 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 
 import { publicEnv } from "@/shared/config/env.public";
 
-import type { Database, DatabaseClient } from "./database-client.types";
-import { fetchWithTimeout } from "./fetch-with-timeout.helper";
+import type { Database, DatabaseClient } from "../database-client.types";
+import { SupabaseFetch } from "../transport";
 
 /**
  * Creates a cookie-free client that acts as `anon`, safe inside `'use cache'` public reads.
@@ -21,7 +21,7 @@ export function createAnonClient(): DatabaseClient {
         autoRefreshToken: false,
         detectSessionInUrl: false,
       },
-      global: { fetch: fetchWithTimeout },
+      global: { fetch: SupabaseFetch.withTimeout },
     },
   );
 }

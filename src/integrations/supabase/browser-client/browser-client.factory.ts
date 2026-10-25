@@ -2,8 +2,8 @@ import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ss
 
 import { publicEnv } from "@/shared/config/env.public";
 
-import type { Database, DatabaseClient } from "./database-client.types";
-import { fetchWithTimeout } from "./fetch-with-timeout.helper";
+import type { Database, DatabaseClient } from "../database-client.types";
+import { SupabaseFetch } from "../transport";
 
 /**
  * Creates the browser client, used only for auth and signed uploads; data goes through the server.
@@ -14,7 +14,7 @@ export function createBrowserClient(): DatabaseClient {
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
-      global: { fetch: fetchWithTimeout },
+      global: { fetch: SupabaseFetch.withTimeout },
     },
   );
 }

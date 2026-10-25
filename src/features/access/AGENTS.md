@@ -18,9 +18,10 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 ## Layout
 
 - SQL: `supabase/schemas/10_access/` (enums `admin_role`, `permission`; `admins`; `role_permissions`, `has_permission`, `my_permissions`, `guard_active_owner`). pgTAP: `supabase/tests/access.test.sql`.
-- `server/session-loader.ts`: `loadAdminSession(client)` verifies the session with `auth.getUser()`, then reads the admin row and `access.my_permissions()`. Testable with any signed-in client (`session-loader.int.test.ts`).
-- `server/session.ts`: request-scoped `getAdminSession` (React `cache` over the cookie client), `getAdmin`, `requirePermission`. `server/context.ts`: `buildAdminContext`, `getAdminContext`.
-- `server/repository.ts` + `admin.schema.ts`: the only `supabase-js` calls; rows and permissions are Zod-parsed against the generated enum values.
+- `server/session/`: `session.loader.ts` verifies with `auth.getUser()`, then reads the admin and SQL permissions; `session.service.ts` caches per request and exposes guards. Types, sign-in path constants and matching tests are colocated.
+- `server/context/`: `context.factory.ts` builds capability contexts; `context.types.ts` owns context and input-option contracts.
+- `server/admin/`: `admin.repository.ts` owns database queries; `admin.schema.ts` parses rows and permissions against generated enums; `admin.types.ts` owns admin/role/permission types. This is access's role-suffixed implementation of the feature repository convention.
+- Each purpose group has an explicit `index.ts`. Other features still import only `features/access`; repositories stay internal. Keep orchestration functions linear, with no extra wrapper classes for session or context entry points.
 
 ## Invariants
 

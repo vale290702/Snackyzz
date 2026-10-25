@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DatabaseClient } from "@/integrations/supabase/database-client.types";
 
-import { ADMIN_SIGN_IN_PATH } from "./access.constants";
-import type { AdminSession } from "./admin.types";
-import { getAdmin, requirePermission } from "./session";
-import { loadAdminSession } from "./session-loader";
+import { ADMIN_SIGN_IN_PATH } from "./session.constants";
+import { loadAdminSession } from "./session.loader";
+import { getAdmin, requirePermission } from "./session.service";
+import type { AdminSession } from "./session.types";
 
 const navigation = vi.hoisted(() => ({
   redirect: vi.fn((path: string) => {
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => navigation);
 vi.mock("@/integrations/supabase/server-client", () => ({
   createServerClient: vi.fn(async () => ({})),
 }));
-vi.mock("./session-loader", () => ({ loadAdminSession: vi.fn() }));
+vi.mock("./session.loader", () => ({ loadAdminSession: vi.fn() }));
 
 const staffSession: AdminSession = {
   admin: {

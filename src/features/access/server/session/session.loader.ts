@@ -4,8 +4,8 @@ import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 
 import type { DatabaseClient } from "@/integrations/supabase/database-client.types";
 
-import type { AdminSession } from "./admin.types";
-import { accessRepository } from "./repository";
+import type { AdminSession } from "./session.types";
+import { accessRepository } from "../admin";
 
 /**
  * Resolves the admin a client is signed in as, verifying the session with Supabase Auth.

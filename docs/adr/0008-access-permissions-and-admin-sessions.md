@@ -17,6 +17,8 @@ Every RLS policy, capability and admin page depends on `access`. The ER design s
 - `access/server` resolves the session with `auth.getUser()` (verified by Supabase Auth on every request, so signed-out sessions stop working immediately) and reads permissions through `access.my_permissions()`, cached per request with React `cache`. `getAdminContext` builds `CapabilityContext<DatabaseClient, Permission, Admin>`; `requirePermission` redirects to sign-in or calls `forbidden()` (enables `experimental.authInterrupts`).
 - Session limits (Q-05) come from Supabase Auth (`[auth.sessions]` in `config.toml`). Production needs a plan that includes them (O-5); otherwise the DAL must add checks.
 
+- Group access server code by purpose (`admin/`, `session/`, `context/`) with role-suffixed implementations, separate contracts/constants and explicit internal exports. Keep the feature's external API unchanged. Supabase client factories retain separate browser/server public entry points; the shared transport uses `SupabaseFetch.withTimeout`. This follows the readability conventions without adding new orchestration or permission abstractions.
+
 ## Alternatives considered
 
 - **`has_permission(text)` as sketched** — typos deny silently and TS duplicates the permission list.

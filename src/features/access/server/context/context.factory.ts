@@ -2,9 +2,8 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import { ADMIN_SIGN_IN_PATH } from "./access.constants";
-import type { AdminContext, AdminContextSource, AdminSession } from "./admin.types";
-import { getAdminSession } from "./session";
+import type { AdminContext, AdminContextSource, AdminContextOptions } from "./context.types";
+import { ADMIN_SIGN_IN_PATH, getAdminSession, type AdminSession } from "../session";
 
 /**
  * Turns a verified admin session into the context capabilities run with.
@@ -27,9 +26,7 @@ export function buildAdminContext(session: AdminSession, source: AdminContextSou
  * @returns The capability context; each capability then checks its own permission.
  * @throws Redirects to sign-in without an admin session.
  */
-export async function getAdminContext(options: {
-  source: AdminContextSource;
-}): Promise<AdminContext> {
+export async function getAdminContext(options: AdminContextOptions): Promise<AdminContext> {
   const session = await getAdminSession();
   if (!session) {
     redirect(ADMIN_SIGN_IN_PATH);

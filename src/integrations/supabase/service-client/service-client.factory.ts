@@ -5,8 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { publicEnv } from "@/shared/config/env.public";
 import { serverEnv } from "@/shared/config/env.server";
 
-import type { Database, DatabaseClient } from "./database-client.types";
-import { fetchWithTimeout } from "./fetch-with-timeout.helper";
+import type { Database, DatabaseClient } from "../database-client.types";
+import { SupabaseFetch } from "../transport";
 
 /**
  * Creates a service-role client that bypasses RLS. Callers must authorize before using it.
@@ -19,6 +19,6 @@ export function createServiceClient(): DatabaseClient {
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
-    global: { fetch: fetchWithTimeout },
+    global: { fetch: SupabaseFetch.withTimeout },
   });
 }

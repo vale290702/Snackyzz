@@ -6,8 +6,8 @@ import type { Database, DatabaseClient } from "@/integrations/supabase/database-
 import { createServiceClient } from "@/integrations/supabase/service-client";
 import { publicEnv } from "@/shared/config/env.public";
 
-import type { AdminRole } from "./admin.types";
-import { loadAdminSession } from "./session-loader";
+import type { AdminRole } from "../admin";
+import { loadAdminSession } from "./session.loader";
 
 const runId = randomUUID();
 const password = `access-int-${runId}`;
