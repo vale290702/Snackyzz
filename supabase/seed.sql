@@ -1,0 +1,2 @@
+-- Deterministic demo data, loaded by `supabase db reset`. Never production data.
+-- Each feature appends its demo rows here as its tables land.

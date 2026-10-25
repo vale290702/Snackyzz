@@ -1,6 +1,6 @@
 # Directory Structure
 
-The target tree for the rebuild repo (DIR-01). Every directory marked 📄 has an `AGENTS.md` (DIR-04). The copy-ready versions are in [`blueprint/`](blueprint/). To start the rework on the `rework` branch (G-08), copy `blueprint/*` (including `.github/`) to its root, and copy `docs/rebuild/` (without `blueprint/`) to `docs/rebuild/`, because the agent docs link to the ER design and architecture docs.
+The target tree for the rebuild repo (DIR-01). Every directory marked 📄 has an `AGENTS.md` (DIR-04). On the `rework` branch (G-08) these files live at their final paths; directories that don't exist yet get created by the work item that needs them.
 
 ```
 /

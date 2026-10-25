@@ -1,0 +1,42 @@
+# Glossary
+
+One name per concept. Code, DB and docs use the **English term**; UI copy uses the **Spanish label** (through next-intl). Don't introduce synonyms. If a concept is missing, add it here in the same PR.
+
+| Term (code)       | UI label (es-CR)               | Meaning                                                                                                                                                        |
+| ----------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brand             | Marca                          | Who makes a product. Snackyzz is the single _primary_ brand; others are collabs (e.g. Baking Stereo).                                                          |
+| Category          | Categoría                      | Optional grouping of products across brands.                                                                                                                   |
+| Product           | Producto                       | A sellable item as shown in the catalog (name, description, image).                                                                                            |
+| Variant           | Presentación                   | A purchasable form of a product with its own price and SKU (e.g. "Caja de 6"). Every product has a default variant. Carts, orders and stock point at variants. |
+| Cart              | Carrito                        | Client-side list of variants and quantities. Not persisted on the server.                                                                                      |
+| Customer          | Cliente                        | A person who placed an order, identified by email. No account.                                                                                                 |
+| Order             | Pedido                         | A customer's purchase. Has a status (see [order lifecycle](order-lifecycle.md)).                                                                               |
+| Order number      | Número de pedido               | Human reference `SNK-000123`. Never expose UUIDs in copy.                                                                                                      |
+| Order item        | Línea del pedido               | One variant × quantity in an order, with price/name snapshots.                                                                                                 |
+| Fulfillment       | Entrega                        | How an order reaches the customer: **pickup** or **delivery**.                                                                                                 |
+| Pickup            | Retiro                         | Customer collects the order at a Pickup location.                                                                                                              |
+| Delivery          | Envío                          | Order sent to the customer's address in a Delivery zone within a Delivery window.                                                                              |
+| Point of sale     | Punto de venta                 | A **third-party** store (local shop, supermarket, café…) that sells Snackyzz products off the shelf. Informational only: never used in checkout or stock.      |
+| Pickup location   | Punto de retiro                | A **Snackyzz-managed** place where customers collect online orders. May optionally keep its own stock.                                                         |
+| Global stock      | Inventario general             | The default stock pool for a variant, used by deliveries and by pickup locations without their own stock.                                                      |
+| Location stock    | Inventario del punto de retiro | Optional stock pool for a variant at one pickup location.                                                                                                      |
+| Delivery zone     | Zona de envío                  | Area with a flat delivery fee.                                                                                                                                 |
+| Delivery window   | Horario de entrega             | The time slot chosen for a delivery (`window_starts_at`–`window_ends_at`).                                                                                     |
+| Payment           | Pago                           | Money for an order. Today always SINPE Móvil with a proof image.                                                                                               |
+| Payment proof     | Comprobante                    | The uploaded SINPE screenshot.                                                                                                                                 |
+| Refund            | Reembolso                      | Full return of a payment, on reject or cancel.                                                                                                                 |
+| Stock level       | Inventario disponible          | Available quantity in one stock pool (global or a pickup location).                                                                                            |
+| Stock movement    | Movimiento de inventario       | Append-only change to a stock level, with a reason.                                                                                                            |
+| Admin             | Administrador                  | Staff user of the admin panel. Role `owner` or `staff`.                                                                                                        |
+| Permission        | Permiso                        | A named capability (`orders.decide`) granted by role.                                                                                                          |
+| Theme             | Tema                           | Visual campaign skin for the storefront (seasonal, anniversary, campaign…). One active at a time.                                                              |
+| Domain event      | Evento                         | Something that happened (`order.placed`), published in the same transaction as the change. Other features react to events instead of being called.             |
+| Capability        | Acción                         | An admin action defined once (permission + input schema + implementation), used by the web admin, the Telegram bot and later the AI agent.                     |
+| Notification      | Notificación                   | A message sent to a customer or admin because of an event, through a Channel.                                                                                  |
+| Notification type | Tipo de notificación           | A kind of notification admins can subscribe to (`order.placed.admin`).                                                                                         |
+| Subscription      | Suscripción                    | An admin's choice to receive a notification type on a channel, optionally filtered by brand.                                                                   |
+| Channel           | Canal                          | A delivery mechanism: email, Telegram (later WhatsApp, SMS).                                                                                                   |
+| Channel identity  | Cuenta vinculada               | An admin's verified account on a channel (e.g. their Telegram), linked in two steps.                                                                           |
+| Admin bot         | Bot de administración          | The Telegram bot admins use to receive and decide orders (`admin-chat`).                                                                                       |
+| Conversation      | Conversación                   | The state of a multi-step flow in the admin bot (e.g. rejecting an order: reason → refund proof → review).                                                     |
+| Order event       | Evento del pedido              | Append-only record of something that happened to an order.                                                                                                     |

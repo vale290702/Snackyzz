@@ -365,6 +365,6 @@ type Result<T, E extends string = ErrorCode> =
 
 ## 12. UI system (ARC-10/11, Q-09)
 
-- Tailwind v4; tokens from `DESIGN.md` go in `src/styles/tokens.css` (`@theme`): brand palette (`--color-cream #F9EDE0`, `--color-cocoa #3C1907`, `--color-orange #ED781A`, `--color-orange-deep #D95907`), type scale, radii, spacing.
+- Tailwind v4; tokens from `DESIGN.md` go in `src/styles/tokens.css` (`@theme`): brand palette (`--color-cream #F9EDE0`, `--color-chocolate #3C1907`, `--color-orange #ED781A`, `--color-orange-deep #D95907`), type scale, radii, spacing.
 - shadcn/ui components are generated into `src/shared/ui/` and restyled with tokens. Feature UI composes them and never restyles them ad hoc.
 - Themes (`features/themes`) override a documented subset of tokens through a `data-theme` attribute on `<html>`; components never check the active theme.

@@ -1,0 +1,15 @@
+.next/
+node_modules/
+package-lock.json
+next-env.d.ts
+public/
+assets/
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
+supabase/migrations/
+src/integrations/supabase/database.types.ts
+docs/rebuild/
+.impeccable/
+*.sql

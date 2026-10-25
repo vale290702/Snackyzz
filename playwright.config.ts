@@ -1,23 +1,28 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
+
+const port = process.env.PORT ?? "5174";
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  forbidOnly: Boolean(process.env.CI),
   reporter: "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:5175",
-    headless: true,
+    baseURL,
+    locale: "es-CR",
+    timezoneId: "America/Costa_Rica",
     reducedMotion: "reduce",
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
-      : {},
+    trace: "retain-on-failure",
   },
   projects: [
-    { name: "desktop", use: { viewport: { width: 1440, height: 1000 } } },
-    { name: "mobile", use: { viewport: { width: 390, height: 844 } } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: process.env.PLAYWRIGHT_SERVER_COMMAND || "npm run dev -- --port 5175",
-    url: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:5175",
-    reuseExistingServer: true,
+    command: "npm run dev",
+    env: { PORT: port },
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
   },
 });

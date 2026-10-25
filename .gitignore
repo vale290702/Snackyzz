@@ -19,3 +19,7 @@ out/
 *.tsbuildinfo
 playwright-report/
 .vercel/
+supabase/.temp/
+supabase/.branches/
+.claude/worktrees/
+next-env.d.ts
