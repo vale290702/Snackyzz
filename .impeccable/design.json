@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-08T00:00:00.000Z",
+  "generatedAt": "2026-10-25T00:30:00.000Z",
   "title": "Design System: Snackyzz",
   "extensions": {
     "colorMeta": {
@@ -63,6 +63,111 @@
           "#F0E2D4",
           "#FFF8F0"
         ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#FFF9F2",
+        "tonalRamp": [
+          "#0E0A06",
+          "#29241F",
+          "#46413C",
+          "#65605A",
+          "#87817B",
+          "#AAA49E",
+          "#CEC8C1",
+          "#F3EDE6"
+        ]
+      },
+      "muted-brown": {
+        "role": "neutral",
+        "displayName": "Muted Brown",
+        "canonical": "#795541",
+        "tonalRamp": [
+          "#180600",
+          "#3B1C08",
+          "#5A3925",
+          "#7C5844",
+          "#9F7964",
+          "#C39B85",
+          "#E9BFA9",
+          "#FFEADE"
+        ]
+      },
+      "warm-line": {
+        "role": "neutral",
+        "displayName": "Warm Line",
+        "canonical": "#DCC6B2",
+        "tonalRamp": [
+          "#150800",
+          "#322111",
+          "#503E2D",
+          "#705D4B",
+          "#927E6C",
+          "#B6A18D",
+          "#DBC5B1",
+          "#FFEAD8"
+        ]
+      },
+      "cream-tint": {
+        "role": "neutral",
+        "displayName": "Cream Tint",
+        "canonical": "#EFDDCA",
+        "tonalRamp": [
+          "#140800",
+          "#2F2213",
+          "#4D3F2F",
+          "#6E5E4E",
+          "#8F7F6E",
+          "#B3A290",
+          "#D7C6B3",
+          "#FDEBD8"
+        ]
+      },
+      "warm-red": {
+        "role": "status",
+        "displayName": "Warm Red",
+        "canonical": "#A8321C",
+        "tonalRamp": [
+          "#1D0100",
+          "#490A02",
+          "#7A1805",
+          "#A8321C",
+          "#CF5740",
+          "#F87B62",
+          "#FEB4A4",
+          "#FFE9E4"
+        ]
+      },
+      "leaf": {
+        "role": "status",
+        "displayName": "Leaf",
+        "canonical": "#3F5A1C",
+        "tonalRamp": [
+          "#060E00",
+          "#1A2B01",
+          "#314B0A",
+          "#506C2E",
+          "#708E4F",
+          "#92B171",
+          "#B5D694",
+          "#DAFCB9"
+        ]
+      },
+      "honey": {
+        "role": "status",
+        "displayName": "Honey",
+        "canonical": "#7F4A00",
+        "tonalRamp": [
+          "#150800",
+          "#381E00",
+          "#603701",
+          "#895311",
+          "#AD7439",
+          "#D2975C",
+          "#F8BB80",
+          "#FFEAD8"
+        ]
       }
     },
     "typographyMeta": {
@@ -70,28 +175,46 @@
         "displayName": "Editorial Display",
         "purpose": "Brand, product, and milestone headings."
       },
+      "title": {
+        "displayName": "Panel Title",
+        "purpose": "Product names and the headings of cards, dialogs, and sheets."
+      },
       "body": {
         "displayName": "Working Sans",
         "purpose": "Copy, controls, prices, forms, and order data."
+      },
+      "label": {
+        "displayName": "Control Label",
+        "purpose": "Field labels, descriptions, and table cells; chips and table headers drop to 12px semibold."
       }
     },
     "shadows": [
       {
-        "name": "toast",
-        "value": "0 8px 30px #3c190730",
-        "purpose": "Temporary floating feedback only."
+        "name": "float",
+        "value": "0 12px 32px -12px rgb(60 25 7 / 0.32)",
+        "purpose": "Toasts only. Cards, dialogs, sheets, and menus stay flat."
       }
     ],
     "motion": [
       {
-        "name": "ease-out",
-        "value": "cubic-bezier(.16,1,.3,1)",
-        "purpose": "Image reveals and responsive control feedback."
+        "name": "control",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Button lift and color, field and checkbox state changes."
+      },
+      {
+        "name": "overlay",
+        "value": "200ms fade with a 95% zoom",
+        "purpose": "Dialogs and select menus opening and closing."
+      },
+      {
+        "name": "sheet",
+        "value": "500ms in, 300ms out, ease-in-out slide",
+        "purpose": "Side and bottom sheets."
       }
     ],
     "breakpoints": [
-      { "name": "compact", "value": "800px" },
-      { "name": "mobile", "value": "560px" }
+      { "name": "sm", "value": "560px" },
+      { "name": "md", "value": "800px" }
     ]
   },
   "components": [
@@ -100,43 +223,69 @@
       "kind": "button",
       "refersTo": "button-primary",
       "description": "Primary purchase or progression action.",
-      "html": "<button class=\"ds-btn\">Comprar</button>",
-      "css": ".ds-btn{background:#ED781A;color:#3C1907;border:0;border-radius:7px;min-height:52px;padding:14px 24px;font:700 14px 'DM Sans',sans-serif;transition:transform .2s cubic-bezier(.16,1,.3,1)}.ds-btn:hover{transform:translateY(-2px)}.ds-btn:focus-visible{outline:3px solid #D95907;outline-offset:5px}"
+      "html": "<button class=\"ds-btn\">Agregar al carrito</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border:0;border-radius:7px;background:#ED781A;color:#3C1907;font:500 16px 'DM Sans',sans-serif;cursor:pointer;transition:transform 150ms cubic-bezier(0.4,0,0.2,1),background-color 150ms cubic-bezier(0.4,0,0.2,1)}.ds-btn:hover{background:#D95907;transform:translateY(-1px)}.ds-btn:focus-visible{outline:2px solid #D95907;outline-offset:2px}"
     },
     {
       "name": "Dark Action",
       "kind": "button",
       "refersTo": "button-dark",
       "description": "Checkout and administrative confirmation action.",
-      "html": "<button class=\"ds-btn-dark\">Confirmar pedido</button>",
-      "css": ".ds-btn-dark{background:#3C1907;color:#F9EDE0;border:0;border-radius:7px;min-height:52px;padding:14px 24px;font:700 14px 'DM Sans',sans-serif}.ds-btn-dark:hover{background:#5A2B12}.ds-btn-dark:focus-visible{outline:3px solid #D95907;outline-offset:5px}"
+      "html": "<button class=\"ds-btn-dark\">Ver pedido</button>",
+      "css": ".ds-btn-dark{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border:0;border-radius:7px;background:#3C1907;color:#F9EDE0;font:500 16px 'DM Sans',sans-serif;cursor:pointer;transition:transform 150ms cubic-bezier(0.4,0,0.2,1),background-color 150ms cubic-bezier(0.4,0,0.2,1)}.ds-btn-dark:hover{background:rgb(60 25 7 / 0.9);transform:translateY(-1px)}.ds-btn-dark:focus-visible{outline:2px solid #D95907;outline-offset:2px}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action next to a primary one.",
+      "html": "<button class=\"ds-btn-outline\">Seguir comprando</button>",
+      "css": ".ds-btn-outline{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border:1px solid #3C1907;border-radius:7px;background:transparent;color:#3C1907;font:500 16px 'DM Sans',sans-serif;cursor:pointer;transition:transform 150ms cubic-bezier(0.4,0,0.2,1),background-color 150ms cubic-bezier(0.4,0,0.2,1)}.ds-btn-outline:hover{background:#EFDDCA;transform:translateY(-1px)}.ds-btn-outline:focus-visible{outline:2px solid #D95907;outline-offset:2px}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "Customer and administrator data entry.",
-      "html": "<input class=\"ds-input\" placeholder=\"Tu nombre\">",
-      "css": ".ds-input{width:100%;min-height:49px;border:1px solid #DCC6B2;background:#FFF9F2;color:#3C1907;border-radius:7px;padding:12px 14px;font:400 16px 'DM Sans',sans-serif}.ds-input:focus-visible{outline:3px solid #D95907;outline-offset:4px}"
+      "description": "Labelled customer and administrator data entry, with its error state.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-name\">Nombre completo</label><input class=\"ds-input\" id=\"ds-name\" placeholder=\"Ana Rodríguez\"><label class=\"ds-label ds-label-error\" for=\"ds-phone\">Teléfono</label><input class=\"ds-input\" id=\"ds-phone\" value=\"8888\" aria-invalid=\"true\"><p class=\"ds-error\">Escribe un número de 8 dígitos.</p></div>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:8px;max-width:360px;font-family:'DM Sans',sans-serif;color:#3C1907}.ds-label{font:500 14px/1.375 'DM Sans',sans-serif}.ds-label-error,.ds-error{color:#A8321C}.ds-error{margin:0;font:500 14px 'DM Sans',sans-serif}.ds-input{height:49px;padding:12px 14px;border:1px solid #DCC6B2;border-radius:7px;background:#FFF9F2;color:#3C1907;font:400 16px 'DM Sans',sans-serif;outline:none;transition:color 150ms,background-color 150ms,border-color 150ms}.ds-input::placeholder{color:#795541}.ds-input:focus-visible{outline:2px solid #D95907;outline-offset:2px}.ds-input[aria-invalid=true]{border-color:#A8321C;background:rgb(168 50 28 / 0.05)}"
+    },
+    {
+      "name": "Checkbox",
+      "kind": "custom",
+      "refersTo": "checkbox",
+      "description": "24px choice control; muted-brown outline unchecked, chocolate when checked.",
+      "html": "<div class=\"ds-checks\"><label class=\"ds-check\"><button class=\"ds-box ds-box-on\" role=\"checkbox\" aria-checked=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></button>Acepto las condiciones de compra</label><label class=\"ds-check\"><button class=\"ds-box\" role=\"checkbox\" aria-checked=\"false\"></button>Quiero recibir novedades</label></div>",
+      "css": ".ds-checks{display:flex;flex-direction:column;gap:12px}.ds-check{display:flex;align-items:center;gap:12px;font:500 14px 'DM Sans',sans-serif;color:#3C1907}.ds-box{display:grid;place-content:center;width:24px;height:24px;padding:0;border:1px solid #795541;border-radius:7px;background:#FFF9F2;color:#F9EDE0;cursor:pointer;transition:background-color 150ms,border-color 150ms}.ds-box-on{border-color:#3C1907;background:#3C1907}.ds-box:focus-visible{outline:2px solid #D95907;outline-offset:2px}"
     },
     {
       "name": "Status Chip",
       "kind": "chip",
-      "description": "Pending and confirmed order state.",
-      "html": "<span class=\"ds-chip\">Pendiente</span>",
-      "css": ".ds-chip{display:inline-flex;align-items:center;background:#F7DFC7;color:#763C13;border-radius:30px;padding:7px 10px;font:600 10px 'DM Sans',sans-serif}"
+      "refersTo": "chip-pending",
+      "description": "Order-state tones: each status ink on a 15% tint of itself.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-chip ds-chip-pending\">Pendiente de revisión</span><span class=\"ds-chip ds-chip-positive\">Confirmado</span><span class=\"ds-chip ds-chip-neutral\">Completado</span><span class=\"ds-chip ds-chip-negative\">Rechazado</span><span class=\"ds-chip ds-chip-selected\">Filtro activo</span></div>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:8px}.ds-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:9999px;font:600 12px/1 'DM Sans',sans-serif;white-space:nowrap}.ds-chip-pending{background:rgb(127 74 0 / 0.15);color:#7F4A00}.ds-chip-positive{background:rgb(63 90 28 / 0.15);color:#3F5A1C}.ds-chip-negative{background:rgb(168 50 28 / 0.15);color:#A8321C}.ds-chip-neutral{background:#EFDDCA;color:#3C1907}.ds-chip-selected{background:#3C1907;color:#F9EDE0}"
     },
     {
       "name": "Working Surface",
       "kind": "card",
-      "description": "Cart, checkout summary, or order detail container.",
-      "html": "<section class=\"ds-surface\">Tu pedido</section>",
-      "css": ".ds-surface{background:#FFF9F2;color:#3C1907;border-radius:12px;padding:24px;font:700 28px Fraunces,Georgia,serif}"
+      "refersTo": "card",
+      "description": "Cart, checkout summary, or order detail container: paper, 12px, flat.",
+      "html": "<section class=\"ds-card\"><h3 class=\"ds-card-title\">Resumen del pedido</h3><p class=\"ds-card-desc\">2 galletas · retiro en tienda</p><div class=\"ds-card-row\"><span>Total</span><strong>₡7 500</strong></div></section>",
+      "css": ".ds-card{display:flex;flex-direction:column;gap:8px;max-width:360px;padding:24px;border-radius:12px;background:#FFF9F2;color:#3C1907;font-family:'DM Sans',sans-serif}.ds-card-title{margin:0;font:700 24px/1.25 Fraunces,Georgia,serif}.ds-card-desc{margin:0;font-size:14px;color:#795541}.ds-card-row{display:flex;justify-content:space-between;margin-top:8px;padding-top:12px;border-top:1px solid #DCC6B2;font-size:18px}"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Temporary feedback; the only element allowed the Float shadow.",
+      "html": "<div class=\"ds-toast\" role=\"status\"><svg class=\"ds-toast-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg><div class=\"ds-toast-body\"><strong>Agregaste 2 galletas al carrito</strong></div><button class=\"ds-toast-action\">Deshacer</button></div>",
+      "css": ".ds-toast{display:flex;align-items:flex-start;gap:12px;max-width:356px;padding:16px;border:1px solid #DCC6B2;border-radius:12px;background:#FFF9F2;color:#3C1907;box-shadow:0 12px 32px -12px rgb(60 25 7 / 0.32);font-family:'DM Sans',sans-serif}.ds-toast-icon{margin-top:2px;flex-shrink:0;color:#3F5A1C}.ds-toast-body{flex:1;font-size:14px;font-weight:600}.ds-toast-action{height:40px;padding:0 16px;border:0;border-radius:7px;background:#3C1907;color:#F9EDE0;font:500 14px 'DM Sans',sans-serif;cursor:pointer}.ds-toast-action:focus-visible{outline:2px solid #D95907;outline-offset:2px}"
     }
   ],
   "narrative": {
     "northStar": "The Confectionery Campaign",
-    "overview": "Snackyzz feels like a confident food campaign translated into a practical store. Oversized editorial type, honest cookie photography, warm paper surfaces, and a sharp orange accent make the product desirable without slowing down cart, checkout, or order review.",
+    "overview": "Snackyzz feels like a confident food campaign translated into a practical store. Oversized editorial type, honest cookie photography, warm paper surfaces, and a sharp orange accent make the product desirable without slowing down cart, checkout, or order review.\n\nDense operational screens reduce the display scale while retaining the same palette, typography, and tactile controls. The system stays warm, direct, and legible across phone, tablet, and desktop.",
     "keyCharacteristics": [
       "Cream canvas with chocolate structure and decisive orange actions.",
       "Rounded editorial display type paired with quiet sans-serif controls.",
@@ -145,18 +294,38 @@
     ],
     "rules": [
       {
-        "name": "Orange Has a Job",
+        "name": "The Orange Has a Job Rule",
         "body": "Use orange for appetite, action, or brand cadence; never scatter it as decoration.",
         "section": "colors"
       },
       {
-        "name": "Two Voices",
+        "name": "The Tint-and-Ink Rule",
+        "body": "A status color appears as text on a 15% tint of itself, never as white text on a solid fill. Each pairing keeps 4.5:1 on both paper and cream.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-to-One Outline Rule",
+        "body": "A control whose outline is its only cue (an unchecked checkbox or radio) takes Muted Brown. Warm Line (1.57:1 on paper) only outlines fields that already carry a visible label.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Voices Rule",
         "body": "Fraunces speaks for products and moments; DM Sans handles every instruction and operation.",
         "section": "typography"
       },
       {
-        "name": "Tonal Depth",
+        "name": "The No Sideways Scroll Rule",
+        "body": "Horizontal overflow is never acceptable on the page. Wide tables scroll inside their own container instead.",
+        "section": "layout"
+      },
+      {
+        "name": "The Tonal Depth Rule",
         "body": "Prefer a change in warm surface tone before adding a border or shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Only Toasts Float Rule",
+        "body": "If it isn't temporary feedback that leaves on its own, it doesn't get a shadow.",
         "section": "elevation"
       }
     ],
@@ -164,13 +333,17 @@
       "Do keep checkout status language precise: received, pending review, confirmed.",
       "Do give cookie photography enough scale to carry appetite and recognition.",
       "Do preserve the four committed brand colors throughout new screens.",
-      "Do stack operational layouts intentionally on small screens."
+      "Do stack operational layouts intentionally on small screens.",
+      "Do pair every status tint with its own ink color (honey on honey, leaf on leaf, warm red on warm red).",
+      "Do give every field a visible label; the warm-line outline relies on it."
     ],
     "donts": [
       "Don't introduce cool grays, blue SaaS accents, glass effects, or generic dashboard gradients.",
       "Don't invent product, ingredient, payment, or location claims.",
       "Don't hide order totals, confirmation state, or recovery actions inside decorative UI.",
-      "Don't replace the display/body type relationship with a single system font."
+      "Don't replace the display/body type relationship with a single system font.",
+      "Don't put shadows on cards, dialogs, sheets, or menus; only toasts float.",
+      "Don't dim overlays with black; use chocolate."
     ]
   }
 }

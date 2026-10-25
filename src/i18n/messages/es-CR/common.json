@@ -14,5 +14,133 @@
   "globalError": {
     "title": "Algo salió mal",
     "retry": "Intentar de nuevo"
+  },
+  "devGallery": {
+    "metaTitle": "Galería de componentes",
+    "title": "Galería de componentes",
+    "intro": "Solo para desarrollo. Revisa cada componente a 390 px y a 1440 px antes de usarlo en una pantalla.",
+    "close": "Cerrar",
+    "buttons": {
+      "title": "Botones",
+      "description": "Acciones principales en naranja, acciones administrativas en chocolate.",
+      "primary": "Agregar al carrito",
+      "dark": "Ver pedido",
+      "outline": "Seguir comprando",
+      "ghost": "Cancelar",
+      "destructive": "Rechazar pedido",
+      "link": "Ver detalles",
+      "small": "Pequeño",
+      "disabled": "No disponible"
+    },
+    "fields": {
+      "title": "Campos de texto",
+      "description": "Entrada, área de texto y selección sobre papel.",
+      "name": {
+        "label": "Nombre completo",
+        "placeholder": "Ana Rodríguez",
+        "description": "Lo usamos para identificar tu pedido."
+      },
+      "phone": {
+        "label": "Teléfono",
+        "error": "Escribe un número de 8 dígitos."
+      },
+      "orderCode": {
+        "label": "Código de pedido"
+      },
+      "notes": {
+        "label": "Notas para el pedido",
+        "placeholder": "Ej.: tocar el timbre dos veces"
+      },
+      "fulfillment": {
+        "label": "Entrega",
+        "placeholder": "Elige una opción",
+        "pickup": "Retiro en tienda",
+        "delivery": "Envío a domicilio",
+        "locker": "Casillero (pronto)"
+      }
+    },
+    "choices": {
+      "title": "Opciones",
+      "description": "Casillas, botones de opción y tarjetas de selección.",
+      "terms": "Acepto las condiciones de compra",
+      "updates": {
+        "label": "Quiero recibir novedades",
+        "description": "Te escribimos como máximo una vez al mes."
+      },
+      "window": {
+        "legend": "Horario de retiro",
+        "morning": "Mañana, de 9:00 a 12:00",
+        "afternoon": "Tarde, de 13:00 a 17:00",
+        "evening": "Noche (no disponible)"
+      },
+      "method": {
+        "legend": "Método de entrega",
+        "pickupTitle": "Retiro",
+        "pickupDescription": "Pasas por tu pedido sin costo.",
+        "deliveryTitle": "Envío",
+        "deliveryDescription": "Lo llevamos hasta tu casa."
+      }
+    },
+    "badges": {
+      "title": "Chips",
+      "description": "Completamente redondeados; los estados usan tintes semánticos discretos.",
+      "neutral": "Nuevo",
+      "brand": "Edición limitada",
+      "selected": "Filtro activo",
+      "outline": "Clásicas",
+      "pendingReview": "Pendiente de revisión",
+      "confirmed": "Confirmado",
+      "completed": "Completado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    },
+    "cards": {
+      "title": "Tarjetas",
+      "description": "Papel sobre crema, esquinas de 12 px, sin sombra.",
+      "summaryTitle": "Resumen del pedido",
+      "summaryDescription": "{count, plural, one {# galleta} other {# galletas}} · retiro en tienda",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "pay": "Ir a pagar",
+      "noteTitle": "Pago con SINPE Móvil",
+      "noteBody": "Después de pagar, sube el comprobante. Revisamos cada pago antes de confirmar el pedido."
+    },
+    "table": {
+      "title": "Tabla",
+      "description": "Filas con divisores cálidos; la tabla se desplaza de lado en pantallas angostas.",
+      "caption": "Pedidos recientes",
+      "order": "Pedido",
+      "customer": "Cliente",
+      "status": "Estado",
+      "total": "Total"
+    },
+    "overlays": {
+      "title": "Ventanas",
+      "description": "Diálogo, panel lateral y notificaciones. Solo las notificaciones tienen sombra.",
+      "dialogOpen": "Cancelar pedido",
+      "dialogTitle": "¿Cancelar este pedido?",
+      "dialogDescription": "El cliente recibirá un correo y las galletas vuelven al inventario.",
+      "dialogKeep": "Mantener pedido",
+      "dialogConfirm": "Sí, cancelar",
+      "sheetOpen": "Abrir carrito",
+      "sheetTitle": "Tu carrito",
+      "sheetDescription": "Revisa tus galletas antes de pagar.",
+      "sheetCheckout": "Ir a pagar",
+      "bottomSheetOpen": "Abrir filtros",
+      "bottomSheetTitle": "Filtros",
+      "bottomSheetDescription": "Elige qué galletas quieres ver."
+    },
+    "toast": {
+      "region": "Notificaciones",
+      "showSuccess": "Mostrar éxito",
+      "showInfo": "Mostrar aviso",
+      "showError": "Mostrar error",
+      "success": "Agregaste 2 galletas al carrito",
+      "undo": "Deshacer",
+      "info": "Registramos tu pedido",
+      "infoDescription": "Te avisamos cuando confirmemos el pago.",
+      "error": "No pudimos subir el comprobante",
+      "errorDescription": "Intenta de nuevo con una imagen JPG o PNG."
+    }
   }
 }
