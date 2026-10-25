@@ -21,7 +21,8 @@ These rules apply to every agent (Claude Code, Codex) and every human. Directory
 3. For order, payment or stock work: [`docs/domain/order-lifecycle.md`](docs/domain/order-lifecycle.md).
 4. For schema work: [`docs/rebuild/02-er-design.md`](docs/rebuild/02-er-design.md). For cross-feature work: [`docs/rebuild/03-architecture.md`](docs/rebuild/03-architecture.md).
 5. [`docs/code-conventions.md`](docs/code-conventions.md): canonical module layout, naming, helper/function rules and exceptions. Local guides add domain constraints; do not redefine these conventions.
-6. For Next.js APIs: the guide in `node_modules/next/dist/docs/` (see top of this file).
+6. For any UI work: [`docs/rebuild/05-ui-parity.md`](docs/rebuild/05-ui-parity.md). Rebuilt screens keep today's design (G-09).
+7. For Next.js APIs: the guide in `node_modules/next/dist/docs/` (see top of this file).
 
 ## Principles, in priority order
 
@@ -158,6 +159,7 @@ export function listDeliveryWindows(input: DeliveryWindowInput): DeliveryWindow[
 
 **UI**
 
+- **Keep today's design** (G-09): a rebuilt screen matches the same screen on `main`. New functionality gets new components in the same design language; reorganize existing UI only for a clear UX gain, and list every visible difference under **Deviations** in the PR. See [`docs/rebuild/05-ui-parity.md`](docs/rebuild/05-ui-parity.md).
 - Compose `src/shared/ui` (shadcn) components; style with Tailwind token classes only. No hex values, no arbitrary values unless a token is missing; if one is, add the token.
 - Server Components by default; `'use client'` at the smallest leaf that needs it.
 - Accessible by default (WCAG 2.2 AA): semantic elements, labelled inputs, visible focus, keyboard paths.
@@ -188,7 +190,7 @@ No skipped or `.only` tests in commits. Use fixtures from `tests/fixtures`, not 
 - [ ] Migration generated from the declarative schema; DB types regenerated.
 - [ ] The `AGENTS.md` of each touched directory still tells the truth (public API, invariants, gotchas).
 - [ ] No new TODO without an issue link. No stray `console.*`.
-- [ ] UI changes: screenshot in the PR.
+- [ ] UI changes: before/after screenshots (the `main` screen next to the rebuilt one, phone and desktop) and a Deviations list in the PR.
 - [ ] An ADR exists if the change needs one (see below).
 
 ## Stop and ask

@@ -8,7 +8,7 @@ Knowledge that code can't express: the domain language, business rules, architec
 
 - `domain/`: `glossary.md` (one name per concept), `order-lifecycle.md`, other business rules. **Normative**: code must match.
 - `adr/`: Architecture Decision Records, `NNNN-kebab-title.md`, from `0000-template.md`.
-- `rebuild/`: questionnaire, decision log, ER design, architecture, structure. Historical record plus current spec.
+- `rebuild/`: questionnaire, decision log, ER design, architecture, structure, UI parity. Historical record plus current spec.
 
 ## Rules
 
