@@ -1,6 +1,6 @@
 # 0010. Build form hooks on a shared `useFormAction`
 
-- **Status:** proposed
+- **Status:** superseded by [0013](0013-data-entry-forms-on-react-hook-form.md) for data-entry forms; still applies to single-button actions
 - **Date:** 2026-10-25
 - **Approver:** Alejandro Loaiza
 - **Refs:** [0007](0007-shared-server-core.md), [0009](0009-canonical-code-conventions.md)
