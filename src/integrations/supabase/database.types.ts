@@ -586,6 +586,121 @@ export type Database = {
       [_ in never]: never;
     };
   };
+  inventory: {
+    Tables: {
+      stock_levels: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_global: boolean | null;
+          pickup_location_id: string | null;
+          quantity_available: number;
+          updated_at: string;
+          variant_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_global?: never;
+          pickup_location_id?: string | null;
+          quantity_available?: number;
+          updated_at?: string;
+          variant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_global?: never;
+          pickup_location_id?: string | null;
+          quantity_available?: number;
+          updated_at?: string;
+          variant_id?: string;
+        };
+        Relationships: [];
+      };
+      stock_movements: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          note: string | null;
+          quantity_delta: number;
+          reason: Database["inventory"]["Enums"]["movement_reason"];
+          stock_level_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          quantity_delta: number;
+          reason: Database["inventory"]["Enums"]["movement_reason"];
+          stock_level_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          quantity_delta?: number;
+          reason?: Database["inventory"]["Enums"]["movement_reason"];
+          stock_level_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_stock_level_id_fkey";
+            columns: ["stock_level_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_levels";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      adjust_stock: {
+        Args: {
+          p_note?: string;
+          p_pickup_location_id?: string;
+          p_quantity: number;
+          p_variant_id: string;
+        };
+        Returns: {
+          created_at: string;
+          id: string;
+          is_global: boolean | null;
+          pickup_location_id: string | null;
+          quantity_available: number;
+          updated_at: string;
+          variant_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "stock_levels";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      variant_availability: {
+        Args: { p_pickup_location_id?: string; p_variant_ids: string[] };
+        Returns: {
+          is_available: boolean;
+          variant_id: string;
+        }[];
+      };
+    };
+    Enums: {
+      movement_reason: "adjustment" | "restock" | "waste" | "order_reservation" | "order_release";
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   media: {
     Tables: {
       files: {
@@ -793,6 +908,11 @@ export const Constants = {
   },
   fulfillment: {
     Enums: {},
+  },
+  inventory: {
+    Enums: {
+      movement_reason: ["adjustment", "restock", "waste", "order_reservation", "order_release"],
+    },
   },
   media: {
     Enums: {

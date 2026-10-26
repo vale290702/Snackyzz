@@ -68,6 +68,15 @@ The numeric prefixes give a dependency order (FK targets first).
 - Invoker entry points granted to `authenticated`: `fulfillment.set_pickup_location_hours(uuid, jsonb)` and `fulfillment.set_delivery_hours(jsonb)` replace a weekly set atomically. They check `fulfillment.manage` (`42501`), lock the location or settings row so concurrent replacements serialize, and raise `pickup_location_not_found`.
 - `seed.sql` adds one pickup location with Monday–Saturday hours, two zones and today's delivery hours, without `created_by`.
 
+## Implemented inventory
+
+- `50_inventory/` implements ER §8: global/optional location pools, nulls-not-distinct uniqueness, nonnegative availability and an immutable movement ledger. Immutable movements have `created_at` only; pool rows have creation/update timestamps.
+- No API role has stock writes. Manager read policies require `inventory.manage`; anon gets only `inventory.variant_availability`, returning booleans for visible catalog variants.
+- `private.apply_stock_movement` is the only writer. It locks the variant before pool creation and arithmetic, supports signed deltas and set-to quantities, and inserts the ledger in the same transaction. Zero initialization/no-op does not append a movement. `inventory.adjust_stock` checks permission and derives the actor from `auth.uid()`.
+- `private.resolve_stock_level` chooses local stock if a row exists, even at zero; otherwise global. Untracked variants do not resolve a pool. Missing tracked stock is unavailable.
+- Order reasons are in the enum but rejected by a check until orders adds its reference/FK and reservation/release functions. Pool deletion/disable is deferred to preserve ledger references.
+- Seed stock uses the private writer without `created_by`. `inventory.test.sql` covers shape, grants, policy-role matrix, pool selection, constraints, authorization and ledger deltas.
+
 ## Gotchas
 
 - PostgREST reads `[api].schemas` when the stack starts. After adding a schema there, run `supabase stop && supabase start`; `db reset` keeps the old list and the API answers `Invalid schema`.
