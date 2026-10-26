@@ -928,7 +928,12 @@ test("delivery zones update the payable total and disappear for pickup", async (
   await mockSupabase(page);
   await startCheckout(page);
   await expect(page.getByLabel("Zona", { exact: true })).toHaveCount(0);
+  await expect(page.locator("#delivery-terms")).toHaveCount(0);
   await page.getByLabel("Enviar con mensajero").check();
+  await expect(page.getByText("El plazo estimado de entrega es de 1 a 3 días.", {exact:false})).toBeVisible();
+  await expect(page.locator("#delivery-terms")).not.toBeChecked();
+  await expect(page.getByRole("link", {name:"términos y condiciones y la política de privacidad de Paqueticos CR"})).toHaveAttribute("href", "https://paqueticoscr.com/sistema/politica-privacidad.php");
+  await page.locator("#delivery-terms").check();
   await page.getByLabel("Zona", { exact: true }).selectOption(zones[0].id);
   await expect(
     page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
@@ -937,12 +942,16 @@ test("delivery zones update the payable total and disappear for pickup", async (
   await expect(
     page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
   ).toContainText("5 500");
+  await expect(page.locator("#delivery-terms")).toBeChecked();
   await capture(page, "delivery-zones-checkout");
   await page.getByLabel("Retiro", { exact: false }).first().check();
   await expect(page.getByLabel("Zona", { exact: true })).toHaveCount(0);
   await expect(
     page.locator("#main .cart-total").filter({ hasText: "Total a pagar" }),
   ).toHaveCount(0);
+  await expect(page.locator("#delivery-terms")).toHaveCount(0);
+  await page.getByLabel("Enviar con mensajero").check();
+  await expect(page.locator("#delivery-terms")).not.toBeChecked();
 });
 
 test("admin can add edit and deactivate delivery zones", async ({ page }) => {
@@ -1005,10 +1014,15 @@ test("delivery submission requires a zone and sends its id without a client fee"
   expect(calls.filter(call => call.kind === "create")).toHaveLength(0);
   await page.getByLabel("Zona", {exact:true}).selectOption(zones[0].id);
   await page.getByRole("button", {name:"Realizar pedido",exact:true}).click();
+  expect(calls.filter(call => call.kind === "create")).toHaveLength(0);
+  await expect(page.locator("#delivery-terms")).toBeFocused();
+  await page.locator("#delivery-terms").check();
+  await page.getByRole("button", {name:"Realizar pedido",exact:true}).click();
   await expect(page.getByRole("heading", {name:"¡Pedido realizado con éxito!"})).toBeVisible();
   const request = calls.find(call => call.kind === "create");
   expect(request.body).toContain('name="deliveryZoneId"');
   expect(request.body).toContain(zones[0].id);
+  expect(request.body).toMatch(/name="deliveryTermsAccepted"\s+true/);
   expect(request.body).not.toContain('name="deliveryFee"');
 });
 

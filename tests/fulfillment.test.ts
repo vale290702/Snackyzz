@@ -100,3 +100,14 @@ test("admin configuration exposes store and pickup controls plus email diagnosis
   assert.match(html, /Nuevo punto/);
   assert.match(html, /RESEND_API_KEY/);
 });
+
+test('delivery shows the estimate and requires an unchecked Paqueticos acceptance', () => {
+  const html = checkout();
+  assert.match(html, /El plazo estimado de entrega es de 1 a 3 días\./);
+  assert.match(html, /id="delivery-terms"[^>]*required/);
+  assert.match(html, /https:\/\/paqueticoscr\.com\/sistema\/politica-privacidad\.php/);
+  assert.doesNotMatch(html, /id="delivery-terms"[^>]*checked/);
+  const pickup = checkout({fulfillment: {type: 'pickup', pickupLocationId: 'loc-1', deliveryAddress: ''}});
+  assert.doesNotMatch(pickup, /id="delivery-terms"/);
+  assert.doesNotMatch(pickup, /El plazo estimado de entrega/);
+});
