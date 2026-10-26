@@ -36,3 +36,7 @@ export { BrandPage } from "./ui/brand-pages/brand-page.component";
 export { ProductGrid } from "./ui/storefront/product-grid.component";
 export { ProductPurchaseProvider } from "./ui/storefront/product-purchase-provider.component";
 export { CatalogManager } from "./ui/manager/catalog-manager.component";
+export {
+  CatalogManagerSkeleton,
+  CatalogShelfSkeleton,
+} from "./ui/loading/catalog-skeleton.component";

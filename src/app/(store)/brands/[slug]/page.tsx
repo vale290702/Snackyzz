@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { BrandPage, getBrandShelf } from "@/features/catalog";
+import { BrandPage, CatalogShelfSkeleton, getBrandShelf } from "@/features/catalog";
 
 export async function generateMetadata({ params }: PageProps<"/brands/[slug]">): Promise<Metadata> {
   await connection();
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/brands/[slug]">):
 
 export default function BrandRoutePage({ params }: PageProps<"/brands/[slug]">) {
   return (
-    <Suspense>
+    <Suspense fallback={<CatalogShelfSkeleton />}>
       <BrandShelfBySlug params={params} />
     </Suspense>
   );

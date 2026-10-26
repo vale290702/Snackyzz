@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { AdminHeader, AdminSection, SignOutButton } from "@/features/access";
-import { CatalogManager, getCatalogManager } from "@/features/catalog";
+import { CatalogManager, CatalogManagerSkeleton, getCatalogManager } from "@/features/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const translate = await getTranslations("catalog.manager");
@@ -16,7 +16,7 @@ export default function AdminCatalogPage() {
     <>
       <AdminHeader actions={<SignOutButton />} activeSection={AdminSection.Catalog} />
       <main id="main" className="mx-auto box-content max-w-page px-5 pt-15 pb-20 md:px-8 lg:px-14">
-        <Suspense>
+        <Suspense fallback={<CatalogManagerSkeleton />}>
           <ManagedCatalog />
         </Suspense>
       </main>

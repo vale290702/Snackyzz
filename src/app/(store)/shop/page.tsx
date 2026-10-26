@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
-import { BrandPage, getBrandShelf } from "@/features/catalog";
+import { BrandPage, CatalogShelfSkeleton, getBrandShelf } from "@/features/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const translate = await getTranslations("catalog.shop");
@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function ShopPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<CatalogShelfSkeleton />}>
       <PrimaryBrandShelf />
     </Suspense>
   );
