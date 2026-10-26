@@ -1,5 +1,6 @@
 "use client";
 import { Icon, Cart, useStoreActions } from "../../components/store/ui";
+import { DELIVERY_COVERAGE_NOTICE, DELIVERY_ESTIMATE, DELIVERY_POLICY_NOTICE, DELIVERY_TERMS_URL } from "../../../supabase/functions/_shared/delivery-policy";
 import { deliveryQuote } from "../../lib/delivery-zones";
 import { formatMoney } from "../../lib/cart";
 import { deliveryDates, deliverySlots } from "../../lib/delivery";
@@ -188,7 +189,7 @@ export function Checkout({
                     />
                     <strong>Enviar con mensajero</strong>
                     <span>
-                      Recíbelo en la dirección y horario que indiques.
+                      Recíbelo en la dirección que indiques.
                     </span>
                   </label>
                 )}
@@ -240,6 +241,7 @@ export function Checkout({
                     <select
                       id="delivery-zone"
                       name="deliveryZoneId"
+                      aria-describedby="delivery-zone-coverage"
                       required
                       value={fulfillment.deliveryZoneId || ""}
                       onChange={(event) =>
@@ -258,6 +260,9 @@ export function Checkout({
                           </option>
                         ))}
                     </select>
+                    <p id="delivery-zone-coverage" className="field-hint">
+                      {DELIVERY_COVERAGE_NOTICE}
+                    </p>
                     {!delivery.zones?.some((zone) => zone.active) && (
                       <p className="field-hint">
                         No hay zonas de entrega disponibles. Contáctanos o
@@ -336,9 +341,35 @@ export function Checkout({
                   <div className="uber-notice">
                     <Icon name="pin" />
                     <p>
+                      {DELIVERY_ESTIMATE}
+                      <br />
+                      {DELIVERY_POLICY_NOTICE}
+                      <br />
                       El envío se calcula según tu zona y se incluye en el total
                       a pagar.
                     </p>
+                  </div>
+                  <div className="delivery-terms">
+                    <input
+                      id="delivery-terms"
+                      name="deliveryTermsAccepted"
+                      type="checkbox"
+                      value="true"
+                      required
+                      checked={fulfillment.deliveryTermsAccepted === true}
+                      onChange={(event) =>
+                        actions.checkoutChange(
+                          "deliveryTermsAccepted",
+                          String(event.target.checked),
+                        )
+                      }
+                    />
+                    <label htmlFor="delivery-terms">
+                      Acepto los{" "}
+                      <a href={DELIVERY_TERMS_URL} target="_blank" rel="noopener noreferrer">
+                        términos y condiciones y la política de privacidad de Paqueticos CR
+                      </a>.
+                    </label>
                   </div>
                 </>
               )}

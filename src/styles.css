@@ -2837,6 +2837,10 @@ small#receipt-help {
 .location-choice p,.location-choice span,.uber-notice p,.fulfillment-summary p { margin:4px 0 0; }
 .uber-notice { display:flex; gap:10px; }
 .uber-notice .icon { flex:0 0 auto; }
+.delivery-terms { display:flex; align-items:flex-start; gap:12px; margin-top:18px; }
+.delivery-terms input { flex:0 0 auto; width:18px; height:18px; min-height:18px; margin:4px 0 0; padding:0; accent-color:var(--orange); }
+.delivery-terms label { font-weight:400; line-height:1.6; }
+.delivery-terms a { text-decoration:underline; text-underline-offset:3px; }
 .settings-grid { display:grid; grid-template-columns:minmax(320px,.85fr) minmax(420px,1.15fr); gap:28px; align-items:start; }
 .locations-admin { background:#fff; border-radius:20px; padding:24px; }
 .admin-location-row { display:grid; grid-template-columns:1fr auto auto; gap:18px; align-items:center; padding:18px 0; border-bottom:1px solid rgba(60,25,7,.12); }

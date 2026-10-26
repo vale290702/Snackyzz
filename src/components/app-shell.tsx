@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEve
 import { seasonalCampaigns } from './seasonal/seasonal-campaigns';
 import { SeasonalSurface } from './seasonal/seasonal';
 import { seasonalThemes,normalizeSeasonalTheme,isSeasonalTheme,type SeasonalTheme } from '../../supabase/functions/_shared/seasonal-theme';
+import { DELIVERY_TERMS_ERROR } from '../../supabase/functions/_shared/delivery-policy';
 import { createCartStore } from '../lib/cart';
 import { api } from '../lib/api';
 import { configured, supabase } from '../lib/supabase';
@@ -221,6 +222,7 @@ export default function AppShell() {
     event.preventDefault();
     const data = current.current;
     if (data.submitting || data.validatingReceipt) return;
+    if (data.fulfillment.type === 'uber' && !data.fulfillment.deliveryTermsAccepted) { patch({ checkoutError: DELIVERY_TERMS_ERROR }); return; }
     if (!data.receipt) { patch({ checkoutError: 'Adjunta tu comprobante SINPE para continuar.' }); return; }
     if (!data.catalogReady) { patch({ checkoutError: 'No pudimos cargar la tienda. Reintenta la conexión antes de enviar tu pedido.' }); return; }
     const body = new FormData();
@@ -229,6 +231,7 @@ export default function AppShell() {
     body.set('receipt', data.receipt);
     body.set('fulfillmentType', data.fulfillment.type);
     body.set('pickupLocationId', data.fulfillment.pickupLocationId);
+    body.set('deliveryTermsAccepted', String(data.fulfillment.type === 'uber' && data.fulfillment.deliveryTermsAccepted === true));
     body.set('deliveryZoneId', data.fulfillment.type === 'uber' ? data.fulfillment.deliveryZoneId || '' : '');
     body.set('deliveryAddress', data.fulfillment.deliveryAddress.trim());
     body.set('deliveryDate', data.fulfillment.deliveryDate);
@@ -261,7 +264,7 @@ export default function AppShell() {
       if (name === 'name' || name === 'email' || name === 'phone') patch({ draft: { ...data.draft, [name]: value }, idempotencyKey: '' });
       else {
         const key = name === 'fulfillmentType' ? 'type' : name;
-        patch({ fulfillment: { ...data.fulfillment, [key]: value, ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
+        patch({ fulfillment: { ...data.fulfillment, [key]: key === 'deliveryTermsAccepted' ? value === 'true' : value, ...(key === 'type' && value !== data.fulfillment.type ? { deliveryTermsAccepted: false } : {}), ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
       }
     },
     receiptChange,

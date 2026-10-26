@@ -1,5 +1,6 @@
 import { boundedForm, cors, errorResponse, json, serviceClient } from '../_shared/http.ts';
 import { InputError, MAX_BYTES, fingerprint, validateFields } from '../_shared/validation.ts';
+import { validateDeliveryTerms } from '../_shared/delivery-policy.ts';
 import { normalizeReceipt } from '../_shared/receipt.ts';
 import { adminRecipients, newOrderMailPayload, sendConfirmation, type NewOrderMail } from '../_shared/mail.ts';
 
@@ -13,6 +14,7 @@ Deno.serve(async (request: Request) => {
     if (!/^[A-Za-z0-9_-]{8,128}$/.test(key)) throw new InputError('Falta la clave del pedido. Recarga la página.');
     const form = await boundedForm(request);
     const fields = validateFields(form);
+    validateDeliveryTerms(form);
     const fulfillmentType = String(form.get('fulfillmentType') ?? '');
     const pickupLocationId = String(form.get('pickupLocationId') ?? '') || null;
     const deliveryZoneId = fulfillmentType === 'uber' ? String(form.get('deliveryZoneId') ?? '') : null;

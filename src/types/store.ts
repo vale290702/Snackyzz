@@ -38,6 +38,7 @@ export interface Fulfillment {
   type: string;
   pickupLocationId: string;
   deliveryZoneId?: string;
+  deliveryTermsAccepted?: boolean;
   deliveryAddress: string;
   deliveryDate: string;
   deliverySlotStart: string;
