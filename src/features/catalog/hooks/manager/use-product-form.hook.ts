@@ -2,21 +2,18 @@
 
 import { useState } from "react";
 
-import { FormFieldKind, useFormAction } from "@/shared/lib/form-action";
-
 import { useCatalogImageUpload } from "./use-catalog-image-upload.hook";
-import { CatalogFieldError } from "../../domain/fields";
+import { useProductSubmission } from "./use-product-submission.hook";
 import { CatalogImagePurpose } from "../../domain/images";
 import { ManagerRecords, NEW_PRODUCT_ACCENT_COLOR } from "../../domain/manager";
-import { productInputSchema } from "../../domain/products";
-import type { Category, ManagedBrand, ManagedProduct, Product } from "../../index";
-import { createProductAction, updateProductAction } from "../../server/products/products.actions";
+import type { Category, ManagedBrand, ManagedProduct, Product, Variant } from "../../index";
 
 /**
  * Props the product form's hook needs.
  */
 type ProductFormOptions = {
   product: ManagedProduct | null;
+  variants?: readonly Variant[];
   brands: readonly ManagedBrand[];
   categories: readonly Category[];
   defaultBrandId: string;
@@ -48,11 +45,16 @@ function choosable<Record extends { id: string; archivedAt: string | null }>(
  */
 export function useProductForm({
   product,
+  variants = [],
   brands,
   categories,
   defaultBrandId,
   onSaved,
 }: ProductFormOptions) {
+  const activeVariants = variants.filter((variant) => variant.archivedAt === null);
+  const inlinePresentation = activeVariants.length <= 1;
+  const singleVariant = activeVariants[0];
+  const [isStockTracked, setIsStockTracked] = useState(singleVariant?.isStockTracked ?? true);
   const [brandId, setBrandId] = useState(product?.brandId ?? defaultBrandId);
   const [categoryIds, setCategoryIds] = useState<string[]>(product?.categoryIds ?? []);
   const image = useCatalogImageUpload(CatalogImagePurpose.ProductImage, {
@@ -60,22 +62,7 @@ export function useProductForm({
     previewUrl: product?.imageUrl ?? null,
   });
 
-  const form = useFormAction({
-    schema: productInputSchema,
-    action: async (input) => {
-      const result = product
-        ? await updateProductAction({ ...input, id: product.id })
-        : await createProductAction(input);
-      if (result.ok) {
-        onSaved(result.value);
-      }
-
-      return result;
-    },
-    fieldErrorCodes: Object.values(CatalogFieldError),
-    preserve: ["slug", "name", "description", "badge", "accentColor", "sortOrder"],
-    fieldKinds: { categoryIds: FormFieldKind.List },
-  });
+  const form = useProductSubmission({ product, singleVariant, inlinePresentation, onSaved });
 
   function toggleCategory(categoryId: string, isSelected: boolean) {
     setCategoryIds((current) => {
@@ -87,6 +74,11 @@ export function useProductForm({
 
   return {
     ...form,
+    inlinePresentation,
+    hasDefaultPresentation: activeVariants.some((variant) => variant.isDefault),
+    singleVariant,
+    isStockTracked,
+    setIsStockTracked,
     brandOptions: choosable(brands, product ? [product.brandId] : []),
     categoryOptions: choosable(categories, product?.categoryIds ?? []),
     accentColor: form.values.accentColor ?? product?.accentColor ?? NEW_PRODUCT_ACCENT_COLOR,

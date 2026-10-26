@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { useErrorMessage } from "@/i18n/use-error-message.hook";
 import { FieldGroup } from "@/shared/ui/field";
 
-import { FormAlert, SaveButton, TextField } from "./form-fields.component";
+import { FormAlert, SaveButton } from "./form-fields.component";
+import { NameSlugFields } from "./name-slug-fields.component";
 import { useCategoryForm } from "../../hooks/manager/use-category-form.hook";
 import type { Category } from "../../index";
 
@@ -31,33 +32,24 @@ export function CategoryForm({ category, onSaved }: CategoryFormProps) {
   const errorMessage = useErrorMessage("catalog");
 
   return (
-    <form action={formAction} aria-labelledby="catalog-editor-title" className="grid gap-6">
+    <form
+      aria-busy={isPending}
+      action={formAction}
+      aria-labelledby="catalog-editor-title"
+      className="grid gap-6"
+    >
       <FieldGroup className="gap-5">
-        <TextField
-          id="category-name"
-          name="name"
-          label={translate("fields.name")}
-          required
-          defaultValue={values.name ?? category?.name ?? ""}
-          error={errorMessage(fieldErrors.name)}
+        <NameSlugFields
+          prefix="category"
+          name={values.name ?? category?.name ?? ""}
+          slug={values.slug ?? category?.slug ?? ""}
+          nameError={errorMessage(fieldErrors.name)}
+          slugError={errorMessage(fieldErrors.slug)}
         />
-        <TextField
-          id="category-slug"
-          name="slug"
-          label={translate("fields.slug")}
-          hint={translate("fields.slugHint")}
-          required
-          defaultValue={values.slug ?? category?.slug ?? ""}
-          error={errorMessage(fieldErrors.slug)}
-        />
-        <TextField
-          id="category-sort-order"
+        <input
+          type="hidden"
           name="sortOrder"
-          type="number"
-          min={0}
-          label={translate("fields.sortOrder")}
-          defaultValue={values.sortOrder ?? category?.sortOrder ?? 0}
-          error={errorMessage(fieldErrors.sortOrder)}
+          value={values.sortOrder ?? category?.sortOrder ?? 0}
         />
       </FieldGroup>
       <FormAlert message={errorMessage(formError)} />

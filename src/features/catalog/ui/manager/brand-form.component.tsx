@@ -7,6 +7,7 @@ import { FieldGroup } from "@/shared/ui/field";
 
 import { FormAlert, SaveButton, TextareaField, TextField } from "./form-fields.component";
 import { ImageField } from "./image-field.component";
+import { NameSlugFields } from "./name-slug-fields.component";
 import { useBrandForm } from "../../hooks/manager/use-brand-form.hook";
 import type { ManagedBrand } from "../../index";
 
@@ -32,24 +33,19 @@ export function BrandForm({ brand, onSaved }: BrandFormProps) {
   const errorMessage = useErrorMessage("catalog");
 
   return (
-    <form action={formAction} aria-labelledby="catalog-editor-title" className="grid gap-6">
+    <form
+      aria-busy={isPending || logo.isUploading}
+      action={formAction}
+      aria-labelledby="catalog-editor-title"
+      className="grid gap-6"
+    >
       <FieldGroup className="gap-5">
-        <TextField
-          id="brand-name"
-          name="name"
-          label={translate("fields.name")}
-          required
-          defaultValue={values.name ?? brand?.name ?? ""}
-          error={errorMessage(fieldErrors.name)}
-        />
-        <TextField
-          id="brand-slug"
-          name="slug"
-          label={translate("fields.slug")}
-          hint={translate("fields.slugHint")}
-          required
-          defaultValue={values.slug ?? brand?.slug ?? ""}
-          error={errorMessage(fieldErrors.slug)}
+        <NameSlugFields
+          prefix="brand"
+          name={values.name ?? brand?.name ?? ""}
+          slug={values.slug ?? brand?.slug ?? ""}
+          nameError={errorMessage(fieldErrors.name)}
+          slugError={errorMessage(fieldErrors.slug)}
         />
         <TextField
           id="brand-tagline"
@@ -79,15 +75,7 @@ export function BrandForm({ brand, onSaved }: BrandFormProps) {
           hint={translate("image.logoHint")}
           image={logo}
         />
-        <TextField
-          id="brand-sort-order"
-          name="sortOrder"
-          type="number"
-          min={0}
-          label={translate("fields.sortOrder")}
-          defaultValue={values.sortOrder ?? brand?.sortOrder ?? 0}
-          error={errorMessage(fieldErrors.sortOrder)}
-        />
+        <input type="hidden" name="sortOrder" value={values.sortOrder ?? brand?.sortOrder ?? 0} />
       </FieldGroup>
       <FormAlert message={errorMessage(formError ?? fieldErrors.logoFileId)} />
       <SaveButton

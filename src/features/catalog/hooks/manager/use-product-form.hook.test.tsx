@@ -5,11 +5,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProductForm } from "./use-product-form.hook";
 import { NEW_PRODUCT_ACCENT_COLOR } from "../../domain/manager";
 import { createProductAction, updateProductAction } from "../../server/products/products.actions";
+import { createVariantAction, updateVariantAction } from "../../server/variants/variants.actions";
 import { CatalogRecords } from "../../ui/testing/catalog-records.helper";
 
 vi.mock("../../server/products/products.actions", () => ({
   createProductAction: vi.fn(),
   updateProductAction: vi.fn(),
+}));
+vi.mock("../../server/variants/variants.actions", () => ({
+  createVariantAction: vi.fn(),
+  updateVariantAction: vi.fn(),
 }));
 vi.mock("../../server/images/images.actions", () => ({
   createCatalogImageUploadAction: vi.fn(),
@@ -43,6 +48,8 @@ const product = CatalogRecords.product({
 
 function productForm(fields: Record<string, string | string[]>): FormData {
   const formData = new FormData();
+  formData.set("presentationName", "Unidad");
+  formData.set("price", "1500");
   for (const [name, value] of Object.entries(fields)) {
     for (const entry of [value].flat()) {
       formData.append(name, entry);
@@ -66,9 +73,122 @@ function renderNewProduct(onSaved = vi.fn()) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(createVariantAction).mockResolvedValue({ ok: true, value: CatalogRecords.variant() });
+  vi.mocked(updateVariantAction).mockResolvedValue({ ok: true, value: CatalogRecords.variant() });
 });
 
 describe("useProductForm", () => {
+  it("retains a partially created product and retries by updating it", async () => {
+    const saved = CatalogRecords.product();
+    vi.mocked(createProductAction).mockResolvedValue({ ok: true, value: saved });
+    vi.mocked(updateProductAction).mockResolvedValue({ ok: true, value: saved });
+    vi.mocked(createVariantAction).mockResolvedValueOnce({ ok: false, error: "sku_taken" });
+    const onSaved = vi.fn();
+    const { result } = renderNewProduct(onSaved);
+    const data = productForm({
+      brandId: primary.id,
+      name: "Galleta",
+      slug: "galleta",
+      description: "Chocolate",
+      accentColor: "#ED781A",
+    });
+    await submit(result.current.formAction, data);
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(result.current.partialProductId).toBe(saved.id);
+    await submit(result.current.formAction, data);
+    expect(createProductAction).toHaveBeenCalledTimes(1);
+    expect(updateProductAction).toHaveBeenCalledWith(expect.objectContaining({ id: saved.id }));
+    expect(createVariantAction).toHaveBeenLastCalledWith(
+      expect.objectContaining({ productId: saved.id, name: "Unidad", price: 1500 }),
+    );
+    expect(onSaved).toHaveBeenCalledWith(saved);
+  });
+
+  it("updates the sole presentation inline", async () => {
+    const variant = CatalogRecords.variant({ productId: product.id });
+    vi.mocked(updateProductAction).mockResolvedValue({ ok: true, value: product });
+    const { result } = renderHook(() =>
+      useProductForm({
+        product,
+        variants: [variant],
+        brands,
+        categories,
+        defaultBrandId: primary.id,
+        onSaved: vi.fn(),
+      }),
+    );
+    await submit(
+      result.current.formAction,
+      productForm({
+        brandId: primary.id,
+        name: "Galleta",
+        slug: "galleta",
+        description: "Chocolate",
+        accentColor: "#ED781A",
+      }),
+    );
+    expect(updateVariantAction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: variant.id, price: 1500 }),
+    );
+    expect(createVariantAction).not.toHaveBeenCalled();
+  });
+
+  it("requires a valid initial price before creating any record", async () => {
+    const { result } = renderNewProduct();
+    const data = productForm({
+      brandId: primary.id,
+      name: "Galleta",
+      slug: "galleta",
+      description: "Chocolate",
+      accentColor: "#ED781A",
+    });
+    data.set("price", "0");
+    await submit(result.current.formAction, data);
+    expect(result.current.fieldErrors.price).toBe("price_invalid");
+    expect(createProductAction).not.toHaveBeenCalled();
+    expect(createVariantAction).not.toHaveBeenCalled();
+  });
+
+  it("expands to multiple presentations without recreating the first", async () => {
+    const first = CatalogRecords.variant({ productId: product.id });
+    const second = CatalogRecords.variant({
+      id: "00000000-0000-7000-8000-0000000000e2",
+      productId: product.id,
+      isDefault: false,
+    });
+    vi.mocked(updateProductAction).mockResolvedValue({ ok: true, value: product });
+    const { result, rerender } = renderHook(
+      ({ variants }) =>
+        useProductForm({
+          product,
+          variants,
+          brands,
+          categories,
+          defaultBrandId: primary.id,
+          onSaved: vi.fn(),
+        }),
+      { initialProps: { variants: [first] } },
+    );
+    expect(result.current.inlinePresentation).toBe(true);
+    rerender({ variants: [first, second] });
+    expect(result.current.inlinePresentation).toBe(false);
+    const data = productForm({
+      brandId: primary.id,
+      name: "Edited product",
+      slug: "galleta",
+      description: "Chocolate",
+      accentColor: "#ED781A",
+    });
+    data.delete("price");
+    data.delete("presentationName");
+    await submit(result.current.formAction, data);
+    expect(updateProductAction).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Edited product" }),
+    );
+    expect(createVariantAction).not.toHaveBeenCalled();
+    expect(updateVariantAction).not.toHaveBeenCalled();
+  });
+
   it("starts a new product in the default brand with the brand color and no image", () => {
     const { result } = renderNewProduct();
 

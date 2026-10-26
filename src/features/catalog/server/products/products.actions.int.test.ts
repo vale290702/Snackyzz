@@ -10,6 +10,7 @@ import { createBrandAction } from "../brands";
 import { archiveCategoryAction, createCategoryAction } from "../categories";
 import { CatalogFixtures, DemoAdmin } from "../testing/catalog-fixtures.helper";
 import { RequestCookies } from "../testing/request-cookies.helper";
+import { createVariantAction } from "../variants";
 
 vi.mock("next/headers", async () => {
   const { RequestCookies: Cookies } = await import("../testing/request-cookies.helper");
@@ -149,6 +150,35 @@ describe("product actions for owners", () => {
     expect(await archiveProductAction({ id })).toEqual({
       ok: false,
       error: CatalogError.ProductNotFound,
+    });
+  });
+});
+
+describe("sellable product capability composition", () => {
+  it("keeps the product id through presentation failure and creates its default on retry", async () => {
+    await CatalogFixtures.signInAs(DemoAdmin.Owner.email);
+    const fields = productFields("sellable-retry");
+    const created = await createProductAction(fields);
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const productId = created.value.id;
+    const failed = await createVariantAction({ productId, name: "Unidad", price: 0 });
+    expect(failed.ok).toBe(false);
+    const retried = await updateProductAction({
+      ...fields,
+      id: productId,
+      name: "Nombre corregido",
+    });
+    expect(retried).toMatchObject({ ok: true, value: { id: productId, name: "Nombre corregido" } });
+    const presentation = await createVariantAction({
+      productId,
+      name: "Unidad",
+      price: 1500,
+      isStockTracked: false,
+    });
+    expect(presentation).toMatchObject({
+      ok: true,
+      value: { productId, isDefault: true, price: 1500, isStockTracked: false },
     });
   });
 });

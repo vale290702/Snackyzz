@@ -5,17 +5,21 @@ import { useTranslations } from "next-intl";
 import { useErrorMessage } from "@/i18n/use-error-message.hook";
 import { FieldGroup } from "@/shared/ui/field";
 
+import { AccentColorField } from "./accent-color-field.component";
 import { FormAlert, SaveButton, TextareaField, TextField } from "./form-fields.component";
 import { ImageField } from "./image-field.component";
+import { InlinePresentationFields } from "./inline-presentation-fields.component";
+import { NameSlugFields } from "./name-slug-fields.component";
 import { BrandSelectField, CategoryCheckboxes } from "./product-placement-fields.component";
 import { useProductForm } from "../../hooks/manager/use-product-form.hook";
-import type { Category, ManagedBrand, ManagedProduct, Product } from "../../index";
+import type { Category, ManagedBrand, ManagedProduct, Product, Variant } from "../../index";
 
 /**
  * Props for the product form.
  */
 type ProductFormProps = {
   product: ManagedProduct | null;
+  variants?: readonly Variant[];
   brands: readonly ManagedBrand[];
   categories: readonly Category[];
   defaultBrandId: string;
@@ -30,35 +34,32 @@ type ProductFormProps = {
  */
 export function ProductForm({
   product,
+  variants = [],
   brands,
   categories,
   defaultBrandId,
   onSaved,
 }: ProductFormProps) {
-  const form = useProductForm({ product, brands, categories, defaultBrandId, onSaved });
+  const form = useProductForm({ product, variants, brands, categories, defaultBrandId, onSaved });
   const { formAction, isPending, values, fieldErrors, formError } = form;
   const translate = useTranslations("catalog.manager");
   const errorMessage = useErrorMessage("catalog");
 
   return (
-    <form action={formAction} aria-labelledby="catalog-editor-title" className="grid gap-6">
+    <form
+      id="catalog-product-form"
+      aria-busy={isPending || form.image.isUploading}
+      action={formAction}
+      aria-labelledby="catalog-editor-title"
+      className="grid gap-6"
+    >
       <FieldGroup className="gap-5">
-        <TextField
-          id="product-name"
-          name="name"
-          label={translate("fields.name")}
-          required
-          defaultValue={values.name ?? product?.name ?? ""}
-          error={errorMessage(fieldErrors.name)}
-        />
-        <TextField
-          id="product-slug"
-          name="slug"
-          label={translate("fields.slug")}
-          hint={translate("fields.slugHint")}
-          required
-          defaultValue={values.slug ?? product?.slug ?? ""}
-          error={errorMessage(fieldErrors.slug)}
+        <NameSlugFields
+          prefix="product"
+          name={values.name ?? product?.name ?? ""}
+          slug={values.slug ?? product?.slug ?? ""}
+          nameError={errorMessage(fieldErrors.name)}
+          slugError={errorMessage(fieldErrors.slug)}
         />
         <BrandSelectField
           options={form.brandOptions}
@@ -66,12 +67,8 @@ export function ProductForm({
           onChange={form.selectBrand}
           error={errorMessage(fieldErrors.brandId)}
         />
-        <CategoryCheckboxes
-          options={form.categoryOptions}
-          categoryIds={form.categoryIds}
-          onToggle={form.toggleCategory}
-          error={errorMessage(fieldErrors.categoryIds)}
-        />
+
+        {form.inlinePresentation && <InlinePresentationFields form={form} />}
         <TextareaField
           id="product-description"
           name="description"
@@ -87,14 +84,9 @@ export function ProductForm({
           defaultValue={values.badge ?? product?.badge ?? ""}
           error={errorMessage(fieldErrors.badge)}
         />
-        <TextField
-          id="product-accent-color"
-          name="accentColor"
-          type="color"
-          label={translate("productForm.accentColor")}
-          defaultValue={form.accentColor}
+        <AccentColorField
+          initialColor={form.accentColor}
           error={errorMessage(fieldErrors.accentColor)}
-          className="w-24 p-1.5"
         />
         <ImageField
           id="product-image"
@@ -103,16 +95,30 @@ export function ProductForm({
           hint={translate("image.productHint")}
           image={form.image}
         />
-        <TextField
-          id="product-sort-order"
-          name="sortOrder"
-          type="number"
-          min={0}
-          label={translate("fields.sortOrder")}
-          defaultValue={values.sortOrder ?? product?.sortOrder ?? 0}
-          error={errorMessage(fieldErrors.sortOrder)}
-        />
+        <details className="rounded-control border border-border p-4">
+          <summary className="cursor-pointer text-sm font-semibold">
+            {translate("productForm.moreOptions")}
+          </summary>
+
+          <CategoryCheckboxes
+            options={form.categoryOptions}
+            categoryIds={form.categoryIds}
+            onToggle={form.toggleCategory}
+            error={errorMessage(fieldErrors.categoryIds)}
+          />
+        </details>
+        <input type="hidden" name="sortOrder" value={values.sortOrder ?? product?.sortOrder ?? 0} />
       </FieldGroup>
+      {form.partialProductId && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {translate("productForm.partialSave")}
+        </p>
+      )}
+      {product && !form.hasDefaultPresentation && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {translate("productForm.notVisible")}
+        </p>
+      )}
       <FormAlert message={errorMessage(formError ?? fieldErrors.imageFileId)} />
       <SaveButton
         isPending={isPending}

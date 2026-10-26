@@ -43,6 +43,7 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
   return (
     <form
       action={formAction}
+      aria-busy={isPending}
       aria-labelledby="variant-editor-title"
       className="grid gap-5 rounded-control border border-border bg-background p-4.5"
     >
@@ -77,15 +78,7 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
           defaultValue={values.sku ?? variant?.sku ?? ""}
           error={errorMessage(fieldErrors.sku)}
         />
-        <TextField
-          id="variant-sort-order"
-          name="sortOrder"
-          type="number"
-          min={0}
-          label={translate("fields.sortOrder")}
-          defaultValue={values.sortOrder ?? variant?.sortOrder ?? 0}
-          error={errorMessage(fieldErrors.sortOrder)}
-        />
+        <input type="hidden" name="sortOrder" value={values.sortOrder ?? variant?.sortOrder ?? 0} />
         <Field orientation="horizontal">
           <Checkbox
             id="variant-stock-tracked"

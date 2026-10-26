@@ -95,7 +95,8 @@
       "setDefault": "Hacer predeterminada",
       "saving": "Guardando…",
       "cancel": "Cancelar",
-      "closeEditor": "Cerrar editor"
+      "closeEditor": "Cerrar editor",
+      "saved": "Cambios guardados"
     },
     "archiveDialog": {
       "title": "¿Archivar {name}?",
@@ -107,7 +108,8 @@
       "slug": "Dirección en la tienda",
       "slugHint": "Minúsculas, números y guiones.",
       "sortOrder": "Posición",
-      "description": "Descripción"
+      "description": "Descripción",
+      "editSlug": "Editar enlace"
     },
     "image": {
       "uploading": "Subiendo imagen…",
@@ -123,7 +125,16 @@
       "accentColor": "Color",
       "image": "Imagen (opcional)",
       "categories": "Categorías",
-      "submit": "Guardar producto"
+      "submit": "Guardar producto",
+      "presentation": "Presentación y precio",
+      "presentationName": "Nombre de la presentación",
+      "defaultPresentationName": "Unidad",
+      "moreOptions": "Más opciones",
+      "categoriesHint": "Opcionales. Las categorías no cambian la agrupación por marca en la tienda.",
+      "searchCategories": "Buscar categorías",
+      "noCategoryResults": "No hay categorías con ese nombre.",
+      "partialSave": "El producto se guardó, pero falta guardar su presentación. Corrige el error y vuelve a guardar; se usará el mismo producto.",
+      "notVisible": "Este producto todavía no aparece en la tienda: necesita una presentación predeterminada."
     },
     "variants": {
       "title": "Presentaciones",
@@ -134,7 +145,8 @@
       "sku": "SKU (opcional)",
       "price": "Precio (₡)",
       "isStockTracked": "Controlar inventario",
-      "submit": "Guardar presentación"
+      "submit": "Guardar presentación",
+      "saveFirst": "Guarda los cambios del producto antes de editar sus presentaciones."
     },
     "brandForm": {
       "createTitle": "Nueva marca",
@@ -149,6 +161,22 @@
       "createTitle": "Nueva categoría",
       "editTitle": "Editar categoría",
       "submit": "Guardar categoría"
+    },
+    "colors": {
+      "palette": "Colores de Snackyzz",
+      "orange": "Naranja Snackyzz",
+      "deepOrange": "Naranja intenso",
+      "chocolate": "Chocolate",
+      "cream": "Crema",
+      "custom": "Color personalizado",
+      "hex": "Código hexadecimal"
+    },
+    "feedbackLabel": "Avisos del catálogo",
+    "discardDialog": {
+      "title": "¿Descartar los cambios?",
+      "description": "Los cambios sin guardar de este editor se perderán.",
+      "cancel": "Seguir editando",
+      "confirm": "Descartar cambios"
     }
   },
   "loading": {
