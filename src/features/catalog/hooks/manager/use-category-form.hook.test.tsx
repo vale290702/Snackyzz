@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { startTransition } from "react";
+import type { ChangeEvent } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCategoryForm } from "./use-category-form.hook";
@@ -16,21 +16,6 @@ vi.mock("../../server/categories/categories.actions", () => ({
 
 const category = CatalogRecords.category();
 
-function categoryForm(fields: Record<string, string>): FormData {
-  const formData = new FormData();
-  for (const [name, value] of Object.entries(fields)) {
-    formData.set(name, value);
-  }
-
-  return formData;
-}
-
-async function submit(formAction: (formData: FormData) => void, formData: FormData) {
-  await act(async () => {
-    startTransition(() => formAction(formData));
-  });
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -41,30 +26,33 @@ describe("useCategoryForm", () => {
     const onSaved = vi.fn();
     const { result } = renderHook(() => useCategoryForm({ category: null, onSaved }));
 
-    await submit(
-      result.current.formAction,
-      categoryForm({ name: " Clásicas ", slug: "clasicas", sortOrder: "2" }),
-    );
+    act(() => {
+      result.current.form.setValue("name", " Clásicas ");
+      result.current.form.setValue("slug", "clasicas");
+    });
+    await act(() => result.current.submit());
 
     expect(createCategoryAction).toHaveBeenCalledWith({
       name: "Clásicas",
       slug: "clasicas",
-      sortOrder: 2,
+      sortOrder: 0,
     });
     expect(onSaved).toHaveBeenCalledWith(category);
   });
 
-  it("updates the category being edited", async () => {
+  it("updates the category being edited, keeping its position", async () => {
     vi.mocked(updateCategoryAction).mockResolvedValue({ ok: true, value: category });
-    const { result } = renderHook(() => useCategoryForm({ category, onSaved: vi.fn() }));
+    const editing = CatalogRecords.category({ sortOrder: 3 });
+    const { result } = renderHook(() => useCategoryForm({ category: editing, onSaved: vi.fn() }));
 
-    await submit(result.current.formAction, categoryForm({ name: "Nuevas", slug: "nuevas" }));
+    act(() => result.current.form.setValue("name", "Nuevas"));
+    await act(() => result.current.submit());
 
     expect(updateCategoryAction).toHaveBeenCalledWith({
-      id: category.id,
+      id: editing.id,
       name: "Nuevas",
-      slug: "nuevas",
-      sortOrder: 0,
+      slug: editing.slug,
+      sortOrder: 3,
     });
     expect(createCategoryAction).not.toHaveBeenCalled();
   });
@@ -73,11 +61,15 @@ describe("useCategoryForm", () => {
     const onSaved = vi.fn();
     const { result } = renderHook(() => useCategoryForm({ category: null, onSaved }));
 
-    await submit(result.current.formAction, categoryForm({ name: "Clásicas", slug: "Clásicas" }));
+    act(() => {
+      result.current.form.setValue("name", "Clásicas");
+      result.current.form.setValue("slug", "Clásicas");
+    });
+    await act(() => result.current.submit());
 
     expect(createCategoryAction).not.toHaveBeenCalled();
     expect(result.current.fieldErrors).toEqual({ slug: "slug_invalid" });
-    expect(result.current.values).toMatchObject({ name: "Clásicas", slug: "Clásicas" });
+    expect(result.current.form.getValues()).toMatchObject({ name: "Clásicas", slug: "Clásicas" });
     expect(onSaved).not.toHaveBeenCalled();
   });
 
@@ -85,8 +77,24 @@ describe("useCategoryForm", () => {
     vi.mocked(createCategoryAction).mockResolvedValue({ ok: false, error: "slug_taken" });
     const { result } = renderHook(() => useCategoryForm({ category: null, onSaved: vi.fn() }));
 
-    await submit(result.current.formAction, categoryForm({ name: "Clásicas", slug: "clasicas" }));
+    act(() => {
+      result.current.form.setValue("name", "Clásicas");
+      result.current.form.setValue("slug", "clasicas");
+    });
+    await act(() => result.current.submit());
 
     expect(result.current.formError).toBe("slug_taken");
+  });
+
+  it("generates a new category's slug from its name", () => {
+    const { result } = renderHook(() => useCategoryForm({ category: null, onSaved: vi.fn() }));
+
+    act(() =>
+      result.current.nameSlug.nameChanged({
+        target: { value: "Edición limitada" },
+      } as ChangeEvent<HTMLInputElement>),
+    );
+
+    expect(result.current.form.getValues("slug")).toBe("edicion-limitada");
   });
 });

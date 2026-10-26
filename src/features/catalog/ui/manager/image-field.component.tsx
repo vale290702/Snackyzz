@@ -18,21 +18,17 @@ const ACCEPTED_IMAGES = "image/jpeg,image/png,image/webp";
  */
 type ImageFieldProps = {
   id: string;
-  /**
-   * The form field that carries the uploaded file's id.
-   */
-  name: string;
   label: string;
   hint: string;
   image: ReturnType<typeof useCatalogImageUpload>;
 };
 
 /**
- * An image picker that uploads right away: preview, status and the hidden file id the form submits.
- * @param props The field's id, form name, label and hint, and the upload state from the form's hook.
+ * An image picker that uploads right away, with its preview and status.
+ * @param props The field's id, label and hint, and the upload state from the form's hook.
  * @returns The field.
  */
-export function ImageField({ id, name, label, hint, image }: ImageFieldProps) {
+export function ImageField({ id, label, hint, image }: ImageFieldProps) {
   const translate = useTranslations("catalog.manager.image");
   const errorMessage = useErrorMessage("media");
   const error = errorMessage(image.error);
@@ -72,7 +68,6 @@ export function ImageField({ id, name, label, hint, image }: ImageFieldProps) {
           className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-wait"
         />
       </div>
-      {image.fileId && <input type="hidden" name={name} value={image.fileId} />}
       <FieldDescription aria-live="polite" className="sr-only">
         {image.isUploading ? translate("uploading") : null}
       </FieldDescription>

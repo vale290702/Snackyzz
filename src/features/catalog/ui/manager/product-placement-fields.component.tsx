@@ -21,7 +21,7 @@ type BrandSelectFieldProps = {
 };
 
 /**
- * The brand whose shelf shows the product; submitted as `brandId`.
+ * The brand whose shelf shows the product.
  * @param props The brands to offer, the chosen one, its handler and error.
  * @returns The field.
  */
@@ -33,7 +33,7 @@ export function BrandSelectField({ options, brandId, onChange, error }: BrandSel
       <FieldLabel htmlFor="product-brand" className="text-xs font-semibold">
         {translate("brand")}
       </FieldLabel>
-      <Select name="brandId" value={brandId} onValueChange={onChange}>
+      <Select value={brandId} onValueChange={onChange}>
         <SelectTrigger id="product-brand" aria-invalid={Boolean(error)} className="w-full">
           <SelectValue />
         </SelectTrigger>
@@ -61,7 +61,7 @@ type CategoryCheckboxesProps = {
 };
 
 /**
- * The categories the product belongs to; each checked one is submitted as `categoryIds`.
+ * The categories the product belongs to.
  * @param props The categories to offer, the chosen ones, the toggle handler and error.
  * @returns The fieldset, or null when there are no categories.
  */
@@ -91,9 +91,6 @@ export function CategoryCheckboxes({
         onChange={(event) => search.setSearch(event.target.value)}
         error={null}
       />
-      {categoryIds.map((id) => (
-        <input key={id} type="hidden" name="categoryIds" value={id} />
-      ))}
       {search.filteredOptions.length === 0 && (
         <p role="status" className="text-sm text-muted-foreground">
           {translate("noCategoryResults")}
@@ -103,7 +100,6 @@ export function CategoryCheckboxes({
         <Field key={category.id} orientation="horizontal">
           <Checkbox
             id={`product-category-${category.id}`}
-            value={category.id}
             checked={categoryIds.includes(category.id)}
             onCheckedChange={(checked) => onToggle(category.id, checked === true)}
           />

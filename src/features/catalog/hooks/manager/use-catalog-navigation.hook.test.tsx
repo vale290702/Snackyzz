@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { EditorForm } from "./catalog-editor.constants";
 import { useCatalogNavigation } from "./use-catalog-navigation.hook";
 import { CatalogManagerView } from "../../domain/manager";
 
@@ -9,7 +10,7 @@ describe("useCatalogNavigation", () => {
     const { result } = renderHook(() => useCatalogNavigation());
 
     act(() => result.current.edit("product"));
-    act(() => result.current.markDirty());
+    act(() => result.current.reportDirty(EditorForm.Record, true));
     act(() => result.current.selectView(CatalogManagerView.Brands));
 
     expect(result.current).toMatchObject({
@@ -34,9 +35,29 @@ describe("useCatalogNavigation", () => {
     const { result } = renderHook(() => useCatalogNavigation());
 
     act(() => result.current.edit("product"));
-    act(() => result.current.markDirty());
+    act(() => result.current.reportDirty(EditorForm.Record, true));
     act(() => result.current.saved());
 
     expect(result.current).toMatchObject({ editingId: null, isDirty: false, isDiscardOpen: false });
+  });
+});
+
+describe("useCatalogNavigation dirty forms", () => {
+  it("stays dirty until every editor form is clean", () => {
+    const { result } = renderHook(() => useCatalogNavigation());
+
+    act(() => result.current.edit("product"));
+    act(() => {
+      result.current.reportDirty(EditorForm.Record, true);
+      result.current.reportDirty(EditorForm.Presentation, true);
+    });
+    act(() => result.current.reportDirty(EditorForm.Presentation, false));
+
+    expect(result.current.isDirty).toBe(true);
+    expect(result.current.isFormDirty(EditorForm.Record)).toBe(true);
+    expect(result.current.isFormDirty(EditorForm.Presentation)).toBe(false);
+
+    act(() => result.current.reportDirty(EditorForm.Record, false));
+    expect(result.current.isDirty).toBe(false);
   });
 });

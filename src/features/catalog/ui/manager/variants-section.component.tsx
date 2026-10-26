@@ -27,10 +27,9 @@ type VariantsSectionProps = {
   productId: string;
   variants: readonly Variant[];
   beforeEdit?: (() => boolean) | undefined;
-  isDirty?: boolean | undefined;
   onEditingChange?: ((open: boolean) => void) | undefined;
   onSaved?: (() => void) | undefined;
-  onDiscard?: (() => void) | undefined;
+  onDirtyChange?: ((isDirty: boolean) => void) | undefined;
   ordering?: ReturnType<typeof useCatalogOrdering> | undefined;
 };
 
@@ -135,6 +134,7 @@ export function VariantsSection({
           variant={section.editingVariant}
           onSaved={section.saved}
           onCancel={section.closeEditor}
+          onDirtyChange={section.dirtyChanged}
         />
       ) : (
         <Button type="button" variant="outline" className="text-sm" onClick={section.startCreate}>

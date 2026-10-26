@@ -1,4 +1,5 @@
 import { productInputSchema } from "./products.schema";
+import { CatalogFields } from "../fields";
 import { variantFieldsInputSchema } from "../variants";
 
 /**
@@ -15,3 +16,15 @@ export function productEditorInputSchema(inline: boolean) {
     isStockTracked: fields.isStockTracked,
   });
 }
+
+/**
+ * What the product editor saves in one submission: the product (a new one without `id`) and, while
+ * it has at most one presentation, that presentation (a new one without `id`).
+ */
+export const saveProductInputSchema = productInputSchema.extend({
+  id: CatalogFields.id.nullable().default(null),
+  presentation: variantFieldsInputSchema
+    .extend({ id: CatalogFields.id.nullable().default(null) })
+    .nullable()
+    .default(null),
+});

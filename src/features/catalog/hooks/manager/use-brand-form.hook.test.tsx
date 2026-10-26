@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { startTransition } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useBrandForm } from "./use-brand-form.hook";
@@ -22,21 +21,6 @@ const brand = CatalogRecords.brand({
   logoUrl: "https://storage.test/logo.png",
 });
 
-function brandForm(fields: Record<string, string>): FormData {
-  const formData = new FormData();
-  for (const [name, value] of Object.entries(fields)) {
-    formData.set(name, value);
-  }
-
-  return formData;
-}
-
-async function submit(formAction: (formData: FormData) => void, formData: FormData) {
-  await act(async () => {
-    startTransition(() => formAction(formData));
-  });
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -57,10 +41,12 @@ describe("useBrandForm", () => {
     const onSaved = vi.fn();
     const { result } = renderHook(() => useBrandForm({ brand: null, onSaved }));
 
-    await submit(
-      result.current.formAction,
-      brandForm({ name: "Baking Stereo", slug: "baking-stereo", tagline: " ", label: "" }),
-    );
+    act(() => {
+      result.current.form.setValue("name", "Baking Stereo");
+      result.current.form.setValue("slug", "baking-stereo");
+      result.current.form.setValue("tagline", " ");
+    });
+    await act(() => result.current.submit());
 
     expect(createBrandAction).toHaveBeenCalledWith({
       name: "Baking Stereo",
@@ -78,10 +64,7 @@ describe("useBrandForm", () => {
     vi.mocked(updateBrandAction).mockResolvedValue({ ok: true, value: brand });
     const { result } = renderHook(() => useBrandForm({ brand, onSaved: vi.fn() }));
 
-    await submit(
-      result.current.formAction,
-      brandForm({ name: "Snackyzz", slug: "snackyzz", logoFileId: LOGO_ID }),
-    );
+    await act(() => result.current.submit());
 
     expect(updateBrandAction).toHaveBeenCalledWith(
       expect.objectContaining({ id: brand.id, logoFileId: LOGO_ID }),
@@ -93,13 +76,15 @@ describe("useBrandForm", () => {
     const onSaved = vi.fn();
     const { result } = renderHook(() => useBrandForm({ brand: null, onSaved }));
 
-    await submit(
-      result.current.formAction,
-      brandForm({ name: "Snackyzz", slug: "snackyzz", tagline: "Nuevo" }),
-    );
+    act(() => {
+      result.current.form.setValue("name", "Snackyzz");
+      result.current.form.setValue("slug", "snackyzz");
+      result.current.form.setValue("tagline", "Nuevo");
+    });
+    await act(() => result.current.submit());
 
     expect(result.current.formError).toBe("slug_taken");
-    expect(result.current.values).toMatchObject({ slug: "snackyzz", tagline: "Nuevo" });
+    expect(result.current.form.getValues()).toMatchObject({ slug: "snackyzz", tagline: "Nuevo" });
     expect(onSaved).not.toHaveBeenCalled();
   });
 });

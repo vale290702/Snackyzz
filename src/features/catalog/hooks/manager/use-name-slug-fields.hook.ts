@@ -1,30 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 
 import { CatalogSlug } from "../../domain/fields/catalog-slug.helper";
 
 /**
- * Keeps existing slugs stable and generates new ones until explicitly edited.
- * @param initialName Initial name.
- * @param initialSlug Existing slug, or empty for automatic generation.
- * @returns Controlled fields and explicit edit handlers.
+ * Options for the name and slug fields.
  */
-export function useNameSlugFields(initialName: string, initialSlug: string) {
-  const [name, setName] = useState(initialName);
-  const [slug, setSlug] = useState(initialSlug);
+type NameSlugFieldsOptions = {
+  initialSlug: string;
+  setSlug: (slug: string) => void;
+};
+
+/**
+ * Keeps existing slugs stable and generates new ones from the name until explicitly edited.
+ * @param options The record's slug (empty for a new record) and how to set the form's slug.
+ * @returns Whether the slug is being edited, the edit handler, and the name's change handler.
+ */
+export function useNameSlugFields({ initialSlug, setSlug }: NameSlugFieldsOptions) {
   const [isEditingSlug, setIsEditingSlug] = useState(false);
-  const [isAutomatic, setIsAutomatic] = useState(!initialSlug);
+  const isAutomatic = !initialSlug && !isEditingSlug;
 
-  function changeName(value: string) {
-    setName(value);
-    if (isAutomatic) setSlug(CatalogSlug.fromName(value));
-  }
+  const nameChanged = (event: ChangeEvent<HTMLInputElement>) => {
+    if (isAutomatic) {
+      setSlug(CatalogSlug.fromName(event.target.value));
+    }
+  };
 
-  function editSlug() {
-    setIsAutomatic(false);
-    setIsEditingSlug(true);
-  }
-
-  return { name, slug, isEditingSlug, changeName, setSlug, editSlug };
+  return { isEditingSlug, editSlug: () => setIsEditingSlug(true), nameChanged };
 }

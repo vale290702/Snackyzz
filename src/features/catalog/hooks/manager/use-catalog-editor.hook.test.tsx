@@ -5,8 +5,8 @@ import { useCatalogEditor } from "./use-catalog-editor.hook";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 
-function renderEditor(isDirty: boolean) {
-  const options = { isDirty, markClean: vi.fn(), onSaved: vi.fn(), savedMessage: "Guardado" };
+function renderEditor(isRecordDirty: boolean) {
+  const options = { isRecordDirty, onSaved: vi.fn(), savedMessage: "Guardado" };
 
   return { options, ...renderHook(() => useCatalogEditor(options)) };
 }
@@ -36,11 +36,10 @@ describe("useCatalogEditor", () => {
     expect(result.current.needsSave).toBe(false);
   });
 
-  it("closes after a record save and stays open, clean, after a presentation save", () => {
-    const { result, options } = renderEditor(true);
+  it("closes after a record save and stays open after a presentation save", () => {
+    const { result, options } = renderEditor(false);
 
     act(() => result.current.presentationSaved());
-    expect(options.markClean).toHaveBeenCalledOnce();
     expect(options.onSaved).not.toHaveBeenCalled();
 
     act(() => result.current.saved());

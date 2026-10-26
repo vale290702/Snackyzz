@@ -188,6 +188,7 @@ test("the owner adds a second presentation without losing product edits", async 
   await editor.getByRole("button", { name: "Guardar producto" }).click();
   await expect(editor).toBeHidden();
   await page.getByRole("button", { name: `Editar ${name}`, exact: true }).click();
+  await expect(editor.getByLabel("Precio (₡)")).toHaveValue("4100");
   await editor.getByRole("button", { name: "Nueva presentación", exact: true }).click();
   const presentation = editor.getByRole("form", { name: "Nueva presentación" });
   await presentation.getByLabel("Nombre", { exact: true }).fill("Caja de 6");

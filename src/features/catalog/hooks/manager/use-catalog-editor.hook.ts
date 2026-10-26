@@ -7,41 +7,29 @@ import { toast } from "sonner";
  * Inputs for the editor's save feedback and presentation editing.
  */
 type CatalogEditorOptions = {
-  isDirty: boolean;
-  markClean: () => void;
+  isRecordDirty: boolean;
   onSaved: () => void;
   savedMessage: string;
 };
 
 /**
  * Confirms saves and keeps presentation editing from starting over unsaved product changes.
- * @param options Whether the editor has unsaved changes, how to clear that, what a product save
- * does next, and the translated confirmation.
+ * @param options Whether the product form has unsaved changes, what a product save does next, and
+ * the translated confirmation.
  * @returns Presentation editing state and the save handlers.
  */
-export function useCatalogEditor({
-  isDirty,
-  markClean,
-  onSaved,
-  savedMessage,
-}: CatalogEditorOptions) {
+export function useCatalogEditor({ isRecordDirty, onSaved, savedMessage }: CatalogEditorOptions) {
   const [needsSave, setNeedsSave] = useState(false);
   const [isPresentationOpen, setIsPresentationOpen] = useState(false);
 
   const beforePresentationEdit = () => {
-    setNeedsSave(isDirty);
-
-    return !isDirty;
+    setNeedsSave(isRecordDirty);
+    return !isRecordDirty;
   };
 
   const saved = () => {
     toast.success(savedMessage);
     onSaved();
-  };
-
-  const presentationSaved = () => {
-    toast.success(savedMessage);
-    markClean();
   };
 
   return {
@@ -50,6 +38,6 @@ export function useCatalogEditor({
     setIsPresentationOpen,
     beforePresentationEdit,
     saved,
-    presentationSaved,
+    presentationSaved: () => toast.success(savedMessage),
   };
 }

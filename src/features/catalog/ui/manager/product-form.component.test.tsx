@@ -7,14 +7,7 @@ import messages from "@/i18n/messages/es-CR";
 import { ProductForm } from "./product-form.component";
 import { CatalogRecords } from "../testing/catalog-records.helper";
 
-vi.mock("../../server/products/products.actions", () => ({
-  createProductAction: vi.fn(),
-  updateProductAction: vi.fn(),
-}));
-vi.mock("../../server/variants/variants.actions", () => ({
-  createVariantAction: vi.fn(),
-  updateVariantAction: vi.fn(),
-}));
+vi.mock("../../server/products/products.actions", () => ({ saveProductAction: vi.fn() }));
 vi.mock("../../server/images/images.actions", () => ({
   createCatalogImageUploadAction: vi.fn(),
   registerCatalogImageUploadAction: vi.fn(),
@@ -45,7 +38,7 @@ function form(record = product, variants = [first]) {
 }
 
 describe("ProductForm", () => {
-  it("edits one presentation inline and submits hidden existing order", () => {
+  it("edits one presentation inline without showing the list position", () => {
     const { container } = render(form());
     expect(
       screen.getByLabelText(messages.catalog.manager.productForm.presentationName),
@@ -54,7 +47,6 @@ describe("ProductForm", () => {
     expect(
       screen.queryByLabelText(messages.catalog.manager.fields.sortOrder),
     ).not.toBeInTheDocument();
-    expect(container.querySelector('input[name="sortOrder"]')).toHaveValue("7");
     expect(container.querySelector("form")).toHaveAttribute("aria-busy", "false");
     expect(screen.getByText(messages.catalog.manager.productForm.moreOptions)).toHaveProperty(
       "tagName",

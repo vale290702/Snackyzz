@@ -8,6 +8,7 @@ import { EditorPanel } from "./editor-panel.component";
 import { FormAlert } from "./form-fields.component";
 import { ProductForm } from "./product-form.component";
 import { VariantsSection } from "./variants-section.component";
+import { EditorForm } from "../../hooks/manager/catalog-editor.constants";
 import { useCatalogEditor } from "../../hooks/manager/use-catalog-editor.hook";
 import type { useCatalogManager } from "../../hooks/manager/use-catalog-manager.hook";
 
@@ -27,11 +28,11 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
   const translate = useTranslations("catalog.manager");
   const { isCreating, editingProduct, editingBrand, editingCategory } = manager;
   const editor = useCatalogEditor({
-    isDirty: manager.isDirty,
-    markClean: manager.markClean,
+    isRecordDirty: manager.isFormDirty(EditorForm.Record),
     onSaved: manager.saved,
     savedMessage: translate("actions.saved"),
   });
+  const recordDirtyChanged = (isDirty: boolean) => manager.reportDirty(EditorForm.Record, isDirty);
 
   if (manager.showsBrands) {
     return (
@@ -40,9 +41,12 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
         onClose={manager.closeEditor}
         onCloseAutoFocus={manager.restoreFocus}
       >
-        <div onChange={manager.markDirty}>
-          <BrandForm key={manager.editingId} brand={editingBrand} onSaved={editor.saved} />
-        </div>
+        <BrandForm
+          key={manager.editingId}
+          brand={editingBrand}
+          onSaved={editor.saved}
+          onDirtyChange={recordDirtyChanged}
+        />
       </EditorPanel>
     );
   }
@@ -54,9 +58,12 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
         onClose={manager.closeEditor}
         onCloseAutoFocus={manager.restoreFocus}
       >
-        <div onChange={manager.markDirty}>
-          <CategoryForm key={manager.editingId} category={editingCategory} onSaved={editor.saved} />
-        </div>
+        <CategoryForm
+          key={manager.editingId}
+          category={editingCategory}
+          onSaved={editor.saved}
+          onDirtyChange={recordDirtyChanged}
+        />
       </EditorPanel>
     );
   }
@@ -67,35 +74,33 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
       onClose={manager.closeEditor}
       onCloseAutoFocus={manager.restoreFocus}
     >
-      <div onChange={manager.markDirty}>
-        <fieldset
-          disabled={editor.isPresentationOpen || manager.ordering.isPending}
-          className="min-w-0"
-        >
-          <ProductForm
-            key={editingProduct?.id ?? manager.editingId}
-            product={editingProduct}
-            brands={manager.allBrands}
-            categories={manager.allCategories}
-            defaultBrandId={manager.newProductBrandId}
-            variants={manager.editingVariants}
-            onSaved={editor.saved}
-          />
-        </fieldset>
-        {editor.needsSave && <FormAlert message={translate("variants.saveFirst")} />}
-        {editingProduct && (
-          <VariantsSection
-            productId={editingProduct.id}
-            variants={manager.editingVariants}
-            beforeEdit={editor.beforePresentationEdit}
-            isDirty={manager.isDirty}
-            onEditingChange={editor.setIsPresentationOpen}
-            onSaved={editor.presentationSaved}
-            onDiscard={manager.markClean}
-            ordering={manager.ordering}
-          />
-        )}
-      </div>
+      <fieldset
+        disabled={editor.isPresentationOpen || manager.ordering.isPending}
+        className="min-w-0"
+      >
+        <ProductForm
+          key={editingProduct?.id ?? manager.editingId}
+          product={editingProduct}
+          brands={manager.allBrands}
+          categories={manager.allCategories}
+          defaultBrandId={manager.newProductBrandId}
+          variants={manager.editingVariants}
+          onSaved={editor.saved}
+          onDirtyChange={recordDirtyChanged}
+        />
+      </fieldset>
+      {editor.needsSave && <FormAlert message={translate("variants.saveFirst")} />}
+      {editingProduct && (
+        <VariantsSection
+          productId={editingProduct.id}
+          variants={manager.editingVariants}
+          beforeEdit={editor.beforePresentationEdit}
+          onEditingChange={editor.setIsPresentationOpen}
+          onSaved={editor.presentationSaved}
+          onDirtyChange={(isDirty) => manager.reportDirty(EditorForm.Presentation, isDirty)}
+          ordering={manager.ordering}
+        />
+      )}
     </EditorPanel>
   );
 }

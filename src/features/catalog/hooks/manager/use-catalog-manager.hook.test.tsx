@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { EditorForm } from "./catalog-editor.constants";
 import { useCatalogManager } from "./use-catalog-manager.hook";
 import { CatalogOrderDirection, CatalogOrderKind } from "./use-catalog-ordering.hook";
 import {
@@ -156,7 +157,7 @@ describe("useCatalogManager", () => {
   it("protects dirty close and record switches until discarded", () => {
     const { result } = renderHook(() => useCatalogManager(data));
     act(() => result.current.edit(choco.id));
-    act(() => result.current.markDirty());
+    act(() => result.current.reportDirty(EditorForm.Record, true));
     act(() => result.current.closeEditor());
     expect(result.current.isEditorOpen).toBe(true);
     expect(result.current.isDiscardOpen).toBe(true);
@@ -170,7 +171,7 @@ describe("useCatalogManager", () => {
   it("closes without asking once the record is saved", () => {
     const { result } = renderHook(() => useCatalogManager(data));
     act(() => result.current.edit(choco.id));
-    act(() => result.current.markDirty());
+    act(() => result.current.reportDirty(EditorForm.Record, true));
     act(() => result.current.saved());
     expect(result.current.isEditorOpen).toBe(false);
   });

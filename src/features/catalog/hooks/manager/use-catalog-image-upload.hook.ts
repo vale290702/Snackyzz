@@ -54,12 +54,17 @@ async function uploadCatalogImage(
 }
 
 /**
- * State for a form's image field: uploads a picked file right away so the form submits only its id.
+ * State for a form's image field: uploads a picked file right away so the form saves only its id.
  * @param purpose The catalog purpose the image is for.
  * @param initial The image the record has now.
+ * @param onChange Receives the file id the form should save (null once removed).
  * @returns The file id and preview, the upload state and error code, and the change handlers.
  */
-export function useCatalogImageUpload(purpose: CatalogImagePurposeValue, initial: CatalogImage) {
+export function useCatalogImageUpload(
+  purpose: CatalogImagePurposeValue,
+  initial: CatalogImage,
+  onChange?: (fileId: string | null) => void,
+) {
   const [image, setImage] = useState<CatalogImage>(initial);
   const [error, setError] = useState<MediaErrorCode | SharedErrorCode | null>(null);
   const [isUploading, startUpload] = useTransition();
@@ -80,6 +85,7 @@ export function useCatalogImageUpload(purpose: CatalogImagePurposeValue, initial
 
     objectUrl.current = file ? URL.createObjectURL(file) : null;
     setImage({ fileId, previewUrl: objectUrl.current });
+    onChange?.(fileId);
   }
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {

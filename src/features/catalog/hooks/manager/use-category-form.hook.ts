@@ -1,7 +1,8 @@
 "use client";
 
-import { useFormAction } from "@/shared/lib/form-action";
+import { useServerForm } from "@/shared/lib/server-form";
 
+import { useNameSlugFields } from "./use-name-slug-fields.hook";
 import { categoryInputSchema } from "../../domain/categories";
 import { CatalogFieldError } from "../../domain/fields";
 import type { Category } from "../../index";
@@ -16,27 +17,33 @@ import {
 type CategoryFormOptions = {
   category: Category | null;
   onSaved: (category: Category) => void;
+  onDirtyChange?: ((isDirty: boolean) => void) | undefined;
 };
 
 /**
  * State for the category editor: creates a category, or replaces the one being edited.
- * @param options The category being edited (null for a new one) and what to do once it is saved.
- * @returns The form action, pending flag, restored values and error codes.
+ * @param options The category being edited (null for a new one), what to do once it is saved, and
+ * who to tell about unsaved changes.
+ * @returns The form, its submit handler and error codes, and the name and slug handlers.
  */
-export function useCategoryForm({ category, onSaved }: CategoryFormOptions) {
-  return useFormAction({
+export function useCategoryForm({ category, onSaved, onDirtyChange }: CategoryFormOptions) {
+  const server = useServerForm({
     schema: categoryInputSchema,
-    action: async (input) => {
-      const result = category
-        ? await updateCategoryAction({ ...input, id: category.id })
-        : await createCategoryAction(input);
-      if (result.ok) {
-        onSaved(result.value);
-      }
-
-      return result;
+    values: {
+      name: category?.name ?? "",
+      slug: category?.slug ?? "",
+      sortOrder: category?.sortOrder ?? 0,
     },
+    action: (input) =>
+      category ? updateCategoryAction({ ...input, id: category.id }) : createCategoryAction(input),
     fieldErrorCodes: Object.values(CatalogFieldError),
-    preserve: ["slug", "name", "sortOrder"],
+    onSuccess: onSaved,
+    onDirtyChange,
   });
+  const nameSlug = useNameSlugFields({
+    initialSlug: category?.slug ?? "",
+    setSlug: (slug) => server.form.setValue("slug", slug, { shouldDirty: true }),
+  });
+
+  return { ...server, nameSlug };
 }

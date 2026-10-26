@@ -1,8 +1,9 @@
 "use client";
 
-import { useFormAction } from "@/shared/lib/form-action";
+import { useServerForm } from "@/shared/lib/server-form";
 
 import { useCatalogImageUpload } from "./use-catalog-image-upload.hook";
+import { useNameSlugFields } from "./use-name-slug-fields.hook";
 import { brandInputSchema } from "../../domain/brands";
 import { CatalogFieldError } from "../../domain/fields";
 import { CatalogImagePurpose } from "../../domain/images";
@@ -15,34 +16,44 @@ import { createBrandAction, updateBrandAction } from "../../server/brands/brands
 type BrandFormOptions = {
   brand: ManagedBrand | null;
   onSaved: (brand: Brand) => void;
+  onDirtyChange?: ((isDirty: boolean) => void) | undefined;
 };
 
 /**
  * State for the brand editor: creates a brand, or replaces the one being edited, with its logo.
- * @param options The brand being edited (null for a new one) and what to do once it is saved.
- * @returns The form action and codes, the logo upload, and whether the form can be submitted.
+ * @param options The brand being edited (null for a new one), what to do once it is saved, and who
+ * to tell about unsaved changes.
+ * @returns The form, its submit handler and error codes, the name and slug handlers, the logo
+ * upload, and whether the form can be submitted.
  */
-export function useBrandForm({ brand, onSaved }: BrandFormOptions) {
-  const logo = useCatalogImageUpload(CatalogImagePurpose.BrandLogo, {
-    fileId: brand?.logoFileId ?? null,
-    previewUrl: brand?.logoUrl ?? null,
-  });
-
-  const form = useFormAction({
+export function useBrandForm({ brand, onSaved, onDirtyChange }: BrandFormOptions) {
+  const server = useServerForm({
     schema: brandInputSchema,
-    action: async (input) => {
-      const result = brand
-        ? await updateBrandAction({ ...input, id: brand.id })
-        : await createBrandAction(input);
-      if (result.ok) {
-        onSaved(result.value);
-      }
-
-      return result;
+    values: {
+      name: brand?.name ?? "",
+      slug: brand?.slug ?? "",
+      tagline: brand?.tagline ?? "",
+      description: brand?.description ?? "",
+      label: brand?.label ?? "",
+      logoFileId: brand?.logoFileId ?? null,
+      sortOrder: brand?.sortOrder ?? 0,
     },
+    action: (input) =>
+      brand ? updateBrandAction({ ...input, id: brand.id }) : createBrandAction(input),
     fieldErrorCodes: Object.values(CatalogFieldError),
-    preserve: ["slug", "name", "tagline", "description", "label", "sortOrder"],
+    onSuccess: onSaved,
+    onDirtyChange,
   });
+  const { setValue } = server.form;
+  const nameSlug = useNameSlugFields({
+    initialSlug: brand?.slug ?? "",
+    setSlug: (slug) => setValue("slug", slug, { shouldDirty: true }),
+  });
+  const logo = useCatalogImageUpload(
+    CatalogImagePurpose.BrandLogo,
+    { fileId: brand?.logoFileId ?? null, previewUrl: brand?.logoUrl ?? null },
+    (fileId) => setValue("logoFileId", fileId, { shouldDirty: true }),
+  );
 
-  return { ...form, logo, canSubmit: !form.isPending && !logo.isUploading };
+  return { ...server, nameSlug, logo, canSubmit: !server.isSubmitting && !logo.isUploading };
 }

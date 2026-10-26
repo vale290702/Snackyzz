@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { CatalogNavigationTarget } from "./catalog-editor.types";
+import type { CatalogNavigationTarget, EditorFormValue } from "./catalog-editor.types";
 import { CatalogManagerView, NEW_RECORD } from "../../domain/manager";
 
 /**
@@ -23,8 +23,40 @@ function useWarnBeforeLeaving(isDirty: boolean) {
 }
 
 /**
+ * Which of the editor's forms have unsaved changes.
+ * @returns Whether any form is dirty, a per-form check, the report handler and a reset.
+ */
+function useDirtyForms() {
+  const [forms, setForms] = useState<ReadonlySet<EditorFormValue>>(new Set());
+
+  const report = (form: EditorFormValue, isDirty: boolean) => {
+    setForms((current) => {
+      if (current.has(form) === isDirty) {
+        return current;
+      }
+
+      const next = new Set(current);
+      if (isDirty) {
+        next.add(form);
+      } else {
+        next.delete(form);
+      }
+
+      return next;
+    });
+  };
+
+  return {
+    isDirty: forms.size > 0,
+    isFormDirty: (form: EditorFormValue) => forms.has(form),
+    report,
+    clear: () => setForms(new Set()),
+  };
+}
+
+/**
  * Which section and record are open, guarded so unsaved editor changes are never lost silently.
- * @returns The open section and record, the dirty flag and its setters, the pending discard
+ * @returns The open section and record, which forms have unsaved changes, the pending discard
  * question, and the navigation and focus handlers.
  */
 export function useCatalogNavigation() {
@@ -33,7 +65,8 @@ export function useCatalogNavigation() {
     editingId: null,
   });
   const [pending, setPending] = useState<CatalogNavigationTarget | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
+  const dirty = useDirtyForms();
+  const { isDirty } = dirty;
   // The sheet has no Radix trigger to return focus to, so remember what opened it.
   const opener = useRef<HTMLElement | null>(null);
 
@@ -45,7 +78,7 @@ export function useCatalogNavigation() {
     }
 
     setTarget(next);
-    setIsDirty(false);
+    dirty.clear();
     setPending(null);
   };
 
@@ -72,8 +105,8 @@ export function useCatalogNavigation() {
   return {
     ...target,
     isDirty,
-    markDirty: () => setIsDirty(true),
-    markClean: () => setIsDirty(false),
+    isFormDirty: dirty.isFormDirty,
+    reportDirty: dirty.report,
     isDiscardOpen: pending !== null,
     cancelDiscard: () => setPending(null),
     discardChanges,

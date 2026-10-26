@@ -12,18 +12,20 @@ import { useAccentColorField } from "../../hooks/manager/use-accent-color-field.
 
 /**
  * Offers brand palette swatches alongside a custom picker and editable hex value.
- * @param props Initial accent and translated error.
- * @returns Accessible color controls submitting one accentColor value.
+ * @param props The current accent, its change handler and translated error.
+ * @returns Accessible color controls for one accent value.
  */
 export function AccentColorField({
-  initialColor,
+  color,
+  onColorChange,
   error,
 }: {
-  initialColor: string;
+  color: string;
+  onColorChange: (color: string) => void;
   error: string | null;
 }) {
   const translate = useTranslations("catalog.manager");
-  const field = useAccentColorField(initialColor);
+  const field = useAccentColorField(color);
 
   return (
     <FieldSet className="gap-3">
@@ -33,7 +35,7 @@ export function AccentColorField({
       <RadioGroup
         aria-label={translate("colors.palette")}
         value={field.swatchValue}
-        onValueChange={field.setColor}
+        onValueChange={onColorChange}
         className="flex gap-2"
       >
         {field.palette.map((color) => (
@@ -54,16 +56,15 @@ export function AccentColorField({
             id="product-custom-color"
             type="color"
             value={field.pickerColor}
-            onChange={(event) => field.setColor(event.target.value)}
+            onChange={(event) => onColorChange(event.target.value)}
             className="h-10 w-24 p-1.5"
           />
         </Field>
         <TextField
           id="product-accent-color"
-          name="accentColor"
           label={translate("colors.hex")}
-          value={field.color}
-          onChange={(event) => field.setColor(event.target.value)}
+          value={color}
+          onChange={(event) => onColorChange(event.target.value)}
           error={error}
         />
       </div>

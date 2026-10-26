@@ -33,17 +33,12 @@ describe("useVariantsSection", () => {
   it("blocks opening during product changes and confirms cancelling a dirty presentation", () => {
     const beforeEdit = vi.fn().mockReturnValue(false);
     const onSaved = vi.fn();
-    const { result } = renderHook(() =>
-      useVariantsSection([unit], {
-        beforeEdit,
-        isDirty: true,
-        onSaved,
-      }),
-    );
+    const { result } = renderHook(() => useVariantsSection([unit], { beforeEdit, onSaved }));
     act(() => result.current.startCreate());
     expect(result.current.isEditorOpen).toBe(false);
     beforeEdit.mockReturnValue(true);
     act(() => result.current.startCreate());
+    act(() => result.current.dirtyChanged(true));
     act(() => result.current.closeEditor());
     expect(result.current.isDiscardOpen).toBe(true);
     act(() => result.current.cancelDiscard());
@@ -53,13 +48,14 @@ describe("useVariantsSection", () => {
     expect(onSaved).toHaveBeenCalledOnce();
   });
 
-  it("closes a dirty presentation on discard and reports it", () => {
-    const onDiscard = vi.fn();
-    const { result } = renderHook(() => useVariantsSection([unit], { isDirty: true, onDiscard }));
+  it("closes a dirty presentation on discard and passes its dirty state on", () => {
+    const onDirtyChange = vi.fn();
+    const { result } = renderHook(() => useVariantsSection([unit], { onDirtyChange }));
     act(() => result.current.startCreate());
+    act(() => result.current.dirtyChanged(true));
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     act(() => result.current.closeEditor());
     act(() => result.current.discardChanges());
     expect(result.current.isEditorOpen).toBe(false);
-    expect(onDiscard).toHaveBeenCalledOnce();
   });
 });
