@@ -7,8 +7,11 @@ import { Badge } from "@/shared/ui/badge";
 import { ArchiveRecordButton } from "./archive-record-button.component";
 import { EditRecordButton } from "./edit-record-button.component";
 import { RecordActionForm } from "./record-action-form.component";
+import { RecordOrderControls } from "./record-order-controls.component";
 import { RecordRow } from "./record-row.component";
 import type { RecordActionValue } from "../../domain/manager";
+import { CatalogOrderKind } from "../../hooks/manager/use-catalog-ordering.hook";
+import type { useCatalogOrdering } from "../../hooks/manager/use-catalog-ordering.hook";
 import type { ManagedBrand } from "../../index";
 
 /**
@@ -18,6 +21,7 @@ type BrandRowsProps = {
   brands: readonly ManagedBrand[];
   archiveAction: RecordActionValue;
   setPrimaryAction: RecordActionValue;
+  ordering?: ReturnType<typeof useCatalogOrdering> | undefined;
   onEdit: (brandId: string) => void;
 };
 
@@ -26,7 +30,13 @@ type BrandRowsProps = {
  * @param props The brands, the archive and primary actions, and the edit handler.
  * @returns The list.
  */
-export function BrandRows({ brands, archiveAction, setPrimaryAction, onEdit }: BrandRowsProps) {
+export function BrandRows({
+  brands,
+  archiveAction,
+  setPrimaryAction,
+  onEdit,
+  ordering,
+}: BrandRowsProps) {
   const translate = useTranslations("catalog.manager");
 
   return (
@@ -50,6 +60,14 @@ export function BrandRows({ brands, archiveAction, setPrimaryAction, onEdit }: B
             ]}
             actions={
               <>
+                {ordering && brand.archivedAt === null && (
+                  <RecordOrderControls
+                    ordering={ordering}
+                    kind={CatalogOrderKind.Brands}
+                    recordId={brand.id}
+                    recordName={brand.name}
+                  />
+                )}
                 <EditRecordButton recordName={brand.name} onEdit={() => onEdit(brand.id)} />
                 {canChangePrimary && (
                   <RecordActionForm
