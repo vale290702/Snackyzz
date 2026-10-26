@@ -58,5 +58,13 @@
     "lead_hours_invalid": "Escribe una anticipación de 0 a 168 horas, sin decimales.",
     "slot_hours_invalid": "Escribe una duración de 1 a 12 horas, sin decimales.",
     "toggle_invalid": "Elige si está activado o desactivado."
+  },
+  "inventory": {
+    "variant_not_stock_tracked": "La presentación no existe, está archivada o no lleva inventario.",
+    "pickup_location_not_found": "El punto de retiro no está disponible.",
+    "insufficient_stock": "No hay suficiente inventario disponible.",
+    "reference_invalid": "Selecciona una referencia válida.",
+    "quantity_invalid": "Ingresa una cantidad entera entre 0 y 2147483647.",
+    "note_too_long": "La nota debe tener como máximo 500 caracteres."
   }
 }

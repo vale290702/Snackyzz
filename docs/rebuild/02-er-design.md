@@ -338,8 +338,20 @@ erDiagram
   2. Pickup order **and** a `stock_levels` row exists for (variant, that pickup location) → reserve there.
   3. Otherwise (delivery, or a location without its own stock) → reserve from the global row.
 - **Release** (reject/cancel) reverses exactly the order's `order_reservation` movements, so it never needs to re-derive where stock came from.
-- `private.apply_stock_movement(stock_level_id, delta, reason, order_id, admin_id, note)` is the **only** writer of both tables. The `quantity_available >= 0` check rejects overselling atomically. Admin "set to N" records `delta = N − current` with reason `adjustment`.
+- `private.apply_stock_movement(variant_id, quantity, reason, pickup_location_id, admin_id, note, set_quantity)` is the **only** writer of both tables; orders will extend it with the order reference. The `quantity_available >= 0` check rejects overselling atomically. Admin "set to N" records `delta = N − current` with reason `adjustment`.
 - `inventory.variant_availability(variant_ids uuid[], pickup_location_id uuid default null)` (security definer, granted to `anon`) returns `{ variant_id, is_available }` with the same rule and no quantities.
+
+### Inventory implementation split (inventory / orders)
+
+The inventory work item implements pool resolution and atomic movements now. Orders will add `stock_movements.order_id` with its FK and the reason/order-reference check, `private.reserve_stock`, and release by reversing original reservation rows. Until then, a check rejects both order reasons, so no unattributed reservation can enter the ledger.
+
+The implemented writer accepts `(p_variant_id, p_quantity, p_reason, p_pickup_location_id, p_admin_id, p_note, p_set_quantity)` and returns the pool. It locks the catalog variant first, lazily creates the requested pool, and either applies a delta or computes a set-to delta under that lock. This also makes concurrent first adjustments safe. A zero initialization creates the pool without a movement; a same-target adjustment is a no-op. Missing tracked pools are unavailable. Orders can use the signed-delta path, extending the signature with the order reference in its own migration.
+
+`inventory.adjust_stock(p_variant_id, p_quantity, p_pickup_location_id, p_note)` is the authenticated `inventory.manage` entry point; SQL supplies the actor and adjustment reason. No API role gets direct writes, including service role. Read policies grant managers quantity and ledger access; anonymous availability is boolean-only and excludes archived variants, products and brands. Stock levels carry creation/update timestamps; immutable movements carry creation time only.
+
+Location pools can be initialized through an adjustment to zero. Disabling a pool is deferred: deleting one with historical movements would break the immutable ledger FK. A history-preserving disable design must be agreed before adding that entry point.
+
+The storefront availability query is cached briefly and tagged with inventory and catalog; adjustments expire inventory. Checkout must re-check/reserve in SQL. Orders must invalidate inventory after reservation/release.
 
 ## 9. Orders
 

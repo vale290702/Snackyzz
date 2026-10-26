@@ -6,6 +6,8 @@ import { CatalogError } from "@/features/catalog/domain/errors";
 import { CatalogFieldError } from "@/features/catalog/domain/fields";
 import { FulfillmentError } from "@/features/fulfillment/domain/errors";
 import { FulfillmentFieldError } from "@/features/fulfillment/domain/fields";
+import { InventoryError } from "@/features/inventory/domain/errors";
+import { InventoryFieldError } from "@/features/inventory/domain/stock";
 import { MediaError } from "@/features/media/domain/errors";
 import type { SharedErrorCode } from "@/shared/lib/result";
 
@@ -77,6 +79,15 @@ describe("messages", () => {
 
     expect(Object.keys(messages.errors.fulfillment).sort()).toEqual(codes);
     for (const message of Object.values(messages.errors.fulfillment)) {
+      expect(message.trim().length).toBeGreaterThan(0);
+    }
+  });
+  it("provides Spanish copy for every inventory error and field code", async () => {
+    const messages = await loadMessages("es-CR");
+    const codes = [...Object.values(InventoryError), ...Object.values(InventoryFieldError)].sort();
+
+    expect(Object.keys(messages.errors.inventory).sort()).toEqual(codes);
+    for (const message of Object.values(messages.errors.inventory)) {
       expect(message.trim().length).toBeGreaterThan(0);
     }
   });

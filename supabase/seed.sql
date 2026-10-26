@@ -273,3 +273,30 @@ select
   '09:00',
   case when weekdays.weekday = 6 then '15:00'::time else '18:00'::time end
 from generate_series(1, 6) as weekdays (weekday);
+
+
+-- Inventory uses its single writer even for demo data; no created_by attribution.
+select private.apply_stock_movement(
+  p_variant_id => '00000000-0000-7000-8000-0000000000e1',
+  p_quantity => 24,
+  p_reason => 'restock'
+);
+
+select private.apply_stock_movement(
+  p_variant_id => '00000000-0000-7000-8000-0000000000e2',
+  p_quantity => 18,
+  p_reason => 'restock'
+);
+
+select private.apply_stock_movement(
+  p_variant_id => '00000000-0000-7000-8000-0000000000e3',
+  p_quantity => 4,
+  p_reason => 'restock'
+);
+
+select private.apply_stock_movement(
+  p_variant_id => '00000000-0000-7000-8000-0000000000e1',
+  p_quantity => 6,
+  p_reason => 'restock',
+  p_pickup_location_id => '00000000-0000-7000-8000-0000000001a1'
+);

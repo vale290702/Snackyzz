@@ -2,40 +2,41 @@
 
 ## Purpose
 
-How many of each variant are available. Stock is **global by default**; a pickup location can optionally keep its own stock. An append-only ledger of movements backs every level.
+Available quantities per variant: global by default, with optional pickup-location pools. An immutable ledger backs every nonzero change.
 
-## Owns / does not own
+## Ownership and public API
 
-- **Owns:** schema `inventory` (stock_levels, stock_movements), `private.apply_stock_movement`, `private.resolve_stock_level`, `private.reserve_stock`, `inventory.variant_availability`, and the admin inventory UI.
-- **Does not own:** when stock is reserved or released. `orders.place_order` and `private.transition_order` call our private functions.
-
-## Public API (`index.ts`)
-
-- Types: `StockLevelDto` (`scope: "global" | { pickupLocationId }`), `StockMovementDto`, `MovementReason`
-- Server: `getAvailability(variantIds, pickupLocationId?)` (uncached), `listStockLevels`, `listMovements(stockLevelId)`, `adjustStockAction`, `enableLocationStockAction`, `disableLocationStockAction`
-- Hooks: `useStockTable()`, `useAdjustStock(level)`
-- UI: `StockTable`, `AdjustStockDialog`, `AvailabilityBadge`
+- Owns `inventory.stock_levels`, `inventory.stock_movements`, `private.apply_stock_movement`, `private.resolve_stock_level`, `inventory.adjust_stock` and `inventory.variant_availability`.
+- `index.ts` exports `StockLevelDto`, `StockMovementDto`, `MovementReason`, `adjustStockAction`, `listStockLevels`, `listMovements` and `getAvailability`.
+- `StockLevelDto.scope` is `"global" | { pickupLocationId }`. Admin reads return Results after `inventory.manage`; availability returns only `{ variantId, isAvailable }` for visible catalog variants.
+- Orders owns when reservations and releases happen. Reservation/release functions and the movement `order_id` column/FK are deferred to orders; order reasons are rejected until then.
 
 ## Invariants
 
-- One global row per tracked variant (`pickup_location_id is null`). Location rows are **optional**: `unique nulls not distinct (variant_id, pickup_location_id)`.
-- **Reservation rule:** untracked variant → nothing. Pickup at a location that has its own row for the variant → that row. Anything else (delivery, or a location without its own row) → global row.
-- **Release** reverses exactly the order's `order_reservation` movements. Never recompute where stock came from.
-- `private.apply_stock_movement` is the **only** writer of both tables. `quantity_available >= 0` is a DB check, so overselling fails atomically.
-- Admin "set to N" is an `adjustment` movement with `delta = N − current`, never an overwrite.
-- `order_*` movements always carry `order_id`.
-- Disabling location stock is only allowed at quantity 0 (move units back to global first, with two movements).
+- No API role, including service role, can write either table directly. Only the private writer changes stock. Anonymous callers cannot read quantities or the ledger.
+- The writer locks the catalog variant before finding/creating a pool. Initial pool creation and concurrent set-to adjustments therefore serialize. A database constraint rejects negative stock, and ledger insertion shares the transaction with the quantity update.
+- Admin adjustments call `inventory.adjust_stock` with a desired available quantity. SQL checks `inventory.manage`, derives `created_by` from `auth.uid()` and computes the delta under its lock. The caller cannot choose the actor or reason.
+- Zero initializes an empty pool without a zero movement; repeated set-to requests append nothing. Pools are created lazily, and a missing tracked pool is unavailable.
+- Pool resolution skips untracked variants; selects a pickup location's own row even when empty; otherwise selects global stock. Never fall back from an empty local pool to global.
+- Movements are append-only. They have `created_at` only; mutable stock levels have `created_at` and `updated_at`.
 
-## Dependencies
+## Server layout
 
-`catalog` (variant types), `fulfillment` (pickup location types), `access` (`inventory.manage`).
+- `server/stock`: repository factory over module functions, capabilities, mutation action and authorized admin queries.
+- `server/availability`: anonymous repository and tagged cached query.
+- `server/mutation`: Result conversion, inventory permission/cache constants and mutation runner.
+- Pure selection/arithmetic and input schemas with field codes live in `domain/stock`; action failures in `domain/errors`.
 
-## Testing
+## Cache and dependencies
 
-- pgTAP: the reservation rule for every case, concurrent reservations can't oversell, release reverses the original rows, reason/order_id check, `nulls not distinct` uniqueness.
-- Integration: adjust action writes one movement and updates the level.
+`getAvailability` uses `'use cache'`, the anonymous client, a seconds lifetime and inventory/catalog tags. Successful inventory actions call `updateTag("inventory")`. Catalog changes invalidate its tag too. This is a display hint; orders must reserve against current SQL state. Reservations/releases will need inventory invalidation when orders is implemented.
 
-## Gotchas
+Dependencies are access, catalog and fulfillment through their public APIs. Points of sale do not hold stock.
 
-- Never cache availability; it's a dynamic hole in otherwise cached pages.
-- Points of sale (`retail`) have no stock in our system.
+## Tests and deferred work
+
+Unit tests cover pool selection, adjustment arithmetic and input codes. pgTAP covers shape, grants, all read policies by role, constraints and entry points. Integration exercises PostgREST adjustments, attribution, staff permission, no-ops, concurrency and anonymous scoped availability.
+
+UI, reservation/release, order references and disabling location pools are deferred. Existing zero local pools remain selectable; deleting pools would conflict with their immutable ledger references. Decide a history-preserving disable design before exposing that action.
+
+Catalog/fulfillment Result and cookie helpers remain duplicated until catalog UI PR #31 merges, per the inventory work-item sequencing requirement.

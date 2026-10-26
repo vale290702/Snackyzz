@@ -51,3 +51,5 @@ messages/es-CR/
 - A feature code that equals a `SharedError` code always reads `errors.shared`; don't reuse shared code names in a feature.
 - Email and Telegram templates render on the server outside a request; use `createTranslator` with the messages, not hooks.
 - Spanish copy uses "tú" and Costa Rican terms (SINPE Móvil, "retiro", "envío"); follow existing keys.
+
+`errors.inventory` covers stock adjustment failures and quantity/reference/note field codes; `messages.test.ts` enforces the complete key set.
