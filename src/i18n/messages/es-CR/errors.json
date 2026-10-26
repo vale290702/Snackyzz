@@ -39,5 +39,24 @@
     "price_invalid": "Escribe un precio en colones mayor que cero, sin decimales.",
     "sort_order_invalid": "Escribe una posición de 0 en adelante, sin decimales.",
     "reference_invalid": "La selección no es válida. Vuelve a elegirla."
+  },
+  "fulfillment": {
+    "pickup_location_not_found": "No se encontró el punto de retiro o ya fue archivado.",
+    "delivery_zone_not_found": "No se encontró la zona de envío o ya fue archivada.",
+    "zone_name_taken": "Ya existe otra zona de envío con este nombre.",
+    "field_required": "Completa este campo.",
+    "field_too_long": "El texto es demasiado largo.",
+    "reference_invalid": "La selección no es válida. Vuelve a elegirla.",
+    "sort_order_invalid": "Escribe una posición de 0 en adelante, sin decimales.",
+    "map_url_invalid": "Escribe un enlace que empiece con https://.",
+    "fee_invalid": "Escribe un costo de envío en colones, de 0 en adelante y sin decimales.",
+    "weekday_invalid": "Elige un día de la semana.",
+    "time_invalid": "Escribe una hora en formato HH:MM, como 09:30.",
+    "hours_inverted": "La hora de cierre debe ser posterior a la de apertura.",
+    "hours_overlap": "Hay horarios que se traslapan en el mismo día.",
+    "too_many_hours": "Hay demasiados horarios. Usa como máximo cuatro por día.",
+    "lead_hours_invalid": "Escribe una anticipación de 0 a 168 horas, sin decimales.",
+    "slot_hours_invalid": "Escribe una duración de 1 a 12 horas, sin decimales.",
+    "toggle_invalid": "Elige si está activado o desactivado."
   }
 }

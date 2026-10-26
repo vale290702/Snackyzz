@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { CatalogDatabaseError } from "./database-error.helper";
+import { CatalogResults } from "./database-result.helper";
 import { PostgresErrorCode } from "./mutation.constants";
 import { CatalogError } from "../../domain/errors";
 
-describe("CatalogDatabaseError", () => {
+describe("CatalogResults", () => {
   it("maps constraint violations by constraint name", () => {
     const takenSlug = {
       code: PostgresErrorCode.UniqueViolation,
@@ -21,15 +21,15 @@ describe("CatalogDatabaseError", () => {
         'new row for relation "product_variants" violates check constraint "product_variants_default_not_archived_check"',
     };
 
-    expect(CatalogDatabaseError.toCode(takenSlug)).toBe(CatalogError.SlugTaken);
-    expect(CatalogDatabaseError.toCode(missingBrand)).toBe(CatalogError.BrandNotFound);
-    expect(CatalogDatabaseError.toCode(archivedDefault)).toBe(CatalogError.DefaultVariantRequired);
+    expect(CatalogResults.errorCode(takenSlug)).toBe(CatalogError.SlugTaken);
+    expect(CatalogResults.errorCode(missingBrand)).toBe(CatalogError.BrandNotFound);
+    expect(CatalogResults.errorCode(archivedDefault)).toBe(CatalogError.DefaultVariantRequired);
   });
 
   it("maps exceptions raised by entry points and guards by message", () => {
     const mismatch = { code: PostgresErrorCode.RaisedException, message: "file_purpose_mismatch" };
 
-    expect(CatalogDatabaseError.toCode(mismatch)).toBe(CatalogError.InvalidImage);
+    expect(CatalogResults.errorCode(mismatch)).toBe(CatalogError.InvalidImage);
   });
 
   it("returns a failed result for expected errors", () => {
@@ -38,7 +38,7 @@ describe("CatalogDatabaseError", () => {
       message: "variant_not_found",
     };
 
-    expect(CatalogDatabaseError.toFailure(missingVariant)).toEqual({
+    expect(CatalogResults.fromError(missingVariant)).toEqual({
       ok: false,
       error: CatalogError.VariantNotFound,
     });
@@ -51,7 +51,7 @@ describe("CatalogDatabaseError", () => {
     };
     const permissionDenied = { code: "42501", message: "permission denied for table brands" };
 
-    expect(() => CatalogDatabaseError.toFailure(unknownConstraint)).toThrow();
-    expect(() => CatalogDatabaseError.toFailure(permissionDenied)).toThrow();
+    expect(() => CatalogResults.fromError(unknownConstraint)).toThrow();
+    expect(() => CatalogResults.fromError(permissionDenied)).toThrow();
   });
 });
