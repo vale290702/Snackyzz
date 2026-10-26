@@ -39,7 +39,7 @@ messages/es-CR/
 - Money: `format.number(n, { style: "currency", currency: "CRC", maximumFractionDigits: 0 })`. Dates: `format.dateTime` with the configured time zone.
 - No locale prefix in URLs while there's one locale. Adding a locale = new folder + entry in `config.ts` (+ routing ADR if prefixes are needed).
 
-`errors.media` contains upload, registration, rate-limit and file-read failures; `messages.test.ts` verifies every MediaError has Spanish copy.
+`errors.media` contains upload, registration, rate-limit and file-read failures; `messages.test.ts` verifies every MediaError has Spanish copy. `errors.catalog` holds both `CatalogError` and `CatalogFieldError` codes (variants are "presentaciones" in copy); the same test covers them. The `catalog` UI namespace file arrives with the first catalog screen.
 
 ## Testing
 

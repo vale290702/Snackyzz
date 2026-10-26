@@ -35,6 +35,25 @@ export function filesRepository(client: DatabaseClient) {
     },
 
     /**
+     * Finds the files the client may read among the given ids.
+     * @param ids File ids; unknown or hidden ids are left out.
+     * @returns The readable files, in no particular order.
+     * @throws When the database request fails.
+     */
+    async findMany(ids: readonly string[]): Promise<StoredFile[]> {
+      const { data, error } = await client
+        .schema("media")
+        .from("files")
+        .select(FILE_COLUMNS)
+        .in("id", [...ids]);
+      if (error) {
+        throw error;
+      }
+
+      return data.map((row) => storedFileSchema.parse(row));
+    },
+
+    /**
      * Records a file once per object; files are immutable, so a retry returns the first record.
      * @param file Metadata for an inspected object.
      * @returns The stored file, new or existing.

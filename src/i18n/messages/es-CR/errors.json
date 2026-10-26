@@ -21,5 +21,23 @@
     "rate_limited": "Has realizado demasiadas cargas. Espera unos minutos.",
     "storage_unavailable": "No se pudo completar la carga. Vuelve a intentarlo.",
     "file_not_found": "No se encontró el archivo."
+  },
+  "catalog": {
+    "brand_not_found": "No se encontró la marca o ya fue archivada.",
+    "category_not_found": "No se encontró la categoría o ya fue archivada.",
+    "product_not_found": "No se encontró el producto o ya fue archivado.",
+    "variant_not_found": "No se encontró la presentación o ya fue archivada.",
+    "slug_taken": "Ya existe otro registro con este identificador. Elige uno diferente.",
+    "sku_taken": "Ya existe otra presentación con este SKU.",
+    "invalid_image": "Selecciona una imagen subida para este uso.",
+    "primary_brand_required": "Elige otra marca principal antes de archivar esta.",
+    "default_variant_required": "Elige otra presentación predeterminada antes de archivar esta.",
+    "field_required": "Completa este campo.",
+    "field_too_long": "El texto es demasiado largo.",
+    "slug_invalid": "Usa solo letras minúsculas, números y guiones, sin espacios ni tildes.",
+    "accent_color_invalid": "Escribe un color en formato #RRGGBB, como #ED781A.",
+    "price_invalid": "Escribe un precio en colones mayor que cero, sin decimales.",
+    "sort_order_invalid": "Escribe una posición de 0 en adelante, sin decimales.",
+    "reference_invalid": "La selección no es válida. Vuelve a elegirla."
   }
 }

@@ -8,7 +8,7 @@ import { createServiceClient } from "@/integrations/supabase/service-client";
 import { SharedError } from "@/shared/lib/result";
 
 import { PROOF_READ_SECONDS } from "./read.constants";
-import { getSignedReadUrl, publicImageUrl } from "./read.query";
+import { findCatalogImages, getSignedReadUrl, publicImageUrl } from "./read.query";
 import { MediaError } from "../../domain/errors";
 import { FilePurpose, ImageMime, ObjectPath, UPLOAD_POLICIES } from "../../domain/upload-policy";
 
@@ -125,6 +125,23 @@ describe("publicImageUrl", () => {
       ok: false,
       error: SharedError.InvalidInput,
     });
+  });
+});
+
+describe("findCatalogImages", () => {
+  it("resolves catalog images with working URLs and leaves out proofs and unknown ids", async () => {
+    const unknownId = randomUUID();
+
+    const images = await findCatalogImages([files.catalogId, files.proofId, unknownId]);
+
+    expect([...images.keys()]).toEqual([files.catalogId]);
+    const image = images.get(files.catalogId);
+    expect(image?.ref.purpose).toBe(FilePurpose.ProductImage);
+    expect((await fetch(image?.url ?? "")).status).toBe(200);
+  });
+
+  it("returns nothing for no ids", async () => {
+    expect((await findCatalogImages([])).size).toBe(0);
   });
 });
 

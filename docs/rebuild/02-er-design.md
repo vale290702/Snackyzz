@@ -198,8 +198,12 @@ erDiagram
 
 *(admin-edited: brands, categories, products, product_variants.)*
 
-- Every product has exactly one default variant (partial unique index on `product_id where is_default`). With one variant, the storefront shows a simple product, like today.
-- `variant_price_history` is written by an `after update of price` trigger, a mechanical audit concern (DB-17).
+- Every product on sale has exactly one default variant (partial unique index on `product_id where is_default`; the first variant created becomes it). A product with no variants yet is not on the storefront. With one variant, the storefront shows a simple product, like today.
+- Exactly one brand is primary while any is active: partial unique index on `is_primary where is_primary`, a deferrable constraint trigger that refuses none, and a check that the primary brand is not archived. `catalog.set_primary_brand(id)` swaps it atomically.
+- The default variant can't be archived; `catalog.set_default_variant(id)` swaps it atomically. `catalog.set_product_categories(product_id, category_ids)` replaces a product's links.
+- `logo_file_id` / `image_file_id` only reference files of purpose `brand_logo` / `product_image` (trigger `private.require_file_purpose`).
+- `variant_price_history` is written by triggers `after insert` and `after update of price` (first price included, so the log answers "what did it cost on date D"), a mechanical audit concern (DB-17). Its rows are immutable: `changed_at` replaces `created_at` / `updated_at`. `product_categories` rows are added and removed, never edited, so they carry `created_at` / `created_by` only.
+- Admin writes go through RLS; policies require `created_by` / `updated_by` = `auth.uid()`.
 - *Design only:* `catalog.bundle_components (bundle_variant_id, component_variant_id, quantity)`.
 
 ## 6. Retail (points of sale)

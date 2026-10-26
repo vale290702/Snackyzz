@@ -114,6 +114,11 @@ export default defineConfig([
   },
 
   {
+    files: ["src/integrations/supabase/database.types.ts"],
+    rules: { "max-lines": "off" },
+  },
+
+  {
     files: TEST_FILES,
     rules: {
       "max-lines-per-function": "off",
