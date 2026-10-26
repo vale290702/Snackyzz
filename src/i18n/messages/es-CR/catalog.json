@@ -11,6 +11,9 @@
     "switchLink": "Ver {brand}"
   },
   "product": {
+    "choosePresentation": "Elegir presentación",
+    "from": "Desde",
+    "presentationCount": "{count, plural, one {# presentación} other {# presentaciones}}",
     "view": "Ver cookie",
     "viewDetails": "Ver detalles de {name}",
     "addToCart": "Agregar al carrito",
@@ -147,5 +150,8 @@
       "editTitle": "Editar categoría",
       "submit": "Guardar categoría"
     }
+  },
+  "loading": {
+    "catalog": "Cargando catálogo…"
   }
 }

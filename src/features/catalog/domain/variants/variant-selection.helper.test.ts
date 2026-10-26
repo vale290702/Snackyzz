@@ -6,6 +6,19 @@ const single = { id: "unit", isDefault: true };
 const box = { id: "box", isDefault: false };
 
 describe("VariantSelection", () => {
+  it("summarizes the actual minimum independently of the default", () => {
+    expect(
+      VariantSelection.summary([
+        { ...single, price: 5000 },
+        { ...box, price: 1200 },
+      ]),
+    ).toEqual({ minimumPrice: 1200, count: 2, hasChoice: true });
+    expect(VariantSelection.summary([])).toEqual({
+      minimumPrice: null,
+      count: 0,
+      hasChoice: false,
+    });
+  });
   it("shows the default variant first, else the first one", () => {
     expect(VariantSelection.defaultOf([box, single])).toBe(single);
     expect(VariantSelection.defaultOf([box])).toBe(box);

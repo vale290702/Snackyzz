@@ -81,14 +81,27 @@ test("shoppers pick a variant on a collab brand's page", async ({ page }) => {
     .click();
 
   await expect(page).toHaveURL(/\/brands\/baking-stereo$/);
-  await page.getByRole("button", { name: "Chocolate Chip", exact: true }).click();
+  const card = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Chocolate Chip", exact: true }) });
+  await expect(card).toContainText("Desde");
+  await expect(card).toContainText("2 presentaciones");
+  const trigger = card.getByRole("button", { name: "Elegir presentación" });
+  await trigger.click();
 
   const dialog = page.getByRole("dialog", { name: "Chocolate Chip" });
   const picker = dialog.getByRole("radiogroup");
   await expect(picker.getByRole("radio", { name: /Unidad/ })).toBeChecked();
 
-  await picker.getByRole("radio", { name: /Caja de 6/ }).click();
+  await picker.getByRole("radio", { name: /Unidad/ }).click();
+  // Radix selects on asynchronous focus while the arrow key is held.
+  await page.keyboard.down("ArrowDown");
 
   await expect(picker.getByRole("radio", { name: /Caja de 6/ })).toBeChecked();
+  await page.keyboard.up("ArrowDown");
   await expect(dialog).toContainText(/15\s?000/);
+  await expect(dialog.getByRole("button", { name: "Agregar al carrito" })).toBeInViewport();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
 });

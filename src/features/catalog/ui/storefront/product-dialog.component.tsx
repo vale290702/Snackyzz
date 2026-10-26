@@ -18,6 +18,7 @@ import type { ProductDto } from "../../index";
 type ProductDialogProps = {
   product: ProductDto;
   brandLabel: string | null;
+  onCloseAutoFocus: (event: Event) => void;
 };
 
 /**
@@ -26,29 +27,38 @@ type ProductDialogProps = {
  * @param props The product and its brand label.
  * @returns The dialog content.
  */
-export function ProductDialog({ product, brandLabel }: ProductDialogProps) {
+export function ProductDialog({ product, brandLabel, onCloseAutoFocus }: ProductDialogProps) {
   const { selectedVariant, hasChoice, selectVariant, canAdd, addToCart } =
     useProductDialog(product);
   const translate = useTranslations("catalog.product");
 
   return (
-    <DialogContent className="max-w-200 gap-0 bg-background p-0 md:grid-cols-2">
+    <DialogContent
+      onCloseAutoFocus={onCloseAutoFocus}
+      className="inset-x-0 top-4 bottom-0 m-0 flex h-auto max-w-none flex-col gap-0 overflow-hidden rounded-b-none bg-background p-0 md:inset-4 md:m-auto md:grid md:h-fit md:max-h-full md:max-w-200 md:grid-cols-2 md:grid-rows-[minmax(0,1fr)_auto] md:rounded-surface"
+    >
       <DialogCloseChip label={translate("closeDetails")} />
-      <DialogPhoto product={product} />
-      <div className="px-6 py-7 md:px-7.5 md:pt-12.5 md:pb-7.5">
-        <DialogTitle className="mb-5 text-4xl leading-display tracking-display">
-          {product.name}
-        </DialogTitle>
-        {brandLabel && <p className="mb-6 text-xs">{brandLabel}</p>}
-        <DialogDescription className="mb-6 text-sm">{product.description}</DialogDescription>
-        {hasChoice && selectedVariant && (
-          <VariantPicker
-            productId={product.id}
-            variants={product.variants}
-            selectedId={selectedVariant.id}
-            onSelect={selectVariant}
-          />
-        )}
+      <div className="min-h-0 flex-1 overflow-y-auto md:contents">
+        <div className="md:row-span-2 md:overflow-hidden">
+          <DialogPhoto product={product} />
+        </div>
+        <div className="px-6 py-7 md:overflow-y-auto md:px-7.5 md:pt-12.5 md:pb-7.5">
+          <DialogTitle className="mb-5 text-4xl leading-display tracking-display">
+            {product.name}
+          </DialogTitle>
+          {brandLabel && <p className="mb-6 text-xs">{brandLabel}</p>}
+          <DialogDescription className="mb-6 text-sm">{product.description}</DialogDescription>
+          {hasChoice && selectedVariant && (
+            <VariantPicker
+              productId={product.id}
+              variants={product.variants}
+              selectedId={selectedVariant.id}
+              onSelect={selectVariant}
+            />
+          )}
+        </div>
+      </div>
+      <div className="shrink-0 border-t bg-background px-6 py-5 md:col-start-2 md:px-7.5">
         {selectedVariant && (
           <ProductPrice
             amount={selectedVariant.price}
@@ -88,7 +98,7 @@ function DialogCloseChip({ label }: { label: string }) {
 
 function DialogPhoto({ product }: { product: ProductDto }) {
   if (!product.imageUrl) {
-    return <div aria-hidden className="h-62.5 bg-cream-tint md:h-auto md:min-h-102.5" />;
+    return <div aria-hidden className="h-62.5 bg-cream-tint md:h-full" />;
   }
 
   return (
@@ -98,7 +108,7 @@ function DialogPhoto({ product }: { product: ProductDto }) {
       width={640}
       height={640}
       unoptimized
-      className="h-62.5 w-full object-cover md:h-full md:min-h-102.5"
+      className="h-62.5 w-full object-cover md:h-full md:min-h-0"
     />
   );
 }

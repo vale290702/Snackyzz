@@ -13,6 +13,19 @@ export class VariantSelection {
   private constructor() {}
 
   /**
+   * Summarizes active storefront presentations without changing their purchase default.
+   * @param variants Active presentations supplied by the storefront DTO.
+   * @returns The minimum price, count and whether a choice is available.
+   */
+  static summary(variants: readonly { price: number }[]) {
+    return {
+      minimumPrice: variants.length ? Math.min(...variants.map((variant) => variant.price)) : null,
+      count: variants.length,
+      hasChoice: variants.length > 1,
+    };
+  }
+
+  /**
    * Finds the variant a product shows first.
    * @param variants The product's variants in display order.
    * @returns The default variant, or the first one when none is flagged; null without variants.

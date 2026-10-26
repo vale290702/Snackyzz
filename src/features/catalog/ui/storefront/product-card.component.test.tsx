@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
@@ -30,6 +30,35 @@ function renderCard(product = CatalogRecords.productDto(), cart: ReactNode = nul
 }
 
 describe("ProductCard", () => {
+  it("labels the minimum and opens choice without purchasing, then returns focus on Escape", async () => {
+    const addToCart = vi.fn();
+    const product = CatalogRecords.productDto({
+      variants: [
+        { ...unit, price: 2500 },
+        { ...box, price: 1200 },
+      ],
+    });
+    renderCard(
+      product,
+      <ProductPurchaseProvider purchase={{ addToCart }}>
+        <ProductCard product={product} brandLabel="Snackyzz" look={ProductLook.Classic} />
+      </ProductPurchaseProvider>,
+    );
+    expect(screen.getByText("Desde")).toBeInTheDocument();
+    expect(screen.getByText("2 presentaciones")).toBeInTheDocument();
+    expect(screen.getByText(/1\s?200/)).toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Elegir presentación" });
+    await userEvent.click(trigger);
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(addToCart).not.toHaveBeenCalled();
+    const radio = screen.getByRole("radio", { name: /Unidad/ });
+    await userEvent.click(radio);
+    await userEvent.click(screen.getByRole("radio", { name: /Caja de 6/ }));
+    await waitFor(() => expect(screen.getByRole("radio", { name: /Caja de 6/ })).toBeChecked());
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it("shows the product's name, badge, default price and photo", () => {
     renderCard();
 
