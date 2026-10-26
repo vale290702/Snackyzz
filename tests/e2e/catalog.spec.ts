@@ -50,17 +50,14 @@ test("the editor opens above the list and restores its trigger", async ({ page }
   await signInAs(page, "owner@snackyzz.test");
   await page.goto("/admin/catalog");
 
-  await expect(page.getByRole("button", { name: "Activos", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(page.getByRole("radio", { name: "Activos", exact: true })).toBeChecked();
   const trigger = page.getByRole("button", { name: "Nuevo producto" });
   await trigger.click();
 
   const title = page.getByRole("heading", { level: 2, name: "Nuevo producto" });
   await expect(title).toBeInViewport();
   const editor = page.getByRole("dialog", { name: "Nuevo producto" });
-  await expect(title).toBeFocused();
+  await expect(editor.getByRole("button", { name: "Cerrar editor" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(editor).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -81,7 +78,7 @@ test("the owner creates a sellable product and protects unsaved changes", async 
   );
   await create.getByLabel("Precio (₡)").fill("4200");
   await create.getByLabel("Descripción", { exact: true }).fill("Cookie de prueba de interfaz.");
-  await create.getByRole("button", { name: "Chocolate", exact: true }).click();
+  await create.getByRole("radio", { name: "Chocolate", exact: true }).check();
   await expect(create.getByLabel("Código hexadecimal")).toHaveValue("#3C1907");
   await create.getByLabel("Código hexadecimal").fill("#123456");
   await create.getByText("Más opciones", { exact: true }).click();
@@ -106,8 +103,9 @@ test("the owner creates a sellable product and protects unsaved changes", async 
   await expect(editor.getByRole("checkbox", { name: "Clásicas", exact: true })).toBeChecked();
   await editor.getByLabel("Precio (₡)").fill("4300");
   await editor.getByRole("button", { name: "Cerrar editor" }).click();
-  const discard = page.getByRole("dialog", { name: "¿Descartar los cambios?" });
+  const discard = page.getByRole("alertdialog", { name: "¿Descartar los cambios?" });
   await discard.getByRole("button", { name: "Seguir editando" }).click();
+  await expect(editor.getByRole("button", { name: "Cerrar editor" })).toBeFocused();
   await expect(editor.getByLabel("Precio (₡)")).toHaveValue("4300");
   await page.keyboard.press("Escape");
   await discard.getByRole("button", { name: "Descartar cambios", exact: true }).click();
@@ -131,7 +129,7 @@ test("the owner reorders categories with keyboard buttons and keeps the order af
   const names = [`E2E orden A ${suffix}`, `E2E orden B ${suffix}`];
   await signInAs(page, "owner@snackyzz.test");
   await page.goto("/admin/catalog");
-  await page.getByRole("button", { name: "Categorías", exact: true }).click();
+  await page.getByRole("tab", { name: "Categorías", exact: true }).click();
   for (const name of names) {
     await page.getByRole("button", { name: "Nueva categoría", exact: true }).click();
     const editor = page.getByRole("dialog", { name: "Nueva categoría" });
@@ -144,7 +142,7 @@ test("the owner reorders categories with keyboard buttons and keeps the order af
   await expect(down).toBeEnabled();
   await down.focus();
   await page.keyboard.press("Enter");
-  await expect(down).toBeEnabled();
+  await expect(page.getByRole("button", { name: `Subir ${firstName}`, exact: true })).toBeEnabled();
   await expect
     .poll(async () => {
       const order = await page.getByRole("heading", { level: 3 }).allTextContents();
@@ -152,7 +150,7 @@ test("the owner reorders categories with keyboard buttons and keeps the order af
     })
     .toBe(true);
   await page.reload();
-  await page.getByRole("button", { name: "Categorías", exact: true }).click();
+  await page.getByRole("tab", { name: "Categorías", exact: true }).click();
   const order = await page.getByRole("heading", { level: 3 }).allTextContents();
   expect(order.indexOf(firstName)).toBeGreaterThan(order.indexOf(secondName));
   for (const name of names) {
@@ -187,7 +185,9 @@ test("the owner adds a second presentation without losing product edits", async 
   await editor.getByRole("button", { name: "Nueva presentación", exact: true }).click();
   await expect(editor.getByRole("alert")).toContainText("Guarda los cambios del producto");
   await expect(editor.getByLabel("Precio (₡)")).toHaveValue("4100");
-  await editor.getByLabel("Precio (₡)").fill("4000");
+  await editor.getByRole("button", { name: "Guardar producto" }).click();
+  await expect(editor).toBeHidden();
+  await page.getByRole("button", { name: `Editar ${name}`, exact: true }).click();
   await editor.getByRole("button", { name: "Nueva presentación", exact: true }).click();
   const presentation = editor.getByRole("form", { name: "Nueva presentación" });
   await presentation.getByLabel("Nombre", { exact: true }).fill("Caja de 6");

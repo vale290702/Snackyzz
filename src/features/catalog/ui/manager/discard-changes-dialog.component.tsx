@@ -1,39 +1,60 @@
 import { useTranslations } from "next-intl";
 
-import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/shared/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog";
+import { buttonVariants } from "@/shared/ui/button";
+
+import { useDiscardChangesDialog } from "../../hooks/manager/use-discard-changes-dialog.hook";
 
 /**
- * Confirms leaving a catalog record while preserving the interrupted editor on cancellation.
- * @param props The confirmation state and explicit discard/cancel handlers.
- * @returns The modal discard confirmation.
+ * Props for the discard confirmation.
  */
-export function DiscardChangesDialog({
-  open,
-  onCancel,
-  onDiscard,
-}: {
+type DiscardChangesDialogProps = {
   open: boolean;
   onCancel: () => void;
   onDiscard: () => void;
-}) {
+};
+
+/**
+ * Asks before leaving a record with unsaved changes; cancelling keeps the editor as it was.
+ * @param props Whether it is open, and the cancel and discard handlers.
+ * @returns The confirmation.
+ */
+export function DiscardChangesDialog({ open, onCancel, onDiscard }: DiscardChangesDialogProps) {
+  const { rememberFocus, restoreFocus } = useDiscardChangesDialog();
   const translate = useTranslations("catalog.manager.discardDialog");
+
+  // Unmount at once instead of animating out, so an Escape right after "keep editing" reaches
+  // the editor rather than this closing layer.
   if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="data-[state=closed]:animate-none">
-        <DialogTitle>{translate("title")}</DialogTitle>
-        <DialogDescription>{translate("description")}</DialogDescription>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button variant="outline" onClick={onCancel}>
+    <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <AlertDialogContent onOpenAutoFocus={rememberFocus} onCloseAutoFocus={restoreFocus}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{translate("title")}</AlertDialogTitle>
+          <AlertDialogDescription>{translate("description")}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className={buttonVariants({ variant: "outline" })}>
             {translate("cancel")}
-          </Button>
-          <Button variant="destructive" onClick={onDiscard}>
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={onDiscard}
+          >
             {translate("confirm")}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

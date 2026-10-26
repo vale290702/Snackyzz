@@ -36,7 +36,7 @@ describe("useVariantsSection", () => {
     const { result } = renderHook(() =>
       useVariantsSection([unit], {
         beforeEdit,
-        hasChanges: () => true,
+        isDirty: true,
         onSaved,
       }),
     );
@@ -53,19 +53,13 @@ describe("useVariantsSection", () => {
     expect(onSaved).toHaveBeenCalledOnce();
   });
 
-  it("cannot cancel or discard a presentation while saving", () => {
-    let busy = false;
-    const { result } = renderHook(() =>
-      useVariantsSection([unit], {
-        hasChanges: () => true,
-        isBusy: () => busy,
-      }),
-    );
+  it("closes a dirty presentation on discard and reports it", () => {
+    const onDiscard = vi.fn();
+    const { result } = renderHook(() => useVariantsSection([unit], { isDirty: true, onDiscard }));
     act(() => result.current.startCreate());
     act(() => result.current.closeEditor());
-    busy = true;
     act(() => result.current.discardChanges());
-    expect(result.current.isEditorOpen).toBe(true);
-    expect(result.current.isDiscardOpen).toBe(true);
+    expect(result.current.isEditorOpen).toBe(false);
+    expect(onDiscard).toHaveBeenCalledOnce();
   });
 });

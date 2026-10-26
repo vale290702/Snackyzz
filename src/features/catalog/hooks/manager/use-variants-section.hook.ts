@@ -6,6 +6,17 @@ import { ManagerRecords, NEW_RECORD, RecordAction } from "../../domain/manager";
 import type { Variant } from "../../index";
 
 /**
+ * How the variants section works with the product editor around it.
+ */
+type VariantsSectionOptions = {
+  beforeEdit?: (() => boolean) | undefined;
+  isDirty?: boolean | undefined;
+  onEditingChange?: ((open: boolean) => void) | undefined;
+  onSaved?: (() => void) | undefined;
+  onDiscard?: (() => void) | undefined;
+};
+
+/**
  * State for a product's variants: which one is in the variant editor.
  * @param variants The product's variants, archived ones included.
  * @param options
@@ -14,29 +25,45 @@ import type { Variant } from "../../index";
  */
 export function useVariantsSection(
   variants: readonly Variant[],
-  options?: {
-    beforeEdit?: (() => boolean) | undefined;
-    hasChanges?: (() => boolean) | undefined;
-    isBusy?: (() => boolean) | undefined;
-    onEditingChange?: ((open: boolean) => void) | undefined;
-    onSaved?: (() => void) | undefined;
-  },
+  options: VariantsSectionOptions = {},
 ) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
-
   const activeVariants = variants.filter((variant) => ManagerRecords.isActive(variant));
 
-  function edit(id: string) {
-    if (options?.beforeEdit && !options.beforeEdit()) return;
-    setEditingId(id);
-    options?.onEditingChange?.(true);
-  }
+  const edit = (id: string) => {
+    if (options.beforeEdit && !options.beforeEdit()) {
+      return;
+    }
 
-  function closeEditor() {
+    setEditingId(id);
+    options.onEditingChange?.(true);
+  };
+
+  const close = () => {
     setEditingId(null);
-    options?.onEditingChange?.(false);
-  }
+    options.onEditingChange?.(false);
+  };
+
+  const closeEditor = () => {
+    if (options.isDirty) {
+      setIsDiscardOpen(true);
+      return;
+    }
+
+    close();
+  };
+
+  const discardChanges = () => {
+    setIsDiscardOpen(false);
+    close();
+    options.onDiscard?.();
+  };
+
+  const saved = () => {
+    close();
+    options.onSaved?.();
+  };
 
   return {
     activeVariants,
@@ -47,21 +74,10 @@ export function useVariantsSection(
     editingVariant: activeVariants.find((variant) => variant.id === editingId) ?? null,
     startCreate: () => edit(NEW_RECORD),
     edit,
-    closeEditor: () => {
-      if (options?.isBusy?.()) return;
-      if (options?.hasChanges?.()) setIsDiscardOpen(true);
-      else closeEditor();
-    },
+    closeEditor,
     isDiscardOpen,
     cancelDiscard: () => setIsDiscardOpen(false),
-    discardChanges: () => {
-      if (options?.isBusy?.()) return;
-      setIsDiscardOpen(false);
-      closeEditor();
-    },
-    saved: () => {
-      closeEditor();
-      options?.onSaved?.();
-    },
+    discardChanges,
+    saved,
   };
 }

@@ -23,7 +23,10 @@ Domain-agnostic building blocks used by many features: UI primitives, small util
   - `badge`: `Badge`, `badgeVariants` (`neutral` · `brand` · `selected` · `outline` · status tones `pending` · `positive` · `negative`)
   - `card`: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
   - `sonner` (Toast): `Toaster` (mount once per layout, `containerAriaLabel` required), `toast()`
-  - `separator`: `Separator`
+  - `separator`: `Separator` · `skeleton`: `Skeleton`
+  - `tabs`: `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` (underlined section tabs)
+  - `toggle`: `Toggle`, `toggleVariants` · `toggle-group`: `ToggleGroup`, `ToggleGroupItem` (filter pills; `type="single"` is a radio group and reports `""` when the chosen item is pressed again)
+  - `alert-dialog`: `AlertDialog`, `AlertDialogContent`, `AlertDialogHeader`, `AlertDialogFooter`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogAction`, `AlertDialogCancel` (confirmations; style actions with `buttonVariants`)
 - `@/shared/lib/cn`: `cn(...classes)` (clsx + tailwind-merge taught the brand radius, shadow and text tokens; used by `ui/`)
 - `@/shared/config/runtime`: `isProduction()`
 - `@/shared/lib/result`: `Results.ok/err/isOk`, `SharedError`, `Result`, `SharedErrorCode`; original `ok/err/isOk` aliases remain available

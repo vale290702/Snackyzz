@@ -37,7 +37,7 @@ describe("catalog fields accessibility", () => {
   it("offers named palette buttons, a custom picker and a typed hex input", async () => {
     renderFields(<AccentColorField initialColor="#ED781A" error={null} />);
     await userEvent.click(
-      screen.getByRole("button", { name: messages.catalog.manager.colors.chocolate }),
+      screen.getByRole("radio", { name: messages.catalog.manager.colors.chocolate }),
     );
     const hex = screen.getByLabelText(messages.catalog.manager.colors.hex);
     expect(hex).toHaveValue("#3C1907");

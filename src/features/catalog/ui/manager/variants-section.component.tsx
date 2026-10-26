@@ -27,10 +27,10 @@ type VariantsSectionProps = {
   productId: string;
   variants: readonly Variant[];
   beforeEdit?: (() => boolean) | undefined;
-  hasChanges?: (() => boolean) | undefined;
-  isBusy?: (() => boolean) | undefined;
+  isDirty?: boolean | undefined;
   onEditingChange?: ((open: boolean) => void) | undefined;
   onSaved?: (() => void) | undefined;
+  onDiscard?: (() => void) | undefined;
   ordering?: ReturnType<typeof useCatalogOrdering> | undefined;
 };
 

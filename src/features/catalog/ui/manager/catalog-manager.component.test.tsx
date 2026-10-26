@@ -80,13 +80,13 @@ describe("CatalogManager", () => {
     renderManager();
 
     expect(screen.getByRole("heading", { level: 1, name: copy.titles.products })).toBeVisible();
-    const sections = screen.getByRole("group", { name: copy.viewsLabel });
-    expect(within(sections).getByRole("button", { name: copy.views.products })).toHaveAttribute(
-      "aria-pressed",
+    const sections = screen.getByRole("tablist", { name: copy.viewsLabel });
+    expect(within(sections).getByRole("tab", { name: copy.views.products })).toHaveAttribute(
+      "aria-selected",
       "true",
     );
-    expect(screen.getByRole("group", { name: copy.filters.brandLabel })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: copy.filters.statusLabel })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: copy.filters.brandLabel })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: copy.filters.statusLabel })).toBeInTheDocument();
   });
 
   it("lists each product with its summary, brand, status and actions", () => {
@@ -104,7 +104,7 @@ describe("CatalogManager", () => {
   it("hides products that don't match the status filter", async () => {
     renderManager();
 
-    await userEvent.click(screen.getByRole("button", { name: copy.filters.archived }));
+    await userEvent.click(screen.getByRole("radio", { name: copy.filters.archived }));
 
     expect(screen.queryByRole("heading", { name: choco.name })).not.toBeInTheDocument();
     expect(screen.getByText(copy.empty.noMatchesTitle)).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe("CatalogManager", () => {
   it("invites the owner to create the first record of an empty section", async () => {
     renderManager({ ...data, categories: [] });
 
-    await userEvent.click(screen.getByRole("button", { name: copy.views.categories }));
+    await userEvent.click(screen.getByRole("tab", { name: copy.views.categories }));
 
     expect(screen.getByRole("heading", { level: 1, name: copy.titles.categories })).toBeVisible();
     expect(screen.getByText(copy.empty.categories)).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe("CatalogManager", () => {
     const editor = screen.getByRole("dialog", { name: copy.productForm.editTitle });
     await userEvent.type(within(editor).getByLabelText(copy.fields.name), " editada");
     await userEvent.click(within(editor).getByRole("button", { name: copy.actions.closeEditor }));
-    const discard = screen.getByRole("dialog", { name: copy.discardDialog.title });
+    const discard = screen.getByRole("alertdialog", { name: copy.discardDialog.title });
     await userEvent.click(within(discard).getByRole("button", { name: copy.discardDialog.cancel }));
     expect(within(editor).getByLabelText(copy.fields.name)).toHaveValue(`${choco.name} editada`);
     await userEvent.keyboard("{Escape}");
@@ -190,7 +190,7 @@ describe("CatalogManager", () => {
   it("translates field codes and links them to their inputs", async () => {
     renderManager();
 
-    await userEvent.click(screen.getByRole("button", { name: copy.views.categories }));
+    await userEvent.click(screen.getByRole("tab", { name: copy.views.categories }));
     await userEvent.click(screen.getByRole("button", { name: copy.create.categories }));
     await userEvent.type(screen.getByLabelText(copy.fields.name), "Clásicas");
     await userEvent.click(screen.getByRole("button", { name: copy.fields.editSlug }));
@@ -225,7 +225,7 @@ describe("CatalogManager", () => {
   it("marks the primary brand and offers to make another one primary", async () => {
     renderManager();
 
-    await userEvent.click(screen.getByRole("button", { name: copy.views.brands }));
+    await userEvent.click(screen.getByRole("tab", { name: copy.views.brands }));
 
     const primaryRow = screen.getByRole("heading", { name: primary.name }).closest("li");
     const collabRow = screen.getByRole("heading", { name: collab.name }).closest("li");

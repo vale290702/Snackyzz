@@ -1,59 +1,49 @@
 import { act, renderHook } from "@testing-library/react";
-import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { CatalogEditorState } from "./catalog-editor.types";
 import { useCatalogEditor } from "./use-catalog-editor.hook";
 
-vi.mock("@/shared/ui/sonner", () => ({ toast: { success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
+
+function renderEditor(isDirty: boolean) {
+  const options = { isDirty, markClean: vi.fn(), onSaved: vi.fn(), savedMessage: "Guardado" };
+
+  return { options, ...renderHook(() => useCatalogEditor(options)) };
+}
 
 describe("useCatalogEditor", () => {
-  it("compares current form values, including hidden selections, and ignores reverted edits", () => {
-    const editorState = createRef<CatalogEditorState>();
-    const container = document.createElement("div");
-    container.innerHTML =
-      '<form><input name="name" value="Cookie"><input name="imageFileId" type="hidden" value="old"></form>';
-    const { result, rerender } = renderHook(() =>
-      useCatalogEditor({
-        registerChecks: (checks) => {
-          editorState.current = checks;
-        },
-        onSaved: vi.fn(),
-        savedMessage: "Saved",
-      }),
-    );
-    act(() => result.current.attachBody(container));
-    act(() => result.current.rememberForms());
-    const input = container.querySelector("input") as HTMLInputElement;
-    input.value = "Edited";
-    expect(editorState.current?.hasChanges()).toBe(true);
-    input.value = "Cookie";
-    expect(editorState.current?.hasChanges()).toBe(false);
-    const hidden = container.querySelector('[type="hidden"]') as HTMLInputElement;
-    hidden.value = "new";
-    expect(editorState.current?.hasChanges()).toBe(true);
-    expect(result.current.beforePresentationEdit()).toBe(false);
-    rerender();
+  it("asks to save the product before editing a presentation over unsaved changes", () => {
+    const { result } = renderEditor(true);
+
+    let canEdit = true;
+    act(() => {
+      canEdit = result.current.beforePresentationEdit();
+    });
+
+    expect(canEdit).toBe(false);
+    expect(result.current.needsSave).toBe(true);
   });
 
-  it("blocks navigation during a save or upload and protects browser unload", () => {
-    const editorState = createRef<CatalogEditorState>();
-    const container = document.createElement("div");
-    container.innerHTML = '<form aria-busy="true"><input name="name" value="Cookie"></form>';
-    const { result } = renderHook(() =>
-      useCatalogEditor({
-        registerChecks: (checks) => {
-          editorState.current = checks;
-        },
-        onSaved: vi.fn(),
-        savedMessage: "Saved",
-      }),
-    );
-    act(() => result.current.attachBody(container));
-    act(() => result.current.rememberForms());
-    expect(editorState.current?.isBusy()).toBe(true);
-    const event = new Event("beforeunload", { cancelable: true });
-    window.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(true);
+  it("lets a clean product open its presentations", () => {
+    const { result } = renderEditor(false);
+
+    let canEdit = false;
+    act(() => {
+      canEdit = result.current.beforePresentationEdit();
+    });
+
+    expect(canEdit).toBe(true);
+    expect(result.current.needsSave).toBe(false);
+  });
+
+  it("closes after a record save and stays open, clean, after a presentation save", () => {
+    const { result, options } = renderEditor(true);
+
+    act(() => result.current.presentationSaved());
+    expect(options.markClean).toHaveBeenCalledOnce();
+    expect(options.onSaved).not.toHaveBeenCalled();
+
+    act(() => result.current.saved());
+    expect(options.onSaved).toHaveBeenCalledOnce();
   });
 });

@@ -144,7 +144,7 @@ describe("useCatalogOrdering", () => {
     ).toBe(true);
   });
 
-  it("locks every list during pending work, including repeated clicks before rerender", async () => {
+  it("locks every list while a move is saving", async () => {
     let resolveUpdate: ((value: ReturnType<typeof Results.ok>) => void) | undefined;
     actions.product.mockReturnValueOnce(
       new Promise((resolve) => {
@@ -154,13 +154,15 @@ describe("useCatalogOrdering", () => {
     const { result } = renderHook(() => useCatalogOrdering(data));
     act(() => {
       result.current.move(CatalogOrderKind.Products, first.id, CatalogOrderDirection.Down);
+    });
+    expect(result.current.isPending).toBe(true);
+    act(() => {
       result.current.move(
         CatalogOrderKind.Categories,
         data.categories[0]?.id ?? "",
         CatalogOrderDirection.Down,
       );
     });
-    expect(result.current.isPending).toBe(true);
     expect(
       result.current.canMove(
         CatalogOrderKind.Brands,

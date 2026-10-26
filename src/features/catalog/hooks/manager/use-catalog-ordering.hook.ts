@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { SharedError, type SharedErrorCode } from "@/shared/lib/result";
 import type { ActionResult } from "@/shared/lib/run-action";
@@ -60,13 +60,11 @@ function planMove(
 /**
  * Coordinates one catalog ordering operation at a time across every visible list.
  * @param data Current server records; normal action revalidation reflects each completed write.
- * @param beforeMove Optional event-time guard against another in-flight editor mutation.
  * @returns Adjacent move handlers, availability, pending state and a failure code.
  */
-export function useCatalogOrdering(data: CatalogManagerData, beforeMove?: () => boolean) {
+export function useCatalogOrdering(data: CatalogManagerData) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<CatalogErrorCode | SharedErrorCode | null>(null);
-  const locked = useRef(false);
 
   const canMove = (
     kind: CatalogOrderKindValue,
@@ -75,17 +73,15 @@ export function useCatalogOrdering(data: CatalogManagerData, beforeMove?: () => 
   ) => !isPending && planMove(data, kind, id, direction).records.length > 0;
 
   const move = (kind: CatalogOrderKindValue, id: string, direction: CatalogOrderDirectionValue) => {
-    if (isPending || locked.current) {
+    if (isPending) {
       return;
     }
-    if (beforeMove && !beforeMove()) return;
 
     const plan = planMove(data, kind, id, direction);
     if (plan.records.length === 0) {
       return;
     }
 
-    locked.current = true;
     setError(null);
     startTransition(async () => {
       try {
@@ -98,8 +94,6 @@ export function useCatalogOrdering(data: CatalogManagerData, beforeMove?: () => 
         }
       } catch {
         setError(SharedError.Unexpected);
-      } finally {
-        locked.current = false;
       }
     });
   };

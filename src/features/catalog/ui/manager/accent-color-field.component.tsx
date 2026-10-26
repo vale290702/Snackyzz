@@ -2,9 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
-import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/cn";
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 
 import { TextField } from "./form-fields.component";
 import { useAccentColorField } from "../../hooks/manager/use-accent-color-field.hook";
@@ -29,20 +30,21 @@ export function AccentColorField({
       <FieldLegend variant="label" className="text-xs font-semibold">
         {translate("productForm.accentColor")}
       </FieldLegend>
-      <div role="group" aria-label={translate("colors.palette")} className="flex gap-2">
+      <RadioGroup
+        aria-label={translate("colors.palette")}
+        value={field.swatchValue}
+        onValueChange={field.setColor}
+        className="flex gap-2"
+      >
         {field.palette.map((color) => (
-          <Button
+          <RadioGroupItem
             key={color.key}
-            type="button"
-            variant="outline"
-            size="icon"
+            value={color.value}
             aria-label={translate(`colors.${color.key}`)}
-            aria-pressed={field.color.toLowerCase() === color.value.toLowerCase()}
-            className={`${color.className} aria-pressed:ring-2 aria-pressed:ring-foreground aria-pressed:ring-offset-2 aria-pressed:ring-offset-background`}
-            onClick={() => field.setColor(color.value)}
+            className={cn("size-10 border-border", color.className)}
           />
         ))}
-      </div>
+      </RadioGroup>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="product-custom-color" className="text-xs">

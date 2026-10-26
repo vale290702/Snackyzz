@@ -142,7 +142,7 @@ function editorRecords(data: CatalogManagerData, editingId: EditingId) {
  */
 export function useCatalogManager(data: CatalogManagerData) {
   const navigation = useCatalogNavigation();
-  const ordering = useCatalogOrdering(data, () => !navigation.editorState.current.isBusy());
+  const ordering = useCatalogOrdering(data);
   const { view, editingId } = navigation;
   const [status, setStatus] = useState<RecordStatusFilterValue>(RecordStatusFilter.Active);
   const [brandFilter, setBrandFilter] = useState<string>(ALL_BRANDS);

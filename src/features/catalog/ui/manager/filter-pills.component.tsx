@@ -1,4 +1,4 @@
-import { cn } from "@/shared/lib/cn";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group";
 
 /**
  * One choice of a pill group.
@@ -19,7 +19,7 @@ type FilterPillsProps<Value extends string> = {
 };
 
 /**
- * A row of toggle pills where one is chosen, such as the brand or status filter.
+ * A row of toggle pills where one is always chosen, such as the brand or status filter.
  * @param props The group's accessible label, its choices, the chosen value and the handler.
  * @returns The labelled group.
  */
@@ -29,23 +29,21 @@ export function FilterPills<Value extends string>({
   value,
   onSelect,
 }: FilterPillsProps<Value>) {
+  // A single toggle group reports "" when the chosen pill is pressed again; keep the choice.
+  const select = (next: string) => {
+    const option = options.find((candidate) => candidate.value === next);
+    if (option) {
+      onSelect(option.value);
+    }
+  };
+
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+    <ToggleGroup type="single" aria-label={label} value={value} onValueChange={select}>
       {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={option.value === value}
-          onClick={() => onSelect(option.value)}
-          className={cn(
-            "h-10 rounded-full border border-border px-4 text-xs font-medium transition-colors",
-            "hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-deep",
-            "aria-pressed:border-secondary aria-pressed:bg-secondary aria-pressed:text-secondary-foreground",
-          )}
-        >
+        <ToggleGroupItem key={option.value} value={option.value}>
           {option.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }

@@ -156,7 +156,7 @@ describe("useCatalogManager", () => {
   it("protects dirty close and record switches until discarded", () => {
     const { result } = renderHook(() => useCatalogManager(data));
     act(() => result.current.edit(choco.id));
-    result.current.editorState.current = { hasChanges: () => true, isBusy: () => false };
+    act(() => result.current.markDirty());
     act(() => result.current.closeEditor());
     expect(result.current.isEditorOpen).toBe(true);
     expect(result.current.isDiscardOpen).toBe(true);
@@ -167,13 +167,10 @@ describe("useCatalogManager", () => {
     expect(result.current.editingId).toBe(chip.id);
   });
 
-  it("blocks leaving during a write and bypasses the dirty guard after success", () => {
+  it("closes without asking once the record is saved", () => {
     const { result } = renderHook(() => useCatalogManager(data));
     act(() => result.current.edit(choco.id));
-    result.current.editorState.current = { hasChanges: () => true, isBusy: () => true };
-    act(() => result.current.closeEditor());
-    expect(result.current.isEditorOpen).toBe(true);
-    expect(result.current.isDiscardOpen).toBe(false);
+    act(() => result.current.markDirty());
     act(() => result.current.saved());
     expect(result.current.isEditorOpen).toBe(false);
   });

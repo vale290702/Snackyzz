@@ -1,4 +1,6 @@
-import { cn } from "@/shared/lib/cn";
+import type { ReactNode } from "react";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 /**
  * One view of the tab row.
@@ -16,37 +18,40 @@ type ViewTabsProps<Value extends string> = {
   options: readonly ViewTab<Value>[];
   value: Value;
   onSelect: (value: Value) => void;
+  children: ReactNode;
 };
 
 /**
- * The catalog's underlined sub-tabs (products, brands, categories), styled like the admin
- * header's section tabs.
- * @param props The group's accessible label, its views, the open view and the handler.
- * @returns The labelled group.
+ * The catalog's sub-tabs (products, brands, categories) and the open view's panel.
+ * @param props The list's accessible label, its views, the open view, the handler and the panel.
+ * @returns The tabs.
  */
 export function ViewTabs<Value extends string>({
   label,
   options,
   value,
   onSelect,
+  children,
 }: ViewTabsProps<Value>) {
+  const select = (next: string) => {
+    const option = options.find((candidate) => candidate.value === next);
+    if (option) {
+      onSelect(option.value);
+    }
+  };
+
   return (
-    <div role="group" aria-label={label} className="flex gap-2 border-b border-border">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={option.value === value}
-          onClick={() => onSelect(option.value)}
-          className={cn(
-            "-mb-px border-b-2 border-transparent px-4.5 py-3 text-xs text-muted-foreground",
-            "focus-visible:outline-2 focus-visible:outline-orange-deep",
-            "aria-pressed:border-orange-deep aria-pressed:font-bold aria-pressed:text-foreground",
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <Tabs value={value} onValueChange={select} className="gap-8">
+      <TabsList aria-label={label}>
+        {options.map((option) => (
+          <TabsTrigger key={option.value} value={option.value}>
+            {option.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent value={value} className="grid gap-8">
+        {children}
+      </TabsContent>
+    </Tabs>
   );
 }
