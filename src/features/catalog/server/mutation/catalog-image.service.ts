@@ -3,8 +3,8 @@ import "server-only";
 import { findCatalogImages } from "@/features/media";
 import { Results, type Result } from "@/shared/lib/result";
 
-import type { CatalogImagePurposeValue } from "./mutation.types";
 import { CatalogError } from "../../domain/errors";
+import type { CatalogImagePurposeValue } from "../../domain/images";
 
 type InvalidImage = typeof CatalogError.InvalidImage;
 

@@ -58,3 +58,12 @@ export type StorefrontCatalog = {
   categories: CategoryDto[];
   products: ProductDto[];
 };
+
+/**
+ * One brand's page: the brand, its products on sale, and the other brands to link to.
+ */
+export type BrandShelf = {
+  brand: BrandDto;
+  products: ProductDto[];
+  otherBrands: BrandDto[];
+};

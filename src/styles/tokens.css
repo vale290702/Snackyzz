@@ -13,6 +13,12 @@
   --color-leaf: #3f5a1c;
   --color-honey: #7f4a00;
 
+  /* Baking Stereo collab page only (DESIGN.md "Collab: Baking Stereo"). */
+  --color-baking-pink: #f3abc5;
+  --color-baking-blush: #ffe1e9;
+  --color-baking-ivory: #fffcfa;
+  --color-baking-rose: #a83f63;
+
   --radius-control: 7px;
   --radius-surface: 12px;
   --radius-round: 30px;
@@ -33,6 +39,11 @@
   --tracking-display: -0.035em;
 
   --container-page: 77.5rem;
+
+  --aspect-product-phone: 1.13;
+
+  /* Baking Stereo hero: 380px on phones, 40% of the width, 540px at most. */
+  --spacing-baking-hero: clamp(23.75rem, 40vw, 33.75rem);
 
   --breakpoint-sm: 35rem;
   --breakpoint-md: 50rem;

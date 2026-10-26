@@ -5,8 +5,47 @@ import { CapabilityKind, defineCapability } from "@/shared/lib/capability";
 
 import { variantsRepository } from "./variants.repository";
 import { recordIdInputSchema } from "../../domain/fields";
-import { updateVariantInputSchema, variantInputSchema } from "../../domain/variants";
+import {
+  updateVariantInputSchema,
+  variantInputSchema,
+  type UpdateVariantInput,
+  type VariantInput,
+} from "../../domain/variants";
 import { CatalogPermission } from "../mutation";
+
+/**
+ * Variant writes shared by the variant capabilities and the product editor's save.
+ */
+export class VariantWrites {
+  private constructor() {}
+
+  /**
+   * Adds a variant; the product's first one becomes its default.
+   * @param context The signed-in admin.
+   * @param input The parsed variant with its product.
+   * @returns The variant, or why it was not added.
+   */
+  static async create(context: AdminContext, input: VariantInput) {
+    const repository = variantsRepository(context.client);
+
+    const product = await repository.findProductDefault(input.productId);
+    if (!product.ok) {
+      return product;
+    }
+
+    return repository.insert(input, context.admin.id, !product.value.hasDefault);
+  }
+
+  /**
+   * Replaces an active variant's fields.
+   * @param context The signed-in admin.
+   * @param input The parsed variant with its id.
+   * @returns The variant, or why it was not updated.
+   */
+  static update(context: AdminContext, { id, ...fields }: UpdateVariantInput) {
+    return variantsRepository(context.client).update(id, fields, context.admin.id);
+  }
+}
 
 /**
  * Adds a way to sell an active product. Its first variant becomes the default, so every product
@@ -17,16 +56,7 @@ export const createVariantCapability = defineCapability({
   kind: CapabilityKind.Mutation,
   permission: CatalogPermission.Manage,
   input: variantInputSchema,
-  execute: async (context: AdminContext, input) => {
-    const repository = variantsRepository(context.client);
-
-    const product = await repository.findProductDefault(input.productId);
-    if (!product.ok) {
-      return product;
-    }
-
-    return repository.insert(input, context.admin.id, !product.value.hasDefault);
-  },
+  execute: (context: AdminContext, input) => VariantWrites.create(context, input),
 });
 
 /**
@@ -37,9 +67,7 @@ export const updateVariantCapability = defineCapability({
   kind: CapabilityKind.Mutation,
   permission: CatalogPermission.Manage,
   input: updateVariantInputSchema,
-  execute: (context: AdminContext, { id, ...fields }) => {
-    return variantsRepository(context.client).update(id, fields, context.admin.id);
-  },
+  execute: (context: AdminContext, input) => VariantWrites.update(context, input),
 });
 
 /**

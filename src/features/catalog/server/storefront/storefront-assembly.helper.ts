@@ -2,6 +2,7 @@ import type { CatalogImage } from "@/features/media";
 
 import type {
   BrandDto,
+  BrandShelf,
   ProductDto,
   StorefrontBrandRow,
   StorefrontCatalog,
@@ -41,6 +42,27 @@ export class StorefrontAssembly {
       brands: brands.map((brand) => StorefrontAssembly.toBrandDto(brand, images)),
       categories: rows.categories,
       products: products.map((product) => StorefrontAssembly.toProductDto(product, images)),
+    };
+  }
+
+  /**
+   * Picks one brand's shelf out of the catalog.
+   * @param catalog The storefront catalog, brands in display order.
+   * @param brandSlug The brand to show, or null for the primary brand.
+   * @returns The brand, its products and the other brands; null when no listed brand matches.
+   */
+  static shelf(catalog: StorefrontCatalog, brandSlug: string | null): BrandShelf | null {
+    const brand = catalog.brands.find((candidate) => {
+      return brandSlug === null ? candidate.isPrimary : candidate.slug === brandSlug;
+    });
+    if (!brand) {
+      return null;
+    }
+
+    return {
+      brand,
+      products: catalog.products.filter((product) => product.brandId === brand.id),
+      otherBrands: catalog.brands.filter((candidate) => candidate.id !== brand.id),
     };
   }
 

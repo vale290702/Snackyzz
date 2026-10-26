@@ -1,0 +1,191 @@
+{
+  "shop": {
+    "metaTitle": "Tienda"
+  },
+  "shelf": {
+    "count": "{count, plural, one {# producto} other {# productos}}",
+    "emptyTitle": "Más antojos en camino.",
+    "emptyBody": "Aquí encontrarás las cookies {brand} cuando estén disponibles.",
+    "discover": "Conocer {brand}",
+    "switchTitle": "{count, plural, =2 {Dos marcas} other {# marcas}}. Un mismo carrito.",
+    "switchLink": "Ver {brand}"
+  },
+  "product": {
+    "choosePresentation": "Elegir presentación",
+    "from": "Desde",
+    "presentationCount": "{count, plural, one {# presentación} other {# presentaciones}}",
+    "view": "Ver cookie",
+    "viewDetails": "Ver detalles de {name}",
+    "addToCart": "Agregar al carrito",
+    "closeDetails": "Cerrar detalles",
+    "variantLegend": "Presentación"
+  },
+  "brandPages": {
+    "bakingStereo": {
+      "credit": "A COLLABORATION WITH <brand>SNACKYZZ</brand>",
+      "explore": "Explorar cookies",
+      "label": "FRESHLY BAKED",
+      "title": "Love at first bite",
+      "body": "Cookies recién horneadas, hechas para disfrutar cada antojo.",
+      "emptyTitle": "Pronto saldrán del horno.",
+      "emptyBody": "Aquí encontrarás los productos de Baking Stereo cuando estén disponibles.",
+      "switchLink": "Ver las cookies Snackyzz"
+    }
+  },
+  "manager": {
+    "metaTitle": "Catálogo",
+    "viewsLabel": "Secciones del catálogo",
+    "views": {
+      "products": "Productos",
+      "brands": "Marcas",
+      "categories": "Categorías"
+    },
+    "titles": {
+      "products": "Productos.",
+      "brands": "Marcas.",
+      "categories": "Categorías."
+    },
+    "descriptions": {
+      "products": "El catálogo que ven tus clientes.",
+      "brands": "Las marcas que agrupan tus productos en la tienda.",
+      "categories": "Las categorías que ordenan tus productos."
+    },
+    "create": {
+      "products": "Nuevo producto",
+      "brands": "Nueva marca",
+      "categories": "Nueva categoría"
+    },
+    "filters": {
+      "brandLabel": "Marca del producto",
+      "allBrands": "Todas las marcas",
+      "statusLabel": "Estado",
+      "all": "Todos",
+      "active": "Activos",
+      "archived": "Archivados"
+    },
+    "status": {
+      "active": "Activo",
+      "archived": "Archivado",
+      "primary": "Principal",
+      "default": "Predeterminada"
+    },
+    "empty": {
+      "noneTitle": "Nada por aquí.",
+      "products": "Crea un producto para comenzar.",
+      "brands": "Crea una marca para comenzar.",
+      "categories": "Crea una categoría para ordenar tus productos.",
+      "noMatchesTitle": "Sin coincidencias.",
+      "noMatches": "Prueba otra marca o estado para ver más."
+    },
+    "rows": {
+      "productSummary": "{variants, plural, =0 {Sin presentaciones} one {{price} · # presentación} other {{price} · # presentaciones}}",
+      "productSummaryWithBadge": "{badge} · {variants, plural, =0 {sin presentaciones} one {{price} · # presentación} other {{price} · # presentaciones}}",
+      "productPlacement": "{brand} · Posición {position}",
+      "brandPlacement": "/brands/{slug} · Posición {position}",
+      "categoryPlacement": "{slug} · Posición {position}",
+      "variantSummary": "{price} · Posición {position}",
+      "variantSummaryWithSku": "{price} · SKU {sku} · Posición {position}",
+      "notVisible": "No visible: falta una presentación con precio"
+    },
+    "actions": {
+      "edit": "Editar",
+      "editNamed": "Editar {name}",
+      "archive": "Archivar",
+      "archiving": "Archivando…",
+      "setPrimary": "Hacer principal",
+      "setDefault": "Hacer predeterminada",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "closeEditor": "Cerrar editor",
+      "saved": "Cambios guardados"
+    },
+    "archiveDialog": {
+      "title": "¿Archivar {name}?",
+      "description": "Deja de verse en la tienda y los pedidos anteriores lo conservan. No se puede deshacer desde el panel.",
+      "confirm": "Sí, archivar"
+    },
+    "fields": {
+      "name": "Nombre",
+      "slug": "Dirección en la tienda",
+      "slugHint": "Minúsculas, números y guiones.",
+      "sortOrder": "Posición",
+      "description": "Descripción",
+      "editSlug": "Editar enlace"
+    },
+    "image": {
+      "uploading": "Subiendo imagen…",
+      "remove": "Quitar imagen",
+      "productHint": "JPG, PNG o WebP · Máximo 5 MB.",
+      "logoHint": "JPG, PNG o WebP · Máximo 2 MB."
+    },
+    "productForm": {
+      "createTitle": "Nuevo producto",
+      "editTitle": "Editar producto",
+      "brand": "Sección del catálogo",
+      "badge": "Etiqueta corta",
+      "accentColor": "Color",
+      "image": "Imagen (opcional)",
+      "categories": "Categorías",
+      "submit": "Guardar producto",
+      "presentation": "Presentación y precio",
+      "presentationName": "Nombre de la presentación",
+      "defaultPresentationName": "Unidad",
+      "moreOptions": "Más opciones",
+      "categoriesHint": "Opcionales. Las categorías no cambian la agrupación por marca en la tienda.",
+      "searchCategories": "Buscar categorías",
+      "noCategoryResults": "No hay categorías con ese nombre.",
+      "partialSave": "El producto se guardó, pero falta guardar su presentación. Corrige el error y vuelve a guardar; se usará el mismo producto.",
+      "notVisible": "Este producto todavía no aparece en la tienda: necesita una presentación predeterminada."
+    },
+    "variants": {
+      "title": "Presentaciones",
+      "description": "Cada forma de vender este producto. La predeterminada se muestra primero.",
+      "none": "Agrega una presentación para mostrar este producto en la tienda.",
+      "createTitle": "Nueva presentación",
+      "editTitle": "Editar presentación",
+      "sku": "SKU (opcional)",
+      "price": "Precio (₡)",
+      "isStockTracked": "Controlar inventario",
+      "submit": "Guardar presentación",
+      "saveFirst": "Guarda los cambios del producto antes de editar sus presentaciones."
+    },
+    "brandForm": {
+      "createTitle": "Nueva marca",
+      "editTitle": "Editar marca",
+      "tagline": "Frase corta (opcional)",
+      "label": "Etiqueta en los productos (opcional)",
+      "description": "Descripción (opcional)",
+      "logo": "Logo (opcional)",
+      "submit": "Guardar marca"
+    },
+    "categoryForm": {
+      "createTitle": "Nueva categoría",
+      "editTitle": "Editar categoría",
+      "submit": "Guardar categoría"
+    },
+    "colors": {
+      "palette": "Colores de Snackyzz",
+      "orange": "Naranja Snackyzz",
+      "deepOrange": "Naranja intenso",
+      "chocolate": "Chocolate",
+      "cream": "Crema",
+      "custom": "Color personalizado",
+      "hex": "Código hexadecimal"
+    },
+    "feedbackLabel": "Avisos del catálogo",
+    "discardDialog": {
+      "title": "¿Descartar los cambios?",
+      "description": "Los cambios sin guardar de este editor se perderán.",
+      "cancel": "Seguir editando",
+      "confirm": "Descartar cambios"
+    },
+    "ordering": {
+      "label": "Orden de {name}",
+      "moveUp": "Subir {name}",
+      "moveDown": "Bajar {name}"
+    }
+  },
+  "loading": {
+    "catalog": "Cargando catálogo…"
+  }
+}

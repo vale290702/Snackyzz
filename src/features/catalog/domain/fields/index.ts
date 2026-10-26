@@ -7,3 +7,4 @@ export {
 } from "./fields.constants";
 export { CatalogFields, recordIdInputSchema } from "./fields.schema";
 export type { CatalogFieldErrorCode, RecordIdInput } from "./fields.types";
+export { ACCENT_PALETTE } from "./accent-palette.constants";

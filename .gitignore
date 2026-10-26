@@ -9,6 +9,7 @@ instance/
 .DS_Store
 .impeccable/review/
 .impeccable/mocks/
+.impeccable/critique/
 .impeccable/live/roots.json
 .impeccable/live/sessions/
 .superpowers/

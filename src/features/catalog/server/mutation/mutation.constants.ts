@@ -1,5 +1,4 @@
 import type { Permission } from "@/features/access";
-import type { FilePurpose } from "@/features/media";
 
 import { CatalogError, type CatalogErrorCode } from "../../domain/errors";
 
@@ -14,14 +13,6 @@ export const CatalogPermission = {
  * Cache tag of every storefront catalog read; admin mutations expire it.
  */
 export const CATALOG_CACHE_TAG = "catalog";
-
-/**
- * The upload purpose each catalog image column requires.
- */
-export const CatalogImagePurpose = {
-  ProductImage: "product_image",
-  BrandLogo: "brand_logo",
-} as const satisfies Record<string, FilePurpose>;
 
 /**
  * Postgres error codes the catalog maps to expected failures.

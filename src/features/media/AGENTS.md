@@ -6,7 +6,7 @@ Owns `media.files`, the media storage buckets and policies, upload validation an
 
 ## Public API (`index.ts`)
 
-- Types: `FileRef` (id, purpose, MIME type, byte count, width, height; never a storage path), `FilePurpose` (the five `media.file_purpose` values), `UploadTicket`.
+- Types: `FileRef` (id, purpose, MIME type, byte count, width, height; never a storage path), `FilePurpose` (the five `media.file_purpose` values), `UploadTicket`, `MediaErrorCode` (so callers can type and translate upload failures).
 - `createUploadAction({ purpose, mimeType, sizeBytes })` → `ActionResult<UploadTicket>` (`{ objectPath, signedUrl, token }`). Upload the bytes directly with the token, then register.
 - `registerUploadAction({ purpose, objectPath })` → `ActionResult<FileRef>` after checking the receipt, the bytes and the decoded image.
 - `getSignedReadUrl(fileId)` → `ActionResult<string>`: a proof URL valid for five minutes; requires `orders.view`.

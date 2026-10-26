@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { FormInput } from ".";
+import { FormFieldKind, FormInput } from ".";
 
 const schema = z
   .object({
@@ -77,6 +77,39 @@ describe("FormInput.read", () => {
     );
 
     expect(parsed).toEqual({ ok: false, fieldErrors: {}, formError: "password_matches_email" });
+  });
+
+  it("reads a checkbox as whether it was submitted", () => {
+    const checkboxSchema = z.object({ isStockTracked: z.boolean() });
+    const kinds = { isStockTracked: FormFieldKind.Checkbox };
+    const checked = formData({ isStockTracked: "on" });
+
+    expect(FormInput.read(checkboxSchema, checked, [], kinds)).toEqual({
+      ok: true,
+      input: { isStockTracked: true },
+    });
+    expect(FormInput.read(checkboxSchema, new FormData(), [], kinds)).toEqual({
+      ok: true,
+      input: { isStockTracked: false },
+    });
+  });
+
+  it("reads a list field as every text entry, and as empty when none was submitted", () => {
+    const listSchema = z.object({ categoryIds: z.array(z.string()) });
+    const kinds = { categoryIds: FormFieldKind.List };
+    const data = new FormData();
+    data.append("categoryIds", "c1");
+    data.append("categoryIds", "c2");
+    data.append("categoryIds", new File(["x"], "ignored.png"));
+
+    expect(FormInput.read(listSchema, data, [], kinds)).toEqual({
+      ok: true,
+      input: { categoryIds: ["c1", "c2"] },
+    });
+    expect(FormInput.read(listSchema, new FormData(), [], kinds)).toEqual({
+      ok: true,
+      input: { categoryIds: [] },
+    });
   });
 
   it("accepts any submission for the empty schema", () => {

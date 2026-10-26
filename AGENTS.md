@@ -99,7 +99,7 @@ Components only render. Hooks hold the logic components need.
 - Server Components in `ui/` receive data **as props**; they don't call queries themselves.
 - Pure, non-React logic belongs in `domain/`, not in a hook. A hook orchestrates; it doesn't calculate.
 - Test hooks with `renderHook` (behavior). Test components only for rendering and accessibility.
-- **Forms** submit through `<form action>`, and their hooks return `useFormAction({ … })` (`@/shared/lib/form-action`) with error codes; components translate them with `useErrorMessage` (`@/i18n/use-error-message.hook`). Follow the recipe, rules and checklist in [Forms and Server Actions](docs/code-conventions.md#forms-and-server-actions); never hand-roll `useActionState` for a form or add a form library without an ADR.
+- **Forms** where people enter data are React Hook Form forms: their hooks return `useServerForm({ … })` (`@/shared/lib/server-form`) with error codes; components submit with `onSubmit`, register inputs, and translate codes with `useErrorMessage` (`@/i18n/use-error-message.hook`). Single-button actions keep `<form action>` with `useFormAction`. Follow the recipe, rules and checklist in [Forms and Server Actions](docs/code-conventions.md#forms-and-server-actions); never hand-roll `useActionState` or `useForm` for a form.
 
 ```tsx
 export function CheckoutForm({ context }: CheckoutFormProps) {

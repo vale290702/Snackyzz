@@ -11,6 +11,11 @@
     "title": "No encontramos esta página",
     "backHome": "Volver al inicio"
   },
+  "forbidden": {
+    "title": "No tienes acceso a esta sección",
+    "body": "Pídele a la persona dueña de la tienda que te dé el permiso.",
+    "backAdmin": "Volver al panel"
+  },
   "globalError": {
     "title": "Algo salió mal",
     "retry": "Intentar de nuevo"

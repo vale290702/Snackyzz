@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+import { FormFieldKind } from "./form-action.constants";
 import type {
   FieldErrors,
   FormField,
+  FormFieldKinds,
+  FormFieldKindValue,
   FormSchema,
   FormValues,
   ParsedForm,
@@ -25,15 +28,18 @@ export class FormInput {
    * @param schema Object schema whose issue messages are error codes, not copy.
    * @param formData The submitted form data; the first entry of each field is read.
    * @param fieldErrorCodes Every code the schema can report; other messages become `invalid_input`.
+   * @param fieldKinds Fields read as a checkbox or a list instead of the first text entry.
    * @returns The parsed input, or one code per invalid field plus any form-level code.
    */
   static read<InputSchema extends FormSchema, FieldErrorCode extends string>(
     schema: InputSchema,
     formData: FormData,
     fieldErrorCodes: readonly FieldErrorCode[],
+    fieldKinds: FormFieldKinds<FormField<InputSchema>> = {},
   ): ParsedForm<z.output<InputSchema>, FormField<InputSchema>, FieldErrorCode> {
+    const fields = Object.keys(schema.shape) as FormField<InputSchema>[];
     const raw = Object.fromEntries(
-      Object.keys(schema.shape).map((field) => [field, formData.get(field) ?? undefined]),
+      fields.map((field) => [field, FormInput.entry(formData, field, fieldKinds[field])]),
     );
 
     const parsed = schema.safeParse(raw);
@@ -63,6 +69,29 @@ export class FormInput {
       fieldErrors,
       formError: flattened.formErrors.length > 0 ? toCode(flattened.formErrors[0]) : null,
     };
+  }
+
+  /**
+   * Reads one field's raw value the way its kind is submitted.
+   * @param formData The submitted form data.
+   * @param field The field name.
+   * @param kind How the field is submitted; plain text when missing.
+   * @returns The first entry, whether a checkbox was submitted, or every text entry.
+   */
+  private static entry(
+    formData: FormData,
+    field: string,
+    kind: FormFieldKindValue = FormFieldKind.Text,
+  ): FormDataEntryValue | boolean | string[] | undefined {
+    if (kind === FormFieldKind.Checkbox) {
+      return formData.has(field);
+    }
+
+    if (kind === FormFieldKind.List) {
+      return formData.getAll(field).filter((value) => typeof value === "string");
+    }
+
+    return formData.get(field) ?? undefined;
   }
 
   /**

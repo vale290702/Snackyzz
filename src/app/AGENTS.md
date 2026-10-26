@@ -41,4 +41,5 @@ Covered by feature tests and `tests/e2e`. Pages have no unit tests of their own;
 
 - `params` and `searchParams` are Promises in Next 16; `await` them.
 - `proxy.ts` (not middleware) is at `src/proxy.ts`. On `/admin/**` it calls `refreshAdminSession` from `features/access`: it refreshes the Supabase session cookies and redirects signed-out navigations to sign-in. It is not authorization.
-- Pages that read the session (`getAdmin`, `requirePermission`) do so inside `<Suspense>`, so the rest of the page stays in the static shell.
+- Pages that read the session (`getAdmin`, `requirePermission`) do so inside `<Suspense>`, so the rest of the page stays in the static shell. A `forbidden()` raised there renders `forbidden.tsx` but keeps the 200 status already streamed.
+- Store pages that read the catalog call `await connection()` inside `<Suspense>` first, so builds without a database still succeed.

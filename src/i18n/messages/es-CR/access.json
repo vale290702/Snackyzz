@@ -2,7 +2,12 @@
   "metaTitle": "Administración",
   "header": {
     "wordmark": "snackyzz<dot>.</dot>",
-    "section": "Administración"
+    "section": "Administración",
+    "sectionsLabel": "Secciones de administración",
+    "sections": {
+      "orders": "Órdenes",
+      "catalog": "Productos"
+    }
   },
   "signIn": {
     "welcome": {

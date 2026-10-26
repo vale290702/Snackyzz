@@ -120,3 +120,27 @@ describe("StorefrontAssembly.imageFileIds", () => {
     expect(StorefrontAssembly.imageFileIds(withRepeat).sort()).toEqual([LOGO_ID, IMAGE_ID].sort());
   });
 });
+
+describe("StorefrontAssembly.shelf", () => {
+  const catalog = StorefrontAssembly.build(rows, new Map(), null);
+
+  it("shows the primary brand's products when no slug is given", () => {
+    const shelf = StorefrontAssembly.shelf(catalog, null);
+
+    expect(shelf?.brand.slug).toBe("snackyzz");
+    expect(shelf?.products.map((entry) => entry.slug)).toEqual(["choco-cloud"]);
+    expect(shelf?.otherBrands.map((entry) => entry.slug)).toEqual(["baking-stereo"]);
+  });
+
+  it("shows a collab brand by slug, linking back to the others", () => {
+    const shelf = StorefrontAssembly.shelf(catalog, "baking-stereo");
+
+    expect(shelf?.brand.slug).toBe("baking-stereo");
+    expect(shelf?.products.map((entry) => entry.slug)).toEqual(["chocolate-chip"]);
+    expect(shelf?.otherBrands.map((entry) => entry.slug)).toEqual(["snackyzz"]);
+  });
+
+  it("is null for a slug no listed brand has", () => {
+    expect(StorefrontAssembly.shelf(catalog, "unknown")).toBeNull();
+  });
+});

@@ -1,8 +1,9 @@
 import "server-only";
 
-export { listStorefrontCatalog } from "./storefront.query";
+export { getBrandShelf, listStorefrontCatalog } from "./storefront.query";
 export type {
   BrandDto,
+  BrandShelf,
   CategoryDto,
   ProductDto,
   StorefrontCatalog,

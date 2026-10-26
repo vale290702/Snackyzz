@@ -16,8 +16,8 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 - Paths: `ADMIN_SIGN_IN_PATH` (`/admin/sign-in`), `ADMIN_HOME_PATH` (`/admin`, where sign-in lands)
 - Proxy: `refreshAdminSession(request)`, called only by `src/proxy.ts` on `/admin/**`
 - Server Actions: `signInAction(input)` (redirects to `ADMIN_HOME_PATH`; otherwise `invalid_credentials`, `too_many_attempts`, `invalid_input` or `unexpected`), `signOutAction()` (local scope; redirects to sign-in, or returns `sign_out_failed`)
-- UI: `AdminHeader({ actions? })` (wordmark bar; names the section when signed out), `SignInWelcome`, `SignInForm` (client, `useSignInForm`), `SignOutButton` (client, `useSignOutButton`)
-- Planned, not built yet: `getAdminContextForAdmin(adminId, source)` (messaging item: the bot has no user session, so it needs a service-role permission lookup); `inviteAdminAction`, `changeRoleAction`, `archiveAdminAction`, `TeamManager` (team management); `AdminShell` (grows from `AdminHeader` once admin sections exist).
+- UI: `AdminHeader({ actions?, activeSection? })` (wordmark bar; with `activeSection` it shows the section tabs, `AdminSection.Orders` → `/admin` and `AdminSection.Catalog` → `/admin/catalog`, the open one underlined with `aria-current`; names the section when signed out), `AdminSection` / `AdminSectionValue`, `SignInWelcome`, `SignInForm` (client, `useSignInForm`), `SignOutButton` (client, `useSignOutButton`)
+- Planned, not built yet: `getAdminContextForAdmin(adminId, source)` (messaging item: the bot has no user session, so it needs a service-role permission lookup); `inviteAdminAction`, `changeRoleAction`, `archiveAdminAction`, `TeamManager` (team management); `AdminShell` (grows from `AdminHeader`, which already holds the section tabs); a Configuración tab once settings has a route.
 
 ## Layout
 
@@ -25,7 +25,7 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 - `domain/sign-in/`: the client-safe `signInInputSchema` (issue messages are `SignInFieldError` codes) and its types. `domain/errors/`: `AccessError` codes; copy in `errors.access`.
 - `server/session/`: `session.loader.ts` verifies with `auth.getUser()`, then reads the admin and SQL permissions; `session.service.ts` caches per request and exposes guards; `session-refresh.runner.ts` refreshes cookies for `proxy.ts`. Types, path constants and matching tests are colocated.
 - `server/sign-in/`, `server/sign-out/`: `*.actions.ts` Server Actions wrapped in `runAction`. They manage the session itself, so they are not capabilities.
-- `hooks/` and `ui/` by purpose: `sign-in/` (`useSignInForm` ↔ `SignInForm`, `SignInWelcome`), `sign-out/` (`useSignOutButton` ↔ `SignOutButton`), `admin-header/`. Both hooks return `useFormAction({ … })` (codes); `SignInForm` and `SignOutButton` translate with `useErrorMessage("access")`; sign-in is the reference implementation of [Forms and Server Actions](../../../docs/code-conventions.md#forms-and-server-actions) (it preserves only `email`).
+- `hooks/` and `ui/` by purpose: `sign-in/` (`useSignInForm` ↔ `SignInForm`, `SignInWelcome`), `sign-out/` (`useSignOutButton` ↔ `SignOutButton`), `admin-header/`. Both hooks return `useFormAction({ … })` (codes); `SignInForm` and `SignOutButton` translate with `useErrorMessage("access")`; sign-in still uses `useFormAction` (it preserves only `email`) and moves to `useServerForm` when it next changes ([ADR 0013](../../../docs/adr/0013-data-entry-forms-on-react-hook-form.md)).
 - `server/context/`: `context.factory.ts` builds capability contexts; `context.types.ts` owns context and input-option contracts.
 - `server/admin/`: `admin.repository.ts` owns database queries; `admin.schema.ts` parses rows and permissions against generated enums; `admin.types.ts` owns admin/role/permission types. This is access's role-suffixed implementation of the feature repository convention.
 - Each purpose group has an explicit `index.ts`. Other features still import only `features/access`; repositories stay internal. Keep orchestration functions linear, with no extra wrapper classes for session or context entry points.
@@ -62,5 +62,6 @@ Who can use the admin panel and what they may do: sign-in, sessions, the admin r
 - `getAdminSession` calls `connection()` first: the expiry check reads the clock, which Cache Components refuses to prerender. Read the session inside a `<Suspense>` boundary.
 - `next.config.ts` sets `logging.serverFunctions: false`; dev logs would otherwise print sign-in passwords.
 - Local Auth allows 30 sign-ins per 5 minutes per IP (`[auth.rate_limit]`); rapid e2e reruns can hit `too_many_attempts`.
-- `/admin` is a placeholder greeting until the orders item replaces it.
+- `/admin` is a placeholder greeting until the orders item replaces it; its tab is already labelled Órdenes.
+- Section tabs are links in `ui/admin-header/admin-sections.constants.ts`. They show every section to every admin (as `main` did); staff who open Productos get the 403 page.
 - Adding a permission: add the enum value in its own migration, update `private.role_permissions`, regenerate types, extend the pgTAP matrix.

@@ -39,7 +39,7 @@ messages/es-CR/
 - Money: `format.number(n, { style: "currency", currency: "CRC", maximumFractionDigits: 0 })`. Dates: `format.dateTime` with the configured time zone.
 - No locale prefix in URLs while there's one locale. Adding a locale = new folder + entry in `config.ts` (+ routing ADR if prefixes are needed).
 
-`errors.media` contains upload, registration, rate-limit and file-read failures; `messages.test.ts` verifies every MediaError has Spanish copy. `errors.catalog` holds both `CatalogError` and `CatalogFieldError` codes (variants are "presentaciones" in copy); the same test covers them. The `catalog` UI namespace file arrives with the first catalog screen. `errors.fulfillment` holds `FulfillmentError` and `FulfillmentFieldError` codes ("punto de retiro", "zona de envío"); the same test covers them.
+`errors.media` contains upload, registration, rate-limit and file-read failures; `messages.test.ts` verifies every MediaError has Spanish copy. `errors.catalog` holds both `CatalogError` and `CatalogFieldError` codes (variants are "presentaciones" in copy); the same test covers them. `catalog.json` holds the storefront (`shop`, `shelf`, `product`, `brandPages.<page>`) and the admin manager (`manager.*`); `common.forbidden` is the 403 page. `errors.fulfillment` holds `FulfillmentError` and `FulfillmentFieldError` codes ("punto de retiro", "zona de envío"); the same test covers them.
 
 ## Testing
 

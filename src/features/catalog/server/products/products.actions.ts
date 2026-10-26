@@ -7,9 +7,10 @@ import type { ActionResult } from "@/shared/lib/run-action";
 import {
   archiveProductCapability,
   createProductCapability,
+  saveProductCapability,
   updateProductCapability,
 } from "./products.capability";
-import type { Product } from "./products.types";
+import type { Product, SavedProduct } from "./products.types";
 import type { CatalogErrorCode } from "../../domain/errors";
 import { runCatalogMutation } from "../mutation";
 
@@ -35,6 +36,18 @@ export async function updateProductAction(
   input: unknown,
 ): Promise<ActionResult<Product, CatalogErrorCode>> {
   return runCatalogMutation("catalog.updateProduct", updateProductCapability, input);
+}
+
+/**
+ * Saves the product editor's submission: a new or existing product and its only presentation.
+ * @param input Untrusted product fields, the product id when it exists, and the presentation.
+ * @returns The saved product and any presentation failure, or why the product was not saved.
+ * @throws Redirects to sign-in without an admin session.
+ */
+export async function saveProductAction(
+  input: unknown,
+): Promise<ActionResult<SavedProduct, CatalogErrorCode>> {
+  return runCatalogMutation("catalog.saveProduct", saveProductCapability, input);
 }
 
 /**

@@ -4,12 +4,18 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SharedError } from "@/shared/lib/result";
 
-import { archiveProductAction, createProductAction, updateProductAction } from "./products.actions";
+import {
+  archiveProductAction,
+  createProductAction,
+  saveProductAction,
+  updateProductAction,
+} from "./products.actions";
 import { CatalogError } from "../../domain/errors";
 import { createBrandAction } from "../brands";
 import { archiveCategoryAction, createCategoryAction } from "../categories";
 import { CatalogFixtures, DemoAdmin } from "../testing/catalog-fixtures.helper";
 import { RequestCookies } from "../testing/request-cookies.helper";
+import { createVariantAction } from "../variants";
 
 vi.mock("next/headers", async () => {
   const { RequestCookies: Cookies } = await import("../testing/request-cookies.helper");
@@ -150,5 +156,60 @@ describe("product actions for owners", () => {
       ok: false,
       error: CatalogError.ProductNotFound,
     });
+  });
+});
+
+describe("saving the product editor", () => {
+  beforeEach(async () => {
+    await CatalogFixtures.signInAs(DemoAdmin.Owner.email);
+  });
+
+  it("creates a product with its first presentation as the default", async () => {
+    const saved = await saveProductAction({
+      ...productFields("save-create"),
+      presentation: { name: "Unidad", price: 2500, isStockTracked: false },
+    });
+
+    expect(saved).toMatchObject({ ok: true, value: { presentationError: null } });
+    if (!saved.ok) return;
+    const productId = saved.value.product.id;
+    expect(await createVariantAction({ productId, name: "Caja", price: 9000 })).toMatchObject({
+      ok: true,
+      value: { isDefault: false },
+    });
+    expect(updateTag).toHaveBeenCalled();
+  });
+
+  it("returns the saved product when its presentation fails, and the retry updates it", async () => {
+    const sku = CatalogFixtures.uniqueSlug("sku");
+    const other = await createdId(await createProductAction(productFields("save-sku-owner")));
+    await createVariantAction({ productId: other, name: "Unidad", price: 1000, sku });
+    const fields = productFields("save-retry");
+
+    const failed = await saveProductAction({
+      ...fields,
+      presentation: { name: "Unidad", price: 2500, sku },
+    });
+
+    expect(failed).toMatchObject({ ok: true, value: { presentationError: CatalogError.SkuTaken } });
+    if (!failed.ok) return;
+    const retried = await saveProductAction({
+      ...fields,
+      id: failed.value.product.id,
+      presentation: { name: "Unidad", price: 2500 },
+    });
+    expect(retried).toMatchObject({
+      ok: true,
+      value: { product: { id: failed.value.product.id }, presentationError: null },
+    });
+  });
+
+  it("writes nothing when the presentation is invalid", async () => {
+    const fields = productFields("save-invalid");
+
+    expect(
+      await saveProductAction({ ...fields, presentation: { name: "Unidad", price: 0 } }),
+    ).toEqual({ ok: false, error: SharedError.InvalidInput });
+    expect(await createProductAction(fields)).toMatchObject({ ok: true });
   });
 });
