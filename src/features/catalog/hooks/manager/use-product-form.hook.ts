@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useCatalogImageUpload } from "./use-catalog-image-upload.hook";
 import { useProductSubmission } from "./use-product-submission.hook";
 import { CatalogImagePurpose } from "../../domain/images";
-import { ManagerRecords, NEW_PRODUCT_ACCENT_COLOR } from "../../domain/manager";
+import { ManagerRecords, NEW_PRODUCT_ACCENT_COLOR, NEW_RECORD } from "../../domain/manager";
 import type { Category, ManagedBrand, ManagedProduct, Product, Variant } from "../../index";
 
 /**
@@ -54,7 +54,14 @@ export function useProductForm({
   const activeVariants = variants.filter((variant) => variant.archivedAt === null);
   const inlinePresentation = activeVariants.length <= 1;
   const singleVariant = activeVariants[0];
-  const [isStockTracked, setIsStockTracked] = useState(singleVariant?.isStockTracked ?? true);
+  const trackingKey = inlinePresentation ? (singleVariant?.id ?? NEW_RECORD) : null;
+  const [tracking, setTracking] = useState({
+    key: trackingKey,
+    value: singleVariant?.isStockTracked ?? true,
+  });
+  if (tracking.key !== trackingKey) {
+    setTracking({ key: trackingKey, value: singleVariant?.isStockTracked ?? true });
+  }
   const [brandId, setBrandId] = useState(product?.brandId ?? defaultBrandId);
   const [categoryIds, setCategoryIds] = useState<string[]>(product?.categoryIds ?? []);
   const image = useCatalogImageUpload(CatalogImagePurpose.ProductImage, {
@@ -77,8 +84,8 @@ export function useProductForm({
     inlinePresentation,
     hasDefaultPresentation: activeVariants.some((variant) => variant.isDefault),
     singleVariant,
-    isStockTracked,
-    setIsStockTracked,
+    isStockTracked: tracking.value,
+    setIsStockTracked: (value: boolean) => setTracking({ key: trackingKey, value }),
     brandOptions: choosable(brands, product ? [product.brandId] : []),
     categoryOptions: choosable(categories, product?.categoryIds ?? []),
     accentColor: form.values.accentColor ?? product?.accentColor ?? NEW_PRODUCT_ACCENT_COLOR,

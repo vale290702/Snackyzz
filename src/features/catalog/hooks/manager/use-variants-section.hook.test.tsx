@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useVariantsSection } from "./use-variants-section.hook";
 import { NEW_RECORD, RecordAction } from "../../domain/manager";
@@ -28,5 +28,44 @@ describe("useVariantsSection", () => {
 
     act(() => result.current.closeEditor());
     expect(result.current.isEditorOpen).toBe(false);
+  });
+
+  it("blocks opening during product changes and confirms cancelling a dirty presentation", () => {
+    const beforeEdit = vi.fn().mockReturnValue(false);
+    const onSaved = vi.fn();
+    const { result } = renderHook(() =>
+      useVariantsSection([unit], {
+        beforeEdit,
+        hasChanges: () => true,
+        onSaved,
+      }),
+    );
+    act(() => result.current.startCreate());
+    expect(result.current.isEditorOpen).toBe(false);
+    beforeEdit.mockReturnValue(true);
+    act(() => result.current.startCreate());
+    act(() => result.current.closeEditor());
+    expect(result.current.isDiscardOpen).toBe(true);
+    act(() => result.current.cancelDiscard());
+    expect(result.current.isEditorOpen).toBe(true);
+    act(() => result.current.saved());
+    expect(result.current.isEditorOpen).toBe(false);
+    expect(onSaved).toHaveBeenCalledOnce();
+  });
+
+  it("cannot cancel or discard a presentation while saving", () => {
+    let busy = false;
+    const { result } = renderHook(() =>
+      useVariantsSection([unit], {
+        hasChanges: () => true,
+        isBusy: () => busy,
+      }),
+    );
+    act(() => result.current.startCreate());
+    act(() => result.current.closeEditor());
+    busy = true;
+    act(() => result.current.discardChanges());
+    expect(result.current.isEditorOpen).toBe(true);
+    expect(result.current.isDiscardOpen).toBe(true);
   });
 });

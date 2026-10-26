@@ -125,7 +125,7 @@ describe("CatalogManager", () => {
 
     await userEvent.click(screen.getByRole("button", { name: `Editar ${choco.name}` }));
 
-    const editor = screen.getByRole("region", { name: copy.productForm.editTitle });
+    const editor = screen.getByRole("dialog", { name: copy.productForm.editTitle });
     const form = within(editor).getByRole("form", { name: copy.productForm.editTitle });
     expect(within(form).getByLabelText(copy.fields.name)).toHaveValue(choco.name);
     expect(within(form).getByLabelText(copy.fields.slug)).toHaveAccessibleDescription(
@@ -134,6 +134,7 @@ describe("CatalogManager", () => {
     expect(within(form).getByRole("combobox", { name: copy.productForm.brand })).toHaveTextContent(
       primary.name,
     );
+    await userEvent.click(within(form).getByText(copy.productForm.moreOptions));
     expect(within(form).getByRole("checkbox", { name: "Clásicas" })).not.toBeChecked();
     expect(within(form).getByLabelText(copy.productForm.image)).toHaveAccessibleDescription(
       copy.image.productHint,
@@ -151,12 +152,39 @@ describe("CatalogManager", () => {
     renderManager();
 
     await userEvent.click(screen.getByRole("button", { name: copy.create.products }));
-    expect(screen.getByRole("region", { name: copy.productForm.createTitle })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: copy.productForm.createTitle })).toBeVisible();
 
     await userEvent.click(screen.getByRole("button", { name: copy.actions.closeEditor }));
     expect(
-      screen.queryByRole("region", { name: copy.productForm.createTitle }),
+      screen.queryByRole("dialog", { name: copy.productForm.createTitle }),
     ).not.toBeInTheDocument();
+  });
+
+  it("disables presentation row mutations while editing a presentation", async () => {
+    renderManager();
+    await userEvent.click(screen.getByRole("button", { name: `Editar ${choco.name}` }));
+    const editor = screen.getByRole("dialog", { name: copy.productForm.editTitle });
+    await userEvent.click(within(editor).getByRole("button", { name: `Editar ${unit.name}` }));
+    expect(within(editor).getByRole("button", { name: `Bajar ${unit.name}` })).toBeDisabled();
+    expect(within(editor).getByRole("button", { name: copy.actions.setDefault })).toBeDisabled();
+  });
+
+  it("keeps unsaved input when closing is cancelled and restores focus after discarding", async () => {
+    renderManager();
+    const trigger = screen.getByRole("button", { name: `Editar ${choco.name}` });
+    await userEvent.click(trigger);
+    const editor = screen.getByRole("dialog", { name: copy.productForm.editTitle });
+    await userEvent.type(within(editor).getByLabelText(copy.fields.name), " editada");
+    await userEvent.click(within(editor).getByRole("button", { name: copy.actions.closeEditor }));
+    const discard = screen.getByRole("dialog", { name: copy.discardDialog.title });
+    await userEvent.click(within(discard).getByRole("button", { name: copy.discardDialog.cancel }));
+    expect(within(editor).getByLabelText(copy.fields.name)).toHaveValue(`${choco.name} editada`);
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(screen.getByRole("button", { name: copy.discardDialog.confirm }));
+    expect(
+      screen.queryByRole("dialog", { name: copy.productForm.editTitle }),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
   it("translates field codes and links them to their inputs", async () => {
@@ -165,6 +193,8 @@ describe("CatalogManager", () => {
     await userEvent.click(screen.getByRole("button", { name: copy.views.categories }));
     await userEvent.click(screen.getByRole("button", { name: copy.create.categories }));
     await userEvent.type(screen.getByLabelText(copy.fields.name), "Clásicas");
+    await userEvent.click(screen.getByRole("button", { name: copy.fields.editSlug }));
+    await userEvent.clear(screen.getByLabelText(copy.fields.slug));
     await userEvent.type(screen.getByLabelText(copy.fields.slug), "Clásicas");
     await userEvent.click(screen.getByRole("button", { name: copy.categoryForm.submit }));
 

@@ -84,7 +84,8 @@
       "brandPlacement": "/brands/{slug} · Posición {position}",
       "categoryPlacement": "{slug} · Posición {position}",
       "variantSummary": "{price} · Posición {position}",
-      "variantSummaryWithSku": "{price} · SKU {sku} · Posición {position}"
+      "variantSummaryWithSku": "{price} · SKU {sku} · Posición {position}",
+      "notVisible": "No visible: falta una presentación con precio"
     },
     "actions": {
       "edit": "Editar",
@@ -177,6 +178,11 @@
       "description": "Los cambios sin guardar de este editor se perderán.",
       "cancel": "Seguir editando",
       "confirm": "Descartar cambios"
+    },
+    "ordering": {
+      "label": "Orden de {name}",
+      "moveUp": "Subir {name}",
+      "moveDown": "Bajar {name}"
     }
   },
   "loading": {

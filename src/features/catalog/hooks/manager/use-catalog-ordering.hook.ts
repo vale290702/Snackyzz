@@ -60,9 +60,10 @@ function planMove(
 /**
  * Coordinates one catalog ordering operation at a time across every visible list.
  * @param data Current server records; normal action revalidation reflects each completed write.
+ * @param beforeMove Optional event-time guard against another in-flight editor mutation.
  * @returns Adjacent move handlers, availability, pending state and a failure code.
  */
-export function useCatalogOrdering(data: CatalogManagerData) {
+export function useCatalogOrdering(data: CatalogManagerData, beforeMove?: () => boolean) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<CatalogErrorCode | SharedErrorCode | null>(null);
   const locked = useRef(false);
@@ -71,12 +72,13 @@ export function useCatalogOrdering(data: CatalogManagerData) {
     kind: CatalogOrderKindValue,
     id: string,
     direction: CatalogOrderDirectionValue,
-  ) => !isPending && !locked.current && planMove(data, kind, id, direction).records.length > 0;
+  ) => !isPending && planMove(data, kind, id, direction).records.length > 0;
 
   const move = (kind: CatalogOrderKindValue, id: string, direction: CatalogOrderDirectionValue) => {
     if (isPending || locked.current) {
       return;
     }
+    if (beforeMove && !beforeMove()) return;
 
     const plan = planMove(data, kind, id, direction);
     if (plan.records.length === 0) {

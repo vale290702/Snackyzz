@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useCatalogNavigation } from "./use-catalog-navigation.hook";
+import { useCatalogOrdering } from "./use-catalog-ordering.hook";
 import {
   ALL_BRANDS,
   CatalogManagerView,
@@ -12,6 +14,7 @@ import {
   type CatalogManagerViewValue,
   type RecordStatusFilterValue,
 } from "../../domain/manager";
+import { CatalogOrdering } from "../../domain/manager/catalog-ordering.helper";
 import { VariantSelection } from "../../domain/variants";
 import type { CatalogManagerData, ManagedProduct, Variant } from "../../index";
 
@@ -86,12 +89,14 @@ function visibleRecords(
   brandFilter: string,
 ) {
   const parentBrand = brandFilter === ALL_BRANDS ? null : brandFilter;
-  const products = ManagerRecords.withStatus(
-    ManagerRecords.ofParent(data.products, "brandId", parentBrand),
-    status,
+  const products = CatalogOrdering.ordered(
+    ManagerRecords.withStatus(
+      ManagerRecords.ofParent(data.products, "brandId", parentBrand),
+      status,
+    ),
   );
-  const brands = ManagerRecords.withStatus(data.brands, status);
-  const categories = ManagerRecords.withStatus(data.categories, status);
+  const brands = CatalogOrdering.ordered(ManagerRecords.withStatus(data.brands, status));
+  const categories = CatalogOrdering.ordered(ManagerRecords.withStatus(data.categories, status));
   const counts = {
     [CatalogManagerView.Products]: { visible: products.length, total: data.products.length },
     [CatalogManagerView.Brands]: { visible: brands.length, total: data.brands.length },
@@ -136,20 +141,25 @@ function editorRecords(data: CatalogManagerData, editingId: EditingId) {
  * record actions their buttons run, and the editor state.
  */
 export function useCatalogManager(data: CatalogManagerData) {
-  const [view, setView] = useState<CatalogManagerViewValue>(CatalogManagerView.Products);
-  const [status, setStatus] = useState<RecordStatusFilterValue>(RecordStatusFilter.All);
+  const navigation = useCatalogNavigation();
+  const ordering = useCatalogOrdering(data, () => !navigation.editorState.current.isBusy());
+  const { view, editingId } = navigation;
+  const [status, setStatus] = useState<RecordStatusFilterValue>(RecordStatusFilter.Active);
   const [brandFilter, setBrandFilter] = useState<string>(ALL_BRANDS);
-  const [editingId, setEditingId] = useState<EditingId>(null);
-
-  function selectView(next: CatalogManagerViewValue) {
-    setView(next);
-    setEditingId(null);
-  }
 
   return {
-    view,
+    ...navigation,
+    edit: (id: string) => {
+      if (!ordering.isPending) navigation.edit(id);
+    },
+    startCreate: () => {
+      if (!ordering.isPending) navigation.startCreate();
+    },
+    selectView: (next: CatalogManagerViewValue) => {
+      if (!ordering.isPending) navigation.selectView(next);
+    },
+    ordering,
     viewOptions: Object.values(CatalogManagerView),
-    selectView,
     showsProducts: view === CatalogManagerView.Products,
     showsBrands: view === CatalogManagerView.Brands,
     showsCategories: view === CatalogManagerView.Categories,
@@ -173,8 +183,5 @@ export function useCatalogManager(data: CatalogManagerData) {
     isCreating: editingId === NEW_RECORD,
     editingId,
     ...editorRecords(data, editingId),
-    startCreate: () => setEditingId(NEW_RECORD),
-    edit: setEditingId,
-    closeEditor: () => setEditingId(null),
   };
 }

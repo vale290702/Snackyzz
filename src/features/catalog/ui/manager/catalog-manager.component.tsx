@@ -3,13 +3,16 @@
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { cn } from "@/shared/lib/cn";
+import { useErrorMessage } from "@/i18n/use-error-message.hook";
 import { Button } from "@/shared/ui/button";
+import { Toaster } from "@/shared/ui/sonner";
 
 import { BrandRows } from "./brand-rows.component";
 import { CatalogEditor } from "./catalog-editor.component";
 import { CategoryRows } from "./category-rows.component";
+import { DiscardChangesDialog } from "./discard-changes-dialog.component";
 import { FilterPills } from "./filter-pills.component";
+import { FormAlert } from "./form-fields.component";
 import { ProductRows } from "./product-rows.component";
 import { ViewTabs } from "./view-tabs.component";
 import { useCatalogManager } from "../../hooks/manager/use-catalog-manager.hook";
@@ -30,6 +33,7 @@ type CatalogManagerProps = {
 export function CatalogManager({ data }: CatalogManagerProps) {
   const manager = useCatalogManager(data);
   const translate = useTranslations("catalog.manager");
+  const errorMessage = useErrorMessage("catalog");
   const { view, recordActions } = manager;
 
   return (
@@ -54,6 +58,7 @@ export function CatalogManager({ data }: CatalogManagerProps) {
           type="button"
           variant="dark"
           onClick={manager.startCreate}
+          disabled={manager.ordering.isPending}
           className="gap-5 text-sm font-bold max-sm:h-10 max-sm:text-xs"
         >
           {translate(`create.${view}`)}
@@ -82,12 +87,8 @@ export function CatalogManager({ data }: CatalogManagerProps) {
           onSelect={manager.selectStatus}
         />
       </div>
-      <div
-        className={cn(
-          "grid items-start gap-6",
-          manager.isEditorOpen && "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25.625rem)]",
-        )}
-      >
+      <div className="grid items-start gap-6">
+        <FormAlert message={errorMessage(manager.ordering.error)} />
         <section aria-label={translate(`views.${view}`)} className="grid gap-3">
           {!manager.hasRecords && (
             <EmptyRecords title={translate("empty.noneTitle")} body={translate(`empty.${view}`)} />
@@ -103,6 +104,7 @@ export function CatalogManager({ data }: CatalogManagerProps) {
               rows={manager.productRows}
               archiveAction={recordActions.ArchiveProduct}
               onEdit={manager.edit}
+              ordering={manager.ordering}
             />
           )}
           {manager.showsBrands && (
@@ -111,6 +113,7 @@ export function CatalogManager({ data }: CatalogManagerProps) {
               archiveAction={recordActions.ArchiveBrand}
               setPrimaryAction={recordActions.SetPrimaryBrand}
               onEdit={manager.edit}
+              ordering={manager.ordering}
             />
           )}
           {manager.showsCategories && (
@@ -118,11 +121,18 @@ export function CatalogManager({ data }: CatalogManagerProps) {
               categories={manager.categories}
               archiveAction={recordActions.ArchiveCategory}
               onEdit={manager.edit}
+              ordering={manager.ordering}
             />
           )}
         </section>
-        {manager.isEditorOpen && <CatalogEditor manager={manager} />}
+        {manager.isEditorOpen && <CatalogEditor key={manager.editingId} manager={manager} />}
       </div>
+      <DiscardChangesDialog
+        open={manager.isDiscardOpen}
+        onCancel={manager.cancelDiscard}
+        onDiscard={manager.discardChanges}
+      />
+      <Toaster containerAriaLabel={translate("feedbackLabel")} />
     </div>
   );
 }

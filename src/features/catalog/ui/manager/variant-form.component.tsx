@@ -93,7 +93,13 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
       </FieldGroup>
       <FormAlert message={errorMessage(formError)} />
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <Button type="button" variant="outline" className="text-sm" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          onClick={onCancel}
+          disabled={isPending}
+        >
           {translate("actions.cancel")}
         </Button>
         <SaveButton

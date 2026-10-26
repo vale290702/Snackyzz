@@ -1,7 +1,8 @@
-import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { useCatalogManager } from "./use-catalog-manager.hook";
+import { CatalogOrderDirection, CatalogOrderKind } from "./use-catalog-ordering.hook";
 import {
   ALL_BRANDS,
   CatalogManagerView,
@@ -9,7 +10,13 @@ import {
   RecordStatusFilter,
 } from "../../domain/manager";
 import type { CatalogManagerData } from "../../index";
+import { updateBrandAction } from "../../server/brands/brands.actions";
 import { CatalogRecords } from "../../ui/testing/catalog-records.helper";
+
+vi.mock("../../server/brands/brands.actions", () => ({ updateBrandAction: vi.fn() }));
+vi.mock("../../server/categories/categories.actions", () => ({ updateCategoryAction: vi.fn() }));
+vi.mock("../../server/products/products.actions", () => ({ updateProductAction: vi.fn() }));
+vi.mock("../../server/variants/variants.actions", () => ({ updateVariantAction: vi.fn() }));
 
 const ARCHIVED_AT = "2026-10-01T00:00:00Z";
 
@@ -44,15 +51,12 @@ const data: CatalogManagerData = {
 };
 
 describe("useCatalogManager", () => {
-  it("opens on every product, with each one's brand, default price and active variants", () => {
+  it("opens on active products, with each one's brand, default price and active variants", () => {
     const { result } = renderHook(() => useCatalogManager(data));
 
     expect(result.current.showsProducts).toBe(true);
-    expect(result.current.productRows.map((row) => row.product.id)).toEqual([
-      choco.id,
-      chip.id,
-      retired.id,
-    ]);
+    expect(result.current.productRows.map((row) => row.product.id)).toEqual([choco.id, chip.id]);
+    expect(result.current.status).toBe(RecordStatusFilter.Active);
     expect(result.current.productRows[0]).toMatchObject({
       brandLabel: primary.name,
       defaultPrice: box.price,
@@ -126,5 +130,51 @@ describe("useCatalogManager", () => {
       editingProduct: null,
       newProductBrandId: primary.id,
     });
+  });
+
+  it("cannot open an editor while a full-record reorder is writing", async () => {
+    let finish: (() => void) | undefined;
+    vi.mocked(updateBrandAction).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () => resolve({ ok: true, value: primary });
+        }),
+    );
+    const { result } = renderHook(() => useCatalogManager(data));
+    act(() =>
+      result.current.ordering.move(CatalogOrderKind.Brands, primary.id, CatalogOrderDirection.Down),
+    );
+    await waitFor(() => expect(result.current.ordering.isPending).toBe(true));
+    act(() => result.current.edit(primary.id));
+    expect(result.current.isEditorOpen).toBe(false);
+    act(() => result.current.startCreate());
+    expect(result.current.isEditorOpen).toBe(false);
+    vi.mocked(updateBrandAction).mockResolvedValue({ ok: true, value: primary });
+    await act(async () => finish?.());
+  });
+
+  it("protects dirty close and record switches until discarded", () => {
+    const { result } = renderHook(() => useCatalogManager(data));
+    act(() => result.current.edit(choco.id));
+    result.current.editorState.current = { hasChanges: () => true, isBusy: () => false };
+    act(() => result.current.closeEditor());
+    expect(result.current.isEditorOpen).toBe(true);
+    expect(result.current.isDiscardOpen).toBe(true);
+    act(() => result.current.cancelDiscard());
+    act(() => result.current.edit(chip.id));
+    expect(result.current.editingId).toBe(choco.id);
+    act(() => result.current.discardChanges());
+    expect(result.current.editingId).toBe(chip.id);
+  });
+
+  it("blocks leaving during a write and bypasses the dirty guard after success", () => {
+    const { result } = renderHook(() => useCatalogManager(data));
+    act(() => result.current.edit(choco.id));
+    result.current.editorState.current = { hasChanges: () => true, isBusy: () => true };
+    act(() => result.current.closeEditor());
+    expect(result.current.isEditorOpen).toBe(true);
+    expect(result.current.isDiscardOpen).toBe(false);
+    act(() => result.current.saved());
+    expect(result.current.isEditorOpen).toBe(false);
   });
 });
