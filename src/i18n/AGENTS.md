@@ -41,6 +41,8 @@ messages/es-CR/
 
 `errors.media` contains upload, registration, rate-limit and file-read failures; `messages.test.ts` verifies every MediaError has Spanish copy. `errors.catalog` holds both `CatalogError` and `CatalogFieldError` codes (variants are "presentaciones" in copy); the same test covers them. The `catalog` UI namespace file arrives with the first catalog screen. `errors.fulfillment` holds `FulfillmentError` and `FulfillmentFieldError` codes ("punto de retiro", "zona de envío"); the same test covers them.
 
+`errors.events` covers safe job, receipt and delivery failure codes; the key-coverage test enforces it.
+
 ## Testing
 
 - Unit: all locales have identical key sets; every error code has copy.

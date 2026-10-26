@@ -31,7 +31,7 @@ Follow [the canonical conventions](../../docs/code-conventions.md); provider ope
 - `supabase/service-client` may only be imported from `features/*/server/**` (ESLint rule). Callers authorize **before** using it.
 - Provider operation adapters return `Result` with a `retryable | permanent` error kind; they never throw for vendor 4xx/5xx. Client constructors and low-level fetch transport retain their native contracts.
 - Request timeouts are always set (10 s default).
-- `database.types.ts` is generated (`npm run db:types`, schemas `public,access,media`; add each new feature schema to the script); never edit it. Its `Constants` give Zod the enum values.
+- `database.types.ts` is generated (`npm run db:types`, schemas `public,access,media,catalog,fulfillment,events`; add each new feature schema to the script); never edit it. Its `Constants` give Zod the enum values.
 
 ## Dependencies
 

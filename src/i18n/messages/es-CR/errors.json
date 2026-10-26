@@ -58,5 +58,13 @@
     "lead_hours_invalid": "Escribe una anticipación de 0 a 168 horas, sin decimales.",
     "slot_hours_invalid": "Escribe una duración de 1 a 12 horas, sin decimales.",
     "toggle_invalid": "Elige si está activado o desactivado."
+  },
+  "events": {
+    "invalid_consumer": "La configuración del proceso de eventos no es válida.",
+    "invalid_event": "No se pudo leer el evento.",
+    "pending_read_failed": "No se pudieron consultar los eventos pendientes.",
+    "handler_failed": "No se pudo procesar el evento.",
+    "receipt_write_failed": "No se pudo guardar el resultado del evento.",
+    "kick_failed": "No se pudo iniciar el proceso de eventos."
   }
 }

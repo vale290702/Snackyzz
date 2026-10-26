@@ -378,6 +378,124 @@ export type Database = {
       [_ in never]: never;
     };
   };
+  events: {
+    Tables: {
+      domain_events: {
+        Row: {
+          actor_admin_id: string | null;
+          actor_type: Database["events"]["Enums"]["actor_type"];
+          aggregate_id: string;
+          aggregate_type: string;
+          id: string;
+          occurred_at: string;
+          payload: NonNullable<Json>;
+          type: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_admin_id?: string | null;
+          actor_type: Database["events"]["Enums"]["actor_type"];
+          aggregate_id: string;
+          aggregate_type: string;
+          id?: string;
+          occurred_at?: string;
+          payload: NonNullable<Json>;
+          type: string;
+          version: number;
+        };
+        Update: {
+          actor_admin_id?: string | null;
+          actor_type?: Database["events"]["Enums"]["actor_type"];
+          aggregate_id?: string;
+          aggregate_type?: string;
+          id?: string;
+          occurred_at?: string;
+          payload?: NonNullable<Json>;
+          type?: string;
+          version?: number;
+        };
+        Relationships: [];
+      };
+      event_receipts: {
+        Row: {
+          attempts: number;
+          consumer: string;
+          event_id: string;
+          last_error: string | null;
+          processed_at: string | null;
+          status: Database["events"]["Enums"]["receipt_status"];
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          consumer: string;
+          event_id: string;
+          last_error?: string | null;
+          processed_at?: string | null;
+          status: Database["events"]["Enums"]["receipt_status"];
+        };
+        Update: {
+          attempts?: number;
+          consumer?: string;
+          event_id?: string;
+          last_error?: string | null;
+          processed_at?: string | null;
+          status?: Database["events"]["Enums"]["receipt_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_receipts_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "domain_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      pending_events: {
+        Args: { p_consumer: string; p_limit?: number };
+        Returns: {
+          actor_admin_id: string | null;
+          actor_type: Database["events"]["Enums"]["actor_type"];
+          aggregate_id: string;
+          aggregate_type: string;
+          id: string;
+          occurred_at: string;
+          payload: NonNullable<Json>;
+          type: string;
+          version: number;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "domain_events";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      record_receipt: {
+        Args: {
+          p_consumer: string;
+          p_event_id: string;
+          p_last_error?: string;
+          p_status: Database["events"]["Enums"]["receipt_status"];
+        };
+        Returns: undefined;
+      };
+    };
+    Enums: {
+      actor_type: "customer" | "admin" | "system";
+      receipt_status: "processed" | "failed";
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   fulfillment: {
     Tables: {
       delivery_hours: {
@@ -790,6 +908,12 @@ export const Constants = {
   },
   catalog: {
     Enums: {},
+  },
+  events: {
+    Enums: {
+      actor_type: ["customer", "admin", "system"],
+      receipt_status: ["processed", "failed"],
+    },
   },
   fulfillment: {
     Enums: {},

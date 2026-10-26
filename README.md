@@ -18,7 +18,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Fill `.env.local` from the output of `supabase status`. The app runs on http://127.0.0.1:5174.
+Fill `.env.local` from the output of `supabase status`. Set `MEDIA_SIGNING_SECRET` and `JOB_SECRET` to separate random values of at least 32 characters. The app runs on http://127.0.0.1:5174.
+
+The rebuild stack (`snackyzz-rework`) uses API http://127.0.0.1:55321, database port 55322 and Studio http://127.0.0.1:55323, so it can run alongside the legacy stack. Worktrees share the rebuild stack: serialize resets and database tests using the shared notes lock.
 
 ## Scripts
 
