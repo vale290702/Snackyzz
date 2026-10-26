@@ -71,7 +71,7 @@ The numeric prefixes give a dependency order (FK targets first).
 ## Gotchas
 
 - PostgREST reads `[api].schemas` when the stack starts. After adding a schema there, run `supabase stop && supabase start`; `db reset` keeps the old list and the API answers `Invalid schema`.
-- The local stack's `project_id` is `snackyzz-rework`, so it keeps its own volumes apart from the legacy stack. Both use the default ports: stop one (`supabase stop --workdir <path>`) before starting the other.
+- The local stack's `project_id` is `snackyzz-rework`, so it keeps its own volumes apart from the legacy stack. The rebuild uses API 55321, DB 55322, Studio 55323, mail 55324, analytics 55327 and shadow DB 55320, so it can run alongside the legacy stack on 5432x.
 
 - Postgres has no `add constraint if not exists`; let the diff tool generate constraint changes.
 - Adding an enum value can't run inside a transaction that also uses it; put it in its own migration.
@@ -82,3 +82,10 @@ The numeric prefixes give a dependency order (FK targets first).
 - API requests load `pg_safeupdate`: a function called through PostgREST can't `delete` or `update` without a `where` clause. pgTAP runs through psql and won't notice; integration tests will.
 - pgTAP runs inside a transaction that never commits, so deferred constraint triggers never fire there; the catalog guard is `initially immediate` for that reason, and entry points defer it themselves.
 - Integration tests write catalog rows that can't be deleted. A test that empties `access.admins` sets `session_replication_role = replica` so audit FKs from other features don't block it.
+
+## Implemented events
+
+- `05_events/` implements ER §10. Immutable `domain_events` uses `occurred_at`; `event_receipts` uses `processed_at` for success only. These intentionally omit generic creation/update timestamps. Both enums live in `events`.
+- `private.publish_event(text, integer, text, uuid, jsonb, events.actor_type, uuid default null)` is owner-only. Publisher security-definer entry points call it in the same transaction as their mutation.
+- Service-only RPCs: `events.pending_events(text, integer default 100)` and `events.record_receipt(text, uuid, events.receipt_status, text default null)`. Pending reads use receipts, never an id cursor; failed events retry below five attempts. Atomic upserts preserve successful receipts. Service-role table grants are select-only; shoppers have no events privileges.
+- `events.test.sql` covers security, constraints, rollback, retries and independent/idempotent receipts. Integration tests exercise the receipt upsert through PostgREST under `pg_safeupdate`.

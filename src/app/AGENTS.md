@@ -37,6 +37,8 @@ Next.js App Router routes: URLs, layouts, metadata, loading/error boundaries. Pa
 
 Covered by feature tests and `tests/e2e`. Pages have no unit tests of their own; if a page needs one, move the logic into a feature.
 
+`POST /api/jobs/events` currently verifies `JOB_SECRET` and passes an explicit empty consumer list. Notifications and outbound dispatch wiring are deferred to their work items. Failed passes return 503; successful passes return counts only.
+
 ## Gotchas
 
 - `params` and `searchParams` are Promises in Next 16; `await` them.

@@ -4,6 +4,7 @@ import { AccessError } from "@/features/access/domain/errors";
 import { SignInFieldError } from "@/features/access/domain/sign-in";
 import { CatalogError } from "@/features/catalog/domain/errors";
 import { CatalogFieldError } from "@/features/catalog/domain/fields";
+import { EventError } from "@/features/events/domain/errors/errors.constants";
 import { FulfillmentError } from "@/features/fulfillment/domain/errors";
 import { FulfillmentFieldError } from "@/features/fulfillment/domain/fields";
 import { MediaError } from "@/features/media/domain/errors";
@@ -23,6 +24,14 @@ function collectKeys(value: unknown, prefix = ""): string[] {
 }
 
 describe("messages", () => {
+  it("provides Spanish copy for every events error", async () => {
+    const messages = await loadMessages(defaultLocale);
+    expect(Object.keys(messages.errors.events).sort()).toEqual(Object.values(EventError).sort());
+    for (const message of Object.values(messages.errors.events)) {
+      expect(message.trim().length).toBeGreaterThan(0);
+    }
+  });
+
   it("provides Spanish copy for every media error", async () => {
     const messages = await loadMessages(defaultLocale);
 

@@ -62,6 +62,7 @@ Unit tests for every `lib/` module. Component tests for primitives with behavior
 
 ## Gotchas
 
+- `env.server` also requires `JOB_SECRET` (at least 32 random characters) for event job bearer authentication; set it in local/Vercel environments and CI.
 - `env.server` requires `MEDIA_SIGNING_SECRET` (at least 32 random characters); it signs media upload receipts and rate-limit keys.
 - `next build` imports every route, so env parsing runs at build time: a build without the variables fails. CI sets schema-valid placeholders in `.github/workflows/ci.yml`; each Vercel environment needs real values. Add new variables to both.
 - Don't add a helper here "because two features might need it". Wait for the third use (AG-02).
