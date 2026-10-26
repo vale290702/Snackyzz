@@ -7,7 +7,7 @@ import { PICKUP_LOCATION_COLUMNS, pickupLocationRowSchema } from "./pickup-locat
 import type { PickupLocation } from "./pickup-locations.types";
 import { FulfillmentError, type FulfillmentErrorCode } from "../../domain/errors";
 import type { PickupLocationInput } from "../../domain/pickup-locations";
-import { FulfillmentDatabaseError } from "../mutation";
+import { FulfillmentResults } from "../mutation";
 
 type PickupLocationResult = Result<PickupLocation, FulfillmentErrorCode>;
 
@@ -45,7 +45,7 @@ async function insert(
     .select(PICKUP_LOCATION_COLUMNS)
     .single();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     pickupLocationRowSchema,
     FulfillmentError.PickupLocationNotFound,
@@ -74,7 +74,7 @@ async function update(
     .select(PICKUP_LOCATION_COLUMNS)
     .maybeSingle();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     pickupLocationRowSchema,
     FulfillmentError.PickupLocationNotFound,
@@ -101,7 +101,7 @@ async function archive(
     .select(PICKUP_LOCATION_COLUMNS)
     .maybeSingle();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     pickupLocationRowSchema,
     FulfillmentError.PickupLocationNotFound,

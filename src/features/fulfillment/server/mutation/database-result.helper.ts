@@ -9,10 +9,11 @@ import type { FulfillmentErrorCode } from "../../domain/errors";
 const CONSTRAINT_NAME = /constraint "([^"]+)"/;
 
 /**
- * Turns Postgres errors fulfillment expects (taken zone names, missing locations) into
- * fulfillment error codes. Anything else is a bug and is rethrown.
+ * Turns PostgREST responses into fulfillment results: the parsed row, or the code of a failure
+ * fulfillment expects (taken zone names, missing locations). Any other error is a bug and is
+ * rethrown.
  */
-export class FulfillmentDatabaseError {
+export class FulfillmentResults {
   private constructor() {}
 
   /**
@@ -20,8 +21,8 @@ export class FulfillmentDatabaseError {
    * @param error The error PostgREST returned.
    * @returns The matching code, or null when the error is not an expected one.
    */
-  static toCode(error: DatabaseError): FulfillmentErrorCode | null {
-    const key = FulfillmentDatabaseError.failureKey(error);
+  static errorCode(error: DatabaseError): FulfillmentErrorCode | null {
+    const key = FulfillmentResults.failureKey(error);
     if (key === null) {
       return null;
     }
@@ -35,8 +36,8 @@ export class FulfillmentDatabaseError {
    * @returns The failed result.
    * @throws The original error when it is not an expected one.
    */
-  static toFailure(error: DatabaseError): Result<never, FulfillmentErrorCode> {
-    const code = FulfillmentDatabaseError.toCode(error);
+  static fromError(error: DatabaseError): Result<never, FulfillmentErrorCode> {
+    const code = FulfillmentResults.errorCode(error);
     if (code === null) {
       throw error;
     }
@@ -52,13 +53,13 @@ export class FulfillmentDatabaseError {
    * @returns The parsed record, `notFound`, or the expected database failure.
    * @throws When the database fails unexpectedly.
    */
-  static toResult<Value>(
+  static fromResponse<Value>(
     response: DatabaseResponse,
     rowSchema: z.ZodType<Value>,
     notFound: FulfillmentErrorCode,
   ): Result<Value, FulfillmentErrorCode> {
     if (response.error) {
-      return FulfillmentDatabaseError.toFailure(response.error);
+      return FulfillmentResults.fromError(response.error);
     }
 
     if (response.data === null) {

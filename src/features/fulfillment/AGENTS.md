@@ -26,7 +26,7 @@ How online orders reach customers: **Snackyzz-managed pickup locations** and the
 - `domain/delivery-windows/`: `DeliveryWindows` and `ZonedTime` (calendar math in an IANA zone with `Intl` only). Pure; `now` is always injected.
 - `domain/errors/`: `FulfillmentError`; Spanish copy for both code sets in `errors.fulfillment`.
 - `server/<pickup-locations|delivery-zones|hours|settings>/`: row schema (snake_case → record), repository (module functions behind a small factory), capabilities, actions.
-- `server/mutation/`: `FulfillmentPermission`, `FULFILLMENT_CACHE_TAG`, `runFulfillmentMutation` (admin context → capability → `updateTag("fulfillment")`), `FulfillmentDatabaseError` (constraint names and raised messages → codes; anything else is rethrown).
+- `server/mutation/`: `FulfillmentPermission`, `FULFILLMENT_CACHE_TAG`, `runFulfillmentMutation` (admin context → capability → `updateTag("fulfillment")`), `FulfillmentResults` (PostgREST response → `Result`: the parsed row, or a code for known constraint names and raised messages; anything else is rethrown).
 - `server/options/`: anon repository, DTO row schemas, `getFulfillmentOptions`, `listPickupLocations`.
 - `server/testing/`: integration-test helpers only (in-memory cookies, demo admins, unique names).
 
@@ -47,7 +47,7 @@ How online orders reach customers: **Snackyzz-managed pickup locations** and the
 
 ## Testing
 
-- Unit (TDD): `DeliveryWindows` (lead time into the next day, local date across midnight UTC, closed days, short tails, slot sizes 1–12 h, split ranges, horizon, availability), `ZonedTime` (including a DST zone), every input schema, `FulfillmentDatabaseError`; `messages.test.ts` covers `errors.fulfillment`.
+- Unit (TDD): `DeliveryWindows` (lead time into the next day, local date across midnight UTC, closed days, short tails, slot sizes 1–12 h, split ranges, horizon, availability), `ZonedTime` (including a DST zone), every input schema, `FulfillmentResults`; `messages.test.ts` covers `errors.fulfillment`.
 - Integration (`*.int.test.ts`, local stack): every action for visitor / staff / owner, archive rules, taken zone names, hours replacement (ordered, overlapping and inverted refused, archived location refused, empty schedule), settings, and the public queries' filtering. Tests that change delivery hours or settings restore them afterwards; locations and zones use unique `int-*` names.
 - pgTAP `fulfillment.test.sql`: shape, grants, every policy × role, constraints, exclusion constraints and both entry points.
 

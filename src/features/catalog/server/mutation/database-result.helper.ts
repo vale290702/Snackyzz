@@ -9,10 +9,11 @@ import type { CatalogErrorCode } from "../../domain/errors";
 const CONSTRAINT_NAME = /constraint "([^"]+)"/;
 
 /**
- * Turns Postgres errors the catalog expects (taken slugs, missing references, guarded invariants)
- * into catalog error codes. Anything else is a bug and is rethrown.
+ * Turns PostgREST responses into catalog results: the parsed row, or the code of a failure the
+ * catalog expects (taken slugs, missing references, guarded invariants). Any other error is a bug
+ * and is rethrown.
  */
-export class CatalogDatabaseError {
+export class CatalogResults {
   private constructor() {}
 
   /**
@@ -20,8 +21,8 @@ export class CatalogDatabaseError {
    * @param error The error PostgREST returned.
    * @returns The matching code, or null when the error is not an expected one.
    */
-  static toCode(error: DatabaseError): CatalogErrorCode | null {
-    const key = CatalogDatabaseError.failureKey(error);
+  static errorCode(error: DatabaseError): CatalogErrorCode | null {
+    const key = CatalogResults.failureKey(error);
     if (key === null) {
       return null;
     }
@@ -35,8 +36,8 @@ export class CatalogDatabaseError {
    * @returns The failed result.
    * @throws The original error when it is not an expected one.
    */
-  static toFailure(error: DatabaseError): Result<never, CatalogErrorCode> {
-    const code = CatalogDatabaseError.toCode(error);
+  static fromError(error: DatabaseError): Result<never, CatalogErrorCode> {
+    const code = CatalogResults.errorCode(error);
     if (code === null) {
       throw error;
     }
@@ -52,13 +53,13 @@ export class CatalogDatabaseError {
    * @returns The parsed record, `notFound`, or the expected database failure.
    * @throws When the database fails unexpectedly.
    */
-  static toResult<Value>(
+  static fromResponse<Value>(
     response: DatabaseResponse,
     rowSchema: z.ZodType<Value>,
     notFound: CatalogErrorCode,
   ): Result<Value, CatalogErrorCode> {
     if (response.error) {
-      return CatalogDatabaseError.toFailure(response.error);
+      return CatalogResults.fromError(response.error);
     }
 
     if (response.data === null) {

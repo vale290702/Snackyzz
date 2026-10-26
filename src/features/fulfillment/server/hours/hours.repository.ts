@@ -7,7 +7,7 @@ import { HOUR_COLUMNS, hourRowSchema } from "./hours.schema";
 import type { DeliveryHours, PickupLocationHours } from "./hours.types";
 import type { FulfillmentErrorCode } from "../../domain/errors";
 import type { HourRange } from "../../domain/hours";
-import { FulfillmentDatabaseError } from "../mutation";
+import { FulfillmentResults } from "../mutation";
 
 /**
  * Replaces weekly hours through the `fulfillment.set_*_hours` entry points, acting as the
@@ -41,7 +41,7 @@ async function setPickupLocationHours(
     p_hours: toRows(hours),
   });
   if (error) {
-    return FulfillmentDatabaseError.toFailure(error);
+    return FulfillmentResults.fromError(error);
   }
 
   const { data, error: readError } = await client
@@ -73,7 +73,7 @@ async function setDeliveryHours(
     .schema("fulfillment")
     .rpc("set_delivery_hours", { p_hours: toRows(hours) });
   if (error) {
-    return FulfillmentDatabaseError.toFailure(error);
+    return FulfillmentResults.fromError(error);
   }
 
   const { data, error: readError } = await client

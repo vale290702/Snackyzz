@@ -7,7 +7,7 @@ import { CATEGORY_COLUMNS, categoryRowSchema } from "./categories.schema";
 import type { Category } from "./categories.types";
 import type { CategoryInput } from "../../domain/categories";
 import { CatalogError, type CatalogErrorCode } from "../../domain/errors";
-import { CatalogDatabaseError } from "../mutation";
+import { CatalogResults } from "../mutation";
 
 type CategoryResult = Result<Category, CatalogErrorCode>;
 
@@ -33,7 +33,7 @@ export function categoriesRepository(client: DatabaseClient) {
         .select(CATEGORY_COLUMNS)
         .single();
 
-      return CatalogDatabaseError.toResult(
+      return CatalogResults.fromResponse(
         response,
         categoryRowSchema,
         CatalogError.CategoryNotFound,
@@ -56,7 +56,7 @@ export function categoriesRepository(client: DatabaseClient) {
         .select(CATEGORY_COLUMNS)
         .maybeSingle();
 
-      return CatalogDatabaseError.toResult(
+      return CatalogResults.fromResponse(
         response,
         categoryRowSchema,
         CatalogError.CategoryNotFound,
@@ -78,7 +78,7 @@ export function categoriesRepository(client: DatabaseClient) {
         .select(CATEGORY_COLUMNS)
         .maybeSingle();
 
-      return CatalogDatabaseError.toResult(
+      return CatalogResults.fromResponse(
         response,
         categoryRowSchema,
         CatalogError.CategoryNotFound,

@@ -7,7 +7,7 @@ import { PRODUCT_COLUMNS, productRowSchema } from "./products.schema";
 import type { Product } from "./products.types";
 import { CatalogError, type CatalogErrorCode } from "../../domain/errors";
 import type { ProductInput } from "../../domain/products";
-import { CatalogDatabaseError } from "../mutation";
+import { CatalogResults } from "../mutation";
 
 type ProductResult = Result<Product, CatalogErrorCode>;
 
@@ -70,7 +70,7 @@ async function insert(
     .select("id")
     .single();
   if (error) {
-    return CatalogDatabaseError.toFailure(error);
+    return CatalogResults.fromError(error);
   }
 
   return linkCategories(client, data.id, input.categoryIds);
@@ -98,7 +98,7 @@ async function update(
     .select("id")
     .maybeSingle();
   if (error) {
-    return CatalogDatabaseError.toFailure(error);
+    return CatalogResults.fromError(error);
   }
 
   if (data === null) {
@@ -128,7 +128,7 @@ async function archive(
     .select(PRODUCT_COLUMNS)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, productRowSchema, CatalogError.ProductNotFound);
+  return CatalogResults.fromResponse(response, productRowSchema, CatalogError.ProductNotFound);
 }
 
 /**
@@ -148,12 +148,12 @@ async function linkCategories(
     .schema("catalog")
     .rpc("set_product_categories", { p_product_id: id, p_category_ids: categoryIds });
   if (error) {
-    return CatalogDatabaseError.toFailure(error);
+    return CatalogResults.fromError(error);
   }
 
   const response = await products(client).select(PRODUCT_COLUMNS).eq("id", id).maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, productRowSchema, CatalogError.ProductNotFound);
+  return CatalogResults.fromResponse(response, productRowSchema, CatalogError.ProductNotFound);
 }
 
 function products(client: DatabaseClient) {

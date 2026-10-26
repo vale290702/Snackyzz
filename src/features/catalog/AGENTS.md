@@ -21,7 +21,7 @@ What we sell: brands (Snackyzz is primary; collabs are rows), categories, produc
 - `domain/<brands|categories|products|variants>/`: input schemas (create, and update with `id`) and text limits. Inputs never carry `isPrimary` or `isDefault`.
 - `domain/errors/`: `CatalogError`; Spanish copy for both code sets in `errors.catalog`.
 - `server/<brands|categories|products|variants>/`: row schema (snake_case → record), repository, capabilities, actions.
-- `server/mutation/`: `CatalogPermission`, `CATALOG_CACHE_TAG`, `CatalogImagePurpose`, `runCatalogMutation` (admin context → capability → `updateTag("catalog")`), `verifyCatalogImage`, `CatalogDatabaseError` (constraint names and raised messages → codes; anything else is rethrown).
+- `server/mutation/`: `CatalogPermission`, `CATALOG_CACHE_TAG`, `CatalogImagePurpose`, `runCatalogMutation` (admin context → capability → `updateTag("catalog")`), `verifyCatalogImage`, `CatalogResults` (PostgREST response → `Result`: the parsed row, or a code for known constraint names and raised messages; anything else is rethrown).
 - `server/storefront/`: anon repository, row schemas, `StorefrontAssembly` (pure), `listStorefrontCatalog`.
 - `server/testing/`: integration-test helpers only (in-memory cookies, demo admins, file fixtures).
 
@@ -42,7 +42,7 @@ What we sell: brands (Snackyzz is primary; collabs are rows), categories, produc
 
 ## Testing
 
-- Unit: field and input schemas (each code on its field), `CatalogDatabaseError`, `StorefrontAssembly`; `messages.test.ts` covers `errors.catalog`.
+- Unit: field and input schemas (each code on its field), `CatalogResults`, `StorefrontAssembly`; `messages.test.ts` covers `errors.catalog`.
 - Integration (`*.int.test.ts`, local stack): every action for visitor / staff / owner, image purposes, taken slugs and SKUs, archive rules, primary and default swaps, price history, storefront filtering and image URLs. Catalog rows can't be deleted, so tests use unique slugs and leave archived fixtures behind (`supabase db reset` clears them).
 - pgTAP `catalog.test.sql`: shape, grants, every policy × role, constraints, the one-primary / one-default invariants, file purposes, entry points and the price-history trigger.
 

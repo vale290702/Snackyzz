@@ -7,7 +7,7 @@ import { productDefaultRowSchema, VARIANT_COLUMNS, variantRowSchema } from "./va
 import type { ProductDefault, Variant, VariantFields } from "./variants.types";
 import { CatalogError, type CatalogErrorCode } from "../../domain/errors";
 import type { VariantInput } from "../../domain/variants";
-import { CatalogDatabaseError } from "../mutation";
+import { CatalogResults } from "../mutation";
 
 type VariantResult = Result<Variant, CatalogErrorCode>;
 
@@ -49,7 +49,7 @@ async function findProductDefault(
     .eq("product_variants.is_default", true)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(
+  return CatalogResults.fromResponse(
     response,
     productDefaultRowSchema,
     CatalogError.ProductNotFound,
@@ -82,7 +82,7 @@ async function insert(
     .select(VARIANT_COLUMNS)
     .single();
 
-  return CatalogDatabaseError.toResult(response, variantRowSchema, CatalogError.VariantNotFound);
+  return CatalogResults.fromResponse(response, variantRowSchema, CatalogError.VariantNotFound);
 }
 
 /**
@@ -107,7 +107,7 @@ async function update(
     .select(VARIANT_COLUMNS)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, variantRowSchema, CatalogError.VariantNotFound);
+  return CatalogResults.fromResponse(response, variantRowSchema, CatalogError.VariantNotFound);
 }
 
 /**
@@ -130,7 +130,7 @@ async function archive(
     .select(VARIANT_COLUMNS)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, variantRowSchema, CatalogError.VariantNotFound);
+  return CatalogResults.fromResponse(response, variantRowSchema, CatalogError.VariantNotFound);
 }
 
 /**
@@ -143,12 +143,12 @@ async function archive(
 async function setDefault(client: DatabaseClient, id: string): Promise<VariantResult> {
   const { error } = await client.schema("catalog").rpc("set_default_variant", { p_variant_id: id });
   if (error) {
-    return CatalogDatabaseError.toFailure(error);
+    return CatalogResults.fromError(error);
   }
 
   const response = await variants(client).select(VARIANT_COLUMNS).eq("id", id).maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, variantRowSchema, CatalogError.VariantNotFound);
+  return CatalogResults.fromResponse(response, variantRowSchema, CatalogError.VariantNotFound);
 }
 
 function variants(client: DatabaseClient) {

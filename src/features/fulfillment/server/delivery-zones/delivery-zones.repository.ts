@@ -7,7 +7,7 @@ import { DELIVERY_ZONE_COLUMNS, deliveryZoneRowSchema } from "./delivery-zones.s
 import type { DeliveryZone } from "./delivery-zones.types";
 import type { DeliveryZoneInput } from "../../domain/delivery-zones";
 import { FulfillmentError, type FulfillmentErrorCode } from "../../domain/errors";
-import { FulfillmentDatabaseError } from "../mutation";
+import { FulfillmentResults } from "../mutation";
 
 type DeliveryZoneResult = Result<DeliveryZone, FulfillmentErrorCode>;
 
@@ -44,7 +44,7 @@ async function insert(
     .select(DELIVERY_ZONE_COLUMNS)
     .single();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     deliveryZoneRowSchema,
     FulfillmentError.DeliveryZoneNotFound,
@@ -73,7 +73,7 @@ async function update(
     .select(DELIVERY_ZONE_COLUMNS)
     .maybeSingle();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     deliveryZoneRowSchema,
     FulfillmentError.DeliveryZoneNotFound,
@@ -100,7 +100,7 @@ async function archive(
     .select(DELIVERY_ZONE_COLUMNS)
     .maybeSingle();
 
-  return FulfillmentDatabaseError.toResult(
+  return FulfillmentResults.fromResponse(
     response,
     deliveryZoneRowSchema,
     FulfillmentError.DeliveryZoneNotFound,

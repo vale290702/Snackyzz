@@ -7,7 +7,7 @@ import { BRAND_COLUMNS, brandRowSchema } from "./brands.schema";
 import type { Brand } from "./brands.types";
 import type { BrandInput } from "../../domain/brands";
 import { CatalogError, type CatalogErrorCode } from "../../domain/errors";
-import { CatalogDatabaseError } from "../mutation";
+import { CatalogResults } from "../mutation";
 
 type BrandResult = Result<Brand, CatalogErrorCode>;
 
@@ -67,7 +67,7 @@ async function insert(
     .select(BRAND_COLUMNS)
     .single();
 
-  return CatalogDatabaseError.toResult(response, brandRowSchema, CatalogError.BrandNotFound);
+  return CatalogResults.fromResponse(response, brandRowSchema, CatalogError.BrandNotFound);
 }
 
 /**
@@ -92,7 +92,7 @@ async function update(
     .select(BRAND_COLUMNS)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, brandRowSchema, CatalogError.BrandNotFound);
+  return CatalogResults.fromResponse(response, brandRowSchema, CatalogError.BrandNotFound);
 }
 
 /**
@@ -111,7 +111,7 @@ async function archive(client: DatabaseClient, id: string, adminId: string): Pro
     .select(BRAND_COLUMNS)
     .maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, brandRowSchema, CatalogError.BrandNotFound);
+  return CatalogResults.fromResponse(response, brandRowSchema, CatalogError.BrandNotFound);
 }
 
 /**
@@ -124,12 +124,12 @@ async function archive(client: DatabaseClient, id: string, adminId: string): Pro
 async function setPrimary(client: DatabaseClient, id: string): Promise<BrandResult> {
   const { error } = await client.schema("catalog").rpc("set_primary_brand", { p_brand_id: id });
   if (error) {
-    return CatalogDatabaseError.toFailure(error);
+    return CatalogResults.fromError(error);
   }
 
   const response = await brands(client).select(BRAND_COLUMNS).eq("id", id).maybeSingle();
 
-  return CatalogDatabaseError.toResult(response, brandRowSchema, CatalogError.BrandNotFound);
+  return CatalogResults.fromResponse(response, brandRowSchema, CatalogError.BrandNotFound);
 }
 
 function brands(client: DatabaseClient) {
