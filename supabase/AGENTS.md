@@ -61,6 +61,13 @@ The numeric prefixes give a dependency order (FK targets first).
 - Invoker entry points granted to `authenticated`: `catalog.set_primary_brand`, `catalog.set_default_variant`, `catalog.set_product_categories`. They raise `brand_not_found`, `variant_not_found` and `category_not_found`.
 - `seed.sql` adds the Snackyzz primary brand, Baking Stereo, two categories and sample products without `created_by`, so tests can remove the demo admins.
 
+## Implemented fulfillment
+
+- `40_fulfillment/` follows ER §7. Anonymous and signed-in shoppers read active locations and zones, the hours of active locations, delivery hours and settings; `fulfillment.manage` reads everything and writes through RLS with `created_by` / `updated_by` = `auth.uid()`. Hour rows are inserted and deleted, never updated, so they carry `created_*` only; the settings singleton carries `updated_by` only and is created by `*_fulfillment_data.sql`.
+- Invariants in SQL: `closes_at > opens_at`, whole minutes, ISO weekdays, and exclusion constraints on `fulfillment.time_range(opens_at, closes_at)` per weekday (per location for pickup) so ranges never overlap; this needs `btree_gist` (`00_extensions.sql`). Active delivery zone names are unique ignoring case (`delivery_zones_name_key`).
+- Invoker entry points granted to `authenticated`: `fulfillment.set_pickup_location_hours(uuid, jsonb)` and `fulfillment.set_delivery_hours(jsonb)` replace a weekly set atomically. They check `fulfillment.manage` (`42501`), lock the location or settings row so concurrent replacements serialize, and raise `pickup_location_not_found`.
+- `seed.sql` adds one pickup location with Monday–Saturday hours, two zones and today's delivery hours, without `created_by`.
+
 ## Gotchas
 
 - PostgREST reads `[api].schemas` when the stack starts. After adding a schema there, run `supabase stop && supabase start`; `db reset` keeps the old list and the API answers `Invalid schema`.
@@ -72,5 +79,6 @@ The numeric prefixes give a dependency order (FK targets first).
 - PostgREST won't start while `config.toml` exposes a schema that doesn't exist yet. When adding a schema, run `supabase db start` (DB only) with a seed that doesn't use it, generate the migration, then `supabase start` and `db reset`.
 - Demo admins in `seed.sql`: `owner@snackyzz.test` and `staff@snackyzz.test`, local password `snackyzz-demo`.
 - Hosted projects need each new schema added to the Data API's exposed schemas too, not only `config.toml`.
+- API requests load `pg_safeupdate`: a function called through PostgREST can't `delete` or `update` without a `where` clause. pgTAP runs through psql and won't notice; integration tests will.
 - pgTAP runs inside a transaction that never commits, so deferred constraint triggers never fire there; the catalog guard is `initially immediate` for that reason, and entry points defer it themselves.
 - Integration tests write catalog rows that can't be deleted. A test that empties `access.admins` sets `session_replication_role = replica` so audit FKs from other features don't block it.

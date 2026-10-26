@@ -378,6 +378,214 @@ export type Database = {
       [_ in never]: never;
     };
   };
+  fulfillment: {
+    Tables: {
+      delivery_hours: {
+        Row: {
+          closes_at: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          opens_at: string;
+          weekday: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          closes_at: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          opens_at: string;
+          weekday: number;
+        };
+        Update: {
+          closes_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          opens_at?: string;
+          weekday?: number;
+        };
+        Relationships: [];
+      };
+      delivery_zones: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          fee: number;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          fee: number;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          fee?: number;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      pickup_location_hours: {
+        Row: {
+          closes_at: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          opens_at: string;
+          pickup_location_id: string;
+          weekday: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          closes_at: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          opens_at: string;
+          pickup_location_id: string;
+          weekday: number;
+        };
+        Update: {
+          closes_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          opens_at?: string;
+          pickup_location_id?: string;
+          weekday?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pickup_location_hours_pickup_location_id_fkey";
+            columns: ["pickup_location_id"];
+            isOneToOne: false;
+            referencedRelation: "pickup_locations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pickup_locations: {
+        Row: {
+          address: string;
+          archived_at: string | null;
+          city: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          instructions: string | null;
+          map_url: string | null;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          address: string;
+          archived_at?: string | null;
+          city: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instructions?: string | null;
+          map_url?: string | null;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          address?: string;
+          archived_at?: string | null;
+          city?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instructions?: string | null;
+          map_url?: string | null;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      settings: {
+        Row: {
+          created_at: string;
+          delivery_lead_hours: number;
+          delivery_slot_hours: number;
+          id: boolean;
+          is_delivery_enabled: boolean;
+          is_pickup_enabled: boolean;
+          timezone: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          delivery_lead_hours?: number;
+          delivery_slot_hours?: number;
+          id?: boolean;
+          is_delivery_enabled?: boolean;
+          is_pickup_enabled?: boolean;
+          timezone?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          delivery_lead_hours?: number;
+          delivery_slot_hours?: number;
+          id?: boolean;
+          is_delivery_enabled?: boolean;
+          is_pickup_enabled?: boolean;
+          timezone?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      set_delivery_hours: { Args: { p_hours: Json }; Returns: undefined };
+      set_pickup_location_hours: {
+        Args: { p_hours: Json; p_pickup_location_id: string };
+        Returns: undefined;
+      };
+      time_multirange: { Args: Record<PropertyKey, never>; Returns: unknown };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   media: {
     Tables: {
       files: {
@@ -581,6 +789,9 @@ export const Constants = {
     },
   },
   catalog: {
+    Enums: {},
+  },
+  fulfillment: {
     Enums: {},
   },
   media: {

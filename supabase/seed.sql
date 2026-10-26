@@ -207,3 +207,69 @@ values
     false,
     1
   );
+
+-- fulfillment: one sample pickup location with weekday hours, two delivery zones and today's
+-- delivery schedule (Mon–Fri 9:00–18:00, Sat 9:00–15:00). Fixed ids keep demo links stable; the
+-- settings row comes from the fulfillment data migration. No created_by, as for catalog.
+insert into fulfillment.pickup_locations (
+  id,
+  name,
+  address,
+  city,
+  map_url,
+  instructions,
+  sort_order
+)
+values (
+  '00000000-0000-7000-8000-0000000001a1',
+  'Snackyzz Escazú',
+  'Dirección de muestra, 200 m al oeste del parque',
+  'Escazú',
+  'https://maps.google.com/?q=Escazu',
+  'Toca el timbre de la puerta lateral.',
+  0
+);
+
+insert into fulfillment.pickup_location_hours (
+  pickup_location_id,
+  weekday,
+  opens_at,
+  closes_at
+)
+select
+  '00000000-0000-7000-8000-0000000001a1',
+  weekdays.weekday,
+  '10:00',
+  '18:00'
+from generate_series(1, 6) as weekdays (weekday);
+
+insert into fulfillment.delivery_zones (
+  id,
+  name,
+  fee,
+  sort_order
+)
+values
+  (
+    '00000000-0000-7000-8000-0000000001b1',
+    'Escazú',
+    1500,
+    0
+  ),
+  (
+    '00000000-0000-7000-8000-0000000001b2',
+    'San José centro',
+    2500,
+    1
+  );
+
+insert into fulfillment.delivery_hours (
+  weekday,
+  opens_at,
+  closes_at
+)
+select
+  weekdays.weekday,
+  '09:00',
+  case when weekdays.weekday = 6 then '15:00'::time else '18:00'::time end
+from generate_series(1, 6) as weekdays (weekday);
