@@ -338,7 +338,7 @@ erDiagram
   2. Pickup order **and** a `stock_levels` row exists for (variant, that pickup location) → reserve there.
   3. Otherwise (delivery, or a location without its own stock) → reserve from the global row.
 - **Release** (reject/cancel) reverses exactly the order's `order_reservation` movements, so it never needs to re-derive where stock came from.
-- `private.apply_stock_movement(stock_level_id, delta, reason, order_id, admin_id, note)` is the **only** writer of both tables. The `quantity_available >= 0` check rejects overselling atomically. Admin "set to N" records `delta = N − current` with reason `adjustment`.
+- `private.apply_stock_movement(variant_id, quantity, reason, pickup_location_id, admin_id, note, set_quantity)` is the **only** writer of both tables; orders will extend it with the order reference. The `quantity_available >= 0` check rejects overselling atomically. Admin "set to N" records `delta = N − current` with reason `adjustment`.
 - `inventory.variant_availability(variant_ids uuid[], pickup_location_id uuid default null)` (security definer, granted to `anon`) returns `{ variant_id, is_available }` with the same rule and no quantities.
 
 ### Inventory implementation split (inventory / orders)
