@@ -13,6 +13,10 @@ colors:
   warm-red: "#A8321C"
   leaf: "#3F5A1C"
   honey: "#7F4A00"
+  baking-pink: "#F3ABC5"
+  baking-blush: "#FFE1E9"
+  baking-ivory: "#FFFCFA"
+  baking-rose: "#A83F63"
 typography:
   display:
     fontFamily: "Fraunces, Georgia, serif"
@@ -173,6 +177,10 @@ Orange creates appetite and action; cream and chocolate carry almost every struc
 - **Leaf:** Confirmed and completed states.
 - **Honey:** States waiting on someone, such as pending review.
 
+### Collab: Baking Stereo
+
+- **Baking Pink, Blush, Ivory and Rose:** Only on the Baking Stereo brand page (`/brands/baking-stereo`): ivory canvas, blush image wells and dividers, pink tags and button outlines, rose for its label, headline and focus outline. Chocolate stays the text color. No other screen uses them.
+
 **The Orange Has a Job Rule.** Use orange for appetite, action, or brand cadence; never scatter it as decoration.
 
 **The Tint-and-Ink Rule.** A status color appears as text on a 15% tint of itself, never as white text on a solid fill. Each pairing keeps 4.5:1 on both paper and cream.
@@ -195,6 +203,8 @@ Orange creates appetite and action; cream and chocolate carry almost every struc
 - **Title:** Product names and the headings of cards, dialogs, and sheets: Fraunces bold at 24px.
 - **Body:** 16px base, 1.6 line height, with supporting copy capped at 70 characters. Inputs, selects, and menu items stay at 16px on every width, so phones never zoom into a field.
 - **Label:** 14px medium for field labels, table cells, and descriptions; 12px semibold for chips and table headers.
+
+**Collab Editorial Font:** Bodoni Moda regular with Georgia fallback, only for the Baking Stereo page's headline and product names.
 
 **The Two Voices Rule.** Fraunces speaks for products and moments; DM Sans handles every instruction and operation.
 

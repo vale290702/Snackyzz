@@ -113,9 +113,23 @@ export function SignInForm() {
 
 A form with no fields (a sign-out or "retry" button) passes `schema: FormInput.none` and reads only `formError`.
 
+Fields that are not plain text are listed in `fieldKinds`. A `FormFieldKind.Checkbox` field becomes `true` when it was submitted at all and `false` otherwise (an unchecked box submits nothing), so its schema is `z.boolean()`. A `FormFieldKind.List` field becomes every text entry under its name, in order, or `[]`, for checkbox groups and multi-selects; its schema is `z.array(…)`. Every other field reads its first entry.
+
+```ts
+return useFormAction({
+  schema: productInputSchema,
+  action: createProductAction,
+  fieldErrorCodes: Object.values(CatalogFieldError),
+  preserve: ["slug", "name", "description"],
+  fieldKinds: { categoryIds: FormFieldKind.List },
+});
+```
+
+`preserve` restores text only. Keep checkbox, list and select choices the user should not redo after a failure in the hook's state and render those controls controlled; React's form reset leaves controlled values alone.
+
 ### What `useFormAction` does
 
-On each submission it copies the `preserve` fields' raw text, reads every schema key from `FormData`, and parses it. Invalid input becomes an `invalid` state (one code per field, plus any object-level code as `formError`) and the action is **not** called. Valid input goes to the action; its `Result` becomes `failed` (`formError` is its code) or `succeeded` (`state.value`). It returns `{ formAction, isPending, state, values, fieldErrors, formError }`; `state` is the full `FormActionState` union (`FormActionStatus.Idle | Invalid | Failed | Succeeded`) for hooks or components that render by status, or react to success (close a dialog, show a toast).
+On each submission it copies the `preserve` fields' raw text, reads every schema key from `FormData` (by its `fieldKinds` entry, text by default), and parses it. Invalid input becomes an `invalid` state (one code per field, plus any object-level code as `formError`) and the action is **not** called. Valid input goes to the action; its `Result` becomes `failed` (`formError` is its code) or `succeeded` (`state.value`). It returns `{ formAction, isPending, state, values, fieldErrors, formError }`; `state` is the full `FormActionState` union (`FormActionStatus.Idle | Invalid | Failed | Succeeded`) for hooks or components that render by status, or react to success (close a dialog, show a toast).
 
 ### Rules
 
@@ -124,7 +138,7 @@ On each submission it copies the `preserve` fields' raw text, reads every schema
 - **`preserve` is explicit and never holds secrets.** React resets a form after its action runs; list the fields the user should not retype after a failure (email, name, address). Never passwords, tokens or payment data.
 - **Progressive enhancement.** Submit through `<form action>`, not `onSubmit` + `fetch`, so the form works before hydration. Native constraints (`type="email"`, `required`) stay on the inputs; the schema is the source of truth.
 - **One hook, one component.** The hook is named after its component and returns `useFormAction`'s object as is; don't rename or re-map its fields. A hook with extra client logic spreads it and adds named fields: `return { ...form, canSubmit }`.
-- **Extend, don't fork.** A form that needs something new (multi-value fields such as checkbox groups, file uploads, nested objects, optimistic UI) extends `FormInput` / `useFormAction` in `shared/lib/form-action` with tests and updates this section. Do not hand-roll `useActionState` for a form, and do not add React Hook Form, TanStack Form or shadcn `Form` without a new ADR.
+- **Extend, don't fork.** A form that needs something new (file uploads, nested objects, optimistic UI) extends `FormInput` / `useFormAction` in `shared/lib/form-action` with tests and updates this section. Do not hand-roll `useActionState` for a form, and do not add React Hook Form, TanStack Form or shadcn `Form` without a new ADR.
 - **Not a form?** Buttons that mutate without a form (toggles, drag and drop) call the Server Action from the hook inside `useTransition`, return the `Result` code, and the component translates it with `useErrorMessage`.
 
 ### Testing

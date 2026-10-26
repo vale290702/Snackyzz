@@ -30,7 +30,7 @@ export class FormSubmission {
 
   /**
    * Parses one submission and, when it is valid, sends it to the Server Action.
-   * @param options The form's schema, action, field error codes and preserved fields.
+   * @param options The form's schema, action, field error codes, preserved fields and field kinds.
    * @param formData The submitted form data.
    * @returns `invalid` without calling the action, otherwise `failed` or `succeeded`.
    */
@@ -44,7 +44,12 @@ export class FormSubmission {
     formData: FormData,
   ): Promise<FormActionState<FormField<InputSchema>, FieldErrorCode, Value, ErrorCode>> {
     const values = FormInput.values(formData, options.preserve ?? []);
-    const parsed = FormInput.read(options.schema, formData, options.fieldErrorCodes ?? []);
+    const parsed = FormInput.read(
+      options.schema,
+      formData,
+      options.fieldErrorCodes ?? [],
+      options.fieldKinds,
+    );
 
     if (!parsed.ok) {
       return {

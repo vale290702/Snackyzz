@@ -1,6 +1,6 @@
 import type { z } from "zod";
 
-import type { FormActionStatus } from "./form-action.constants";
+import type { FormActionStatus, FormFieldKind } from "./form-action.constants";
 import type { Result, SharedErrorCode } from "../result";
 
 /**
@@ -12,6 +12,16 @@ export type FormSchema = z.ZodObject;
  * A field name of a form schema.
  */
 export type FormField<InputSchema extends FormSchema> = keyof z.input<InputSchema> & string;
+
+/**
+ * How a field's submitted entries are read.
+ */
+export type FormFieldKindValue = (typeof FormFieldKind)[keyof typeof FormFieldKind];
+
+/**
+ * Fields read as something other than text, such as checkboxes and checkbox groups.
+ */
+export type FormFieldKinds<Field extends string> = Partial<Record<Field, FormFieldKindValue>>;
 
 /**
  * Raw submitted text for the fields a form restores after React resets it.
@@ -68,7 +78,8 @@ export type FormActionState<
   | { status: typeof FormActionStatus.Succeeded; values: FormValues<Field>; value: Value };
 
 /**
- * What `useFormAction` needs: the schema, the action, the codes the schema reports, the fields to restore.
+ * What `useFormAction` needs: the schema, the action, the codes the schema reports, the fields to
+ * restore and the fields that are not plain text.
  */
 export type FormActionOptions<
   InputSchema extends FormSchema,
@@ -80,6 +91,7 @@ export type FormActionOptions<
   action: FormServerAction<InputSchema, Value, ErrorCode>;
   fieldErrorCodes?: readonly FieldErrorCode[];
   preserve?: readonly FormField<InputSchema>[];
+  fieldKinds?: FormFieldKinds<FormField<InputSchema>>;
 };
 
 /**

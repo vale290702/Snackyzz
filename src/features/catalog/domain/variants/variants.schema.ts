@@ -12,6 +12,11 @@ const variantFields = {
 };
 
 /**
+ * A variant's editable fields without its product, as the variant form submits them.
+ */
+export const variantFieldsInputSchema = z.object(variantFields);
+
+/**
  * A new way to sell a product. The product's first variant becomes its default.
  */
 export const variantInputSchema = z.object({

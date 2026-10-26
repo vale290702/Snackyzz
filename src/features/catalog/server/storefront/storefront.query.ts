@@ -7,7 +7,7 @@ import { createAnonClient } from "@/integrations/supabase/anon-client";
 
 import { StorefrontAssembly } from "./storefront-assembly.helper";
 import { storefrontRepository } from "./storefront.repository";
-import type { StorefrontCatalog } from "./storefront.types";
+import type { BrandShelf, StorefrontCatalog } from "./storefront.types";
 import { CatalogFields } from "../../domain/fields";
 import { CATALOG_CACHE_TAG } from "../mutation";
 
@@ -31,6 +31,25 @@ export async function listStorefrontCatalog(brandSlug?: string): Promise<Storefr
   }
 
   return loadStorefrontCatalog(parsed.data);
+}
+
+/**
+ * Loads one brand's page from the cached storefront catalog.
+ * @param brandSlug A brand page's slug, from the URL; omit it for the primary brand's shop.
+ * @returns The brand, its products on sale and the other brands; null for an unknown slug.
+ * @throws When the database request fails.
+ */
+export async function getBrandShelf(brandSlug?: string): Promise<BrandShelf | null> {
+  if (brandSlug === undefined) {
+    return StorefrontAssembly.shelf(await loadStorefrontCatalog(null), null);
+  }
+
+  const parsed = CatalogFields.slug.safeParse(brandSlug);
+  if (!parsed.success) {
+    return null;
+  }
+
+  return StorefrontAssembly.shelf(await loadStorefrontCatalog(null), parsed.data);
 }
 
 async function loadStorefrontCatalog(brandSlug: string | null): Promise<StorefrontCatalog> {

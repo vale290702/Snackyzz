@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { FormActionStatus, FormSubmission } from ".";
+import { FormActionStatus, FormFieldKind, FormSubmission } from ".";
 
 const schema = z.object({
   email: z
@@ -62,6 +62,27 @@ describe("FormSubmission.submit", () => {
     );
 
     expect(state).toEqual({ status: FormActionStatus.Succeeded, values: {}, value: { id: "a1" } });
+  });
+});
+
+describe("FormSubmission.submit with field kinds", () => {
+  it("sends checkbox and list fields in their parsed form", async () => {
+    const action = vi.fn().mockResolvedValue({ ok: true, value: null });
+    const schema = z.object({ isActive: z.boolean(), tags: z.array(z.string()) });
+    const data = new FormData();
+    data.append("tags", "a");
+    data.append("tags", "b");
+
+    await FormSubmission.submit(
+      {
+        schema,
+        action,
+        fieldKinds: { isActive: FormFieldKind.Checkbox, tags: FormFieldKind.List },
+      },
+      data,
+    );
+
+    expect(action).toHaveBeenCalledWith({ isActive: false, tags: ["a", "b"] });
   });
 });
 
