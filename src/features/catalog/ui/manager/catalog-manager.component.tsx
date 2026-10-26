@@ -11,6 +11,7 @@ import { CatalogEditor } from "./catalog-editor.component";
 import { CategoryRows } from "./category-rows.component";
 import { FilterPills } from "./filter-pills.component";
 import { ProductRows } from "./product-rows.component";
+import { ViewTabs } from "./view-tabs.component";
 import { useCatalogManager } from "../../hooks/manager/use-catalog-manager.hook";
 import type { CatalogManagerData } from "../../index";
 
@@ -33,7 +34,7 @@ export function CatalogManager({ data }: CatalogManagerProps) {
 
   return (
     <div className="grid gap-8">
-      <FilterPills
+      <ViewTabs
         label={translate("viewsLabel")}
         options={manager.viewOptions.map((value) => ({
           value,

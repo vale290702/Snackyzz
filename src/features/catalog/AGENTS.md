@@ -31,8 +31,8 @@ What we sell: brands (Snackyzz is primary; collabs are rows), categories, produc
 - `server/manager/`: `managerRepository` (every row, archived included) and `getCatalogManager`.
 - `server/images/images.actions.ts`: `createCatalogImageUploadAction` / `registerCatalogImageUploadAction`, media's upload actions restricted to the catalog purposes. Client hooks call these because media's index also exports server-only reads.
 - `server/testing/`: integration-test helpers only (in-memory cookies, demo admins, file fixtures).
-- `hooks/storefront/`: `useProductCard`, `useProductDialog`, `useProductPurchase` (+ `ProductPurchaseContext`). `hooks/manager/`: `useCatalogManager`, one form hook per record (`useBrandForm`, `useCategoryForm`, `useProductForm`, `useVariantForm`), `useVariantsSection`, `useRecordAction` / `useArchiveRecord`, `useCatalogImageUpload`.
-- `ui/storefront/`: `ProductGrid`, `ProductCard`, `ProductDialog`, `VariantPicker`, `BrandHeader`, `BrandShelf` and shelf parts; `ProductLook` (`classic` / `editorial`) picks the cva variants. `ui/brand-pages/`: `BrandPage`, `GenericBrandPage`, `BakingStereoPage`, `BESPOKE_BRAND_PAGES`. `ui/manager/`: `CatalogManager` and its rows, editor and forms. `ui/testing/`: `CatalogRecords` builders for hook and component tests.
+- `hooks/storefront/`: `useProductCard`, `useProductDialog`, `useProductPurchase` (+ `ProductPurchaseContext`). `hooks/manager/`: `useCatalogManager`, one form hook per record (`useBrandForm`, `useCategoryForm`, `useProductForm`, `useVariantForm`), `useVariantsSection`, `useRecordAction` / `useArchiveRecord`, `useCatalogImageUpload`, `useEditorPanel` (scrolls the editor into view and focuses its title when it opens on a record).
+- `ui/storefront/`: `ProductGrid`, `ProductCard`, `ProductDialog`, `VariantPicker`, `BrandHeader`, `BrandShelf` and shelf parts; `ProductLook` (`classic` / `editorial`) picks the cva variants. `ui/brand-pages/`: `BrandPage`, `GenericBrandPage`, `BakingStereoPage`, `BESPOKE_BRAND_PAGES`. `ui/manager/`: `CatalogManager` (underlined `ViewTabs` for products / brands / categories under the admin header's section tabs, `FilterPills` for brand and status) and its rows, editor and forms. `ui/testing/`: `CatalogRecords` builders for hook and component tests.
 
 ## Invariants
 
@@ -71,6 +71,7 @@ What we sell: brands (Snackyzz is primary; collabs are rows), categories, produc
 - Catalog images render with `next/image` `unoptimized`, since the Supabase host isn't a configured remote pattern.
 - After a save, a form's text fields come back from `values` (`preserve`); brand, categories, stock tracking and images are controlled hook state. Image fields upload on pick and submit only a hidden `*FileId`, rendered only when there is one (an empty string fails `uuid`).
 - Archived records can't be restored from the panel yet.
+- Below 1024 px the editor renders after the whole list; `useEditorPanel` is what brings it into view, so keep it on `EditorPanel`.
 - Every admin mutation must go through `runCatalogMutation`, or the storefront stays stale.
 - A new expected constraint or raised message needs an entry in `DATABASE_FAILURES`, or it surfaces as `unexpected`.
 - Bulk inserts through PostgREST set missing columns to null unless `defaultToNull: false`.

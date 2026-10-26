@@ -11,6 +11,8 @@ export {
 export { signInAction } from "./server/sign-in";
 export { signOutAction } from "./server/sign-out";
 export { AdminHeader } from "./ui/admin-header/admin-header.component";
+export { AdminSection } from "./ui/admin-header/admin-sections.constants";
+export type { AdminSectionValue } from "./ui/admin-header/admin-sections.types";
 export { SignInForm } from "./ui/sign-in/sign-in-form.component";
 export { SignInWelcome } from "./ui/sign-in/sign-in-welcome.component";
 export { SignOutButton } from "./ui/sign-out/sign-out-button.component";

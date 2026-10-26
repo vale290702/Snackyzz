@@ -29,6 +29,7 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
     return (
       <EditorPanel
         title={translate(isCreating ? "brandForm.createTitle" : "brandForm.editTitle")}
+        recordKey={manager.editingId}
         onClose={manager.closeEditor}
       >
         <BrandForm key={manager.editingId} brand={editingBrand} onSaved={manager.closeEditor} />
@@ -40,6 +41,7 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
     return (
       <EditorPanel
         title={translate(isCreating ? "categoryForm.createTitle" : "categoryForm.editTitle")}
+        recordKey={manager.editingId}
         onClose={manager.closeEditor}
       >
         <CategoryForm
@@ -54,6 +56,7 @@ export function CatalogEditor({ manager }: CatalogEditorProps) {
   return (
     <EditorPanel
       title={translate(isCreating ? "productForm.createTitle" : "productForm.editTitle")}
+      recordKey={manager.editingId}
       onClose={manager.closeEditor}
     >
       <ProductForm

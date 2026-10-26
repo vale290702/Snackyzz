@@ -1,11 +1,11 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/shared/ui/button";
-import { DialogContent, DialogDescription, DialogTitle } from "@/shared/ui/dialog";
+import { DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/shared/ui/dialog";
 
 import { ProductPrice } from "./product-price.component";
 import { VariantPicker } from "./variant-picker.component";
@@ -32,10 +32,8 @@ export function ProductDialog({ product, brandLabel }: ProductDialogProps) {
   const translate = useTranslations("catalog.product");
 
   return (
-    <DialogContent
-      closeLabel={translate("closeDetails")}
-      className="max-w-200 gap-0 bg-background p-0 md:grid-cols-2"
-    >
+    <DialogContent className="max-w-200 gap-0 bg-background p-0 md:grid-cols-2">
+      <DialogCloseChip label={translate("closeDetails")} />
       <DialogPhoto product={product} />
       <div className="px-6 py-7 md:px-7.5 md:pt-12.5 md:pb-7.5">
         <DialogTitle className="mb-5 text-4xl leading-display tracking-display">
@@ -63,6 +61,28 @@ export function ProductDialog({ product, brandLabel }: ProductDialogProps) {
         </Button>
       </div>
     </DialogContent>
+  );
+}
+
+/**
+ * The round cream close button over the dialog's corner, which stays legible over the photo on
+ * phones.
+ * @param props The close button's accessible label.
+ * @param props.label The label read by screen readers.
+ * @returns The close button.
+ */
+function DialogCloseChip({ label }: { label: string }) {
+  return (
+    <DialogClose asChild>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-2 right-2 z-10 size-11 rounded-round bg-background hover:translate-y-0"
+      >
+        <X aria-hidden className="size-5" strokeWidth={1.7} />
+        <span className="sr-only">{label}</span>
+      </Button>
+    </DialogClose>
   );
 }
 

@@ -34,10 +34,27 @@ test("the owner manages the catalog", async ({ page }) => {
   await page.goto("/admin/catalog");
 
   await expect(page.getByRole("heading", { level: 1, name: "Productos." })).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Secciones de administración" })
+      .getByRole("link", { name: "Productos" }),
+  ).toHaveAttribute("aria-current", "page");
   await page.getByRole("button", { name: "Editar Choco Cloud" }).click();
   const editor = page.getByRole("region", { name: "Editar producto" });
   await expect(editor.getByLabel("Nombre", { exact: true })).toHaveValue("Choco Cloud");
   await expect(editor.getByRole("region", { name: "Presentaciones" })).toContainText("Unidad");
+});
+
+test("the editor comes into view when the owner starts a new product", async ({ page }) => {
+  await signInAs(page, "owner@snackyzz.test");
+  await page.goto("/admin/catalog");
+
+  await page.getByRole("button", { name: "Nuevo producto" }).click();
+
+  // On phones the editor renders below the whole list.
+  const title = page.getByRole("heading", { level: 2, name: "Nuevo producto" });
+  await expect(title).toBeInViewport();
+  await expect(title).toBeFocused();
 });
 
 test("shoppers browse the shop and open a product", async ({ page }) => {
