@@ -270,7 +270,7 @@ export default function AppShell() {
       if (name === 'name' || name === 'email' || name === 'phone') patch({ draft: { ...data.draft, [name]: value }, idempotencyKey: '' });
       else {
         const key = name === 'fulfillmentType' ? 'type' : name;
-        patch({ fulfillment: { ...data.fulfillment, [key]: (key === 'deliveryTermsAccepted' || key === 'espinalResident') ? value === 'true' : value, ...(key === 'type' && value !== data.fulfillment.type ? { deliveryTermsAccepted: false, promoCode: '', espinalResident: false } : {}), ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
+        patch({ fulfillment: { ...data.fulfillment, [key]: (key === 'deliveryTermsAccepted' || key === 'espinalResident') ? value === 'true' : value, ...(key === 'type' && value !== data.fulfillment.type ? { deliveryTermsAccepted: false, promoCode: '', espinalResident: false } : {}), ...(key === 'promoCode' ? { espinalResident: false } : {}), ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
       }
     },
     receiptChange,

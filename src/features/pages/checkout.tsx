@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { validatePromotion } from "../../../supabase/functions/_shared/commerce";
 import { Icon, Cart, useStoreActions } from "../../components/store/ui";
 import { DELIVERY_COVERAGE_NOTICE, DELIVERY_ESTIMATE, DELIVERY_POLICY_NOTICE, DELIVERY_TERMS_URL } from "../../../supabase/functions/_shared/delivery-policy";
 import { deliveryQuote } from "../../lib/delivery-zones";
@@ -29,6 +31,17 @@ export function Checkout({
   validatingReceipt,
 }: CheckoutProps) {
   const actions = useStoreActions();
+  const [promoInput, setPromoInput] = useState(fulfillment.promoCode || "");
+  const [promoError, setPromoError] = useState("");
+  const promoValidated = Boolean(fulfillment.promoCode);
+  const applyPromo = () => {
+    if (!promoInput.trim()) { setPromoError("Escribe un código promocional."); return; }
+    try {
+      const code = validatePromotion(promoInput, fulfillment.type, true);
+      actions.checkoutChange("promoCode", code);
+      setPromoError("");
+    } catch { setPromoError("El código no es válido. Revisa e inténtalo de nuevo."); }
+  };
   if (!cart.getCount())
     return (
       <main
@@ -341,12 +354,20 @@ export function Checkout({
                     </div>
                   </div>
                   <div className="field">
-                    <label htmlFor="promo-code">Código de envío gratis</label>
-                    <input id="promo-code" name="promoCode" maxLength={60} value={fulfillment.promoCode || ""} placeholder="EspinalSnackyzz" onChange={event => actions.checkoutChange("promoCode", event.target.value)} aria-describedby="espinal-help" />
-                    <small id="espinal-help">Envío gratis únicamente para personas que viven en Espinal con el código EspinalSnackyzz.</small>
+                    <label htmlFor="promo-code">Código promocional</label>
+                    <input id="promo-code" name="promoCode" maxLength={60} value={promoInput} onChange={event => {
+                      setPromoInput(event.target.value);
+                      setPromoError("");
+                      actions.checkoutChange("promoCode", "");
+                    }} aria-describedby={promoError ? "promo-error" : undefined} aria-invalid={Boolean(promoError)} />
+                    <button type="button" className="button button-outline" onClick={applyPromo}>Aplicar</button>
+                    {promoError && <small id="promo-error" role="alert">{promoError}</small>}
                   </div>
-                  <label className="check-field"><input type="checkbox" name="espinalResident" checked={fulfillment.espinalResident === true} onChange={event => actions.checkoutChange("espinalResident", String(event.target.checked))} />Confirmo que vivo en Espinal y que el pedido se entrega en Espinal.</label>
-                  <p role="status">{fulfillment.promoCode?.trim().toLowerCase() === "espinalsnackyzz" && fulfillment.espinalResident ? "Envío gratis · EspinalSnackyzz aplicado." : ""}</p>
+                  {promoValidated && <>
+                    <small>Envío gratis únicamente para personas que viven en Espinal.</small>
+                    <label className="check-field"><input type="checkbox" name="espinalResident" checked={fulfillment.espinalResident === true} onChange={event => actions.checkoutChange("espinalResident", String(event.target.checked))} />Confirmo que vivo en Espinal y que el pedido se entrega en Espinal.</label>
+                    {fulfillment.espinalResident && <p role="status">Envío gratis aplicado.</p>}
+                  </>}
                   <div className="uber-notice">
                     <Icon name="pin" />
                     <p>
