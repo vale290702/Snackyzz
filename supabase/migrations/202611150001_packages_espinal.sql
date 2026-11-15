@@ -26,18 +26,18 @@ alter table public.order_items add column line_total integer;
 update public.order_items set line_total = price * quantity;
 alter table public.order_items alter column line_total set not null;
 alter table public.order_items add constraint positive_line_total check(line_total > 0);
-drop function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time);
+drop function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time,uuid);
 create function public.create_order(
   p_key text, p_fingerprint text, p_name text, p_email text, p_phone text,
   p_items jsonb, p_receipt_path text, p_fulfillment_type text,
   p_pickup_location_id uuid default null, p_delivery_address text default '',
-  p_delivery_date date default null, p_delivery_slot_start time default null,
-  p_promo_code text default '', p_espinal_resident boolean default false
+  p_delivery_date date default null, p_delivery_slot_start time default null, p_delivery_zone_id uuid default null, p_promo_code text default '', p_espinal_resident boolean default false
 ) returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   v_existing public.orders; v_order public.orders; v_item jsonb; v_product public.products;
   v_location public.sales_points; v_settings public.store_settings; v_quantity integer; v_total integer := 0;
   v_snapshots jsonb := '[]'::jsonb; v_seen text[] := array[]::text[]; v_label text; v_address text;
+  v_zone public.delivery_zones; v_delivery_fee integer := 0; v_zone_name text := '';
   v_line_total integer; v_costs integer[]; v_count integer; v_pack jsonb;
   v_day text; v_hours jsonb; v_slot_end time; v_local_now timestamp;
 begin
@@ -57,6 +57,9 @@ begin
     v_label := v_location.name; v_address := v_location.address || case when v_location.city='' then '' else ', ' || v_location.city end;
     p_delivery_date := null; p_delivery_slot_start := null; v_slot_end := null;
   elsif p_fulfillment_type='uber' then
+    select * into v_zone from public.delivery_zones where id=p_delivery_zone_id and active for share;
+    if not found then raise exception 'Invalid delivery zone'; end if;
+    v_delivery_fee := v_zone.price; v_zone_name := v_zone.name;
     if not v_settings.uber_delivery_enabled then raise exception 'Messenger delivery disabled'; end if;
     if length(trim(coalesce(p_delivery_address,''))) not between 8 and 300 or p_delivery_address ~ '[\x00-\x08\x0B\x0C\x0E-\x1F]' then raise exception 'Invalid delivery address'; end if;
     if p_delivery_date is null or p_delivery_slot_start is null then raise exception 'Delivery schedule required'; end if;
@@ -77,12 +80,13 @@ begin
     end if;
     p_promo_code := 'EspinalSnackyzz';
   end if;
+  if p_promo_code <> '' then v_delivery_fee := 0; end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) not between 1 and 3 then raise exception 'Invalid cart'; end if;
-  for v_item in select value from jsonb_array_elements(p_items) loop
+  for v_item in select value from jsonb_array_elements(p_items) order by value->>'productId' loop
     if v_item->'quantity' is null or jsonb_typeof(v_item->'quantity') <> 'number' or (v_item->>'quantity') !~ '^[0-9]{1,2}$' then raise exception 'Invalid quantity'; end if;
     v_quantity := (v_item->>'quantity')::integer;
     if v_quantity not between 1 and 99 or (v_item->>'productId')=any(v_seen) then raise exception 'Invalid quantity'; end if;
-    select * into v_product from public.products where id=v_item->>'productId' and active for share;
+    select * into v_product from public.products where id=v_item->>'productId' and active for update;
     if not found then raise exception 'Unknown product'; end if;
     v_costs := array[0];
     for v_count in 1..v_quantity loop
@@ -98,19 +102,20 @@ begin
     v_snapshots := v_snapshots || jsonb_build_array(jsonb_build_object('productId',v_product.id,'name',v_product.name,'price',v_product.price,'quantity',v_quantity,'lineTotal',v_line_total));
   end loop;
   if p_receipt_path is null or p_receipt_path !~ '^[0-9a-f-]{36}\.jpg$' or not exists(select 1 from storage.objects where bucket_id='receipts' and name=p_receipt_path) then raise exception 'Receipt is required'; end if;
-  insert into public.orders(idempotency_key,fingerprint,name,email,phone,total,receipt_path,fulfillment_type,fulfillment_label,fulfillment_address,pickup_location_id,delivery_date,delivery_slot_start,delivery_slot_end,promo_code,espinal_resident)
-    values(p_key,p_fingerprint,trim(p_name),p_email,p_phone,v_total,p_receipt_path,p_fulfillment_type,v_label,v_address,p_pickup_location_id,p_delivery_date,p_delivery_slot_start,v_slot_end,p_promo_code,p_promo_code <> '') returning * into v_order;
+  insert into public.orders(idempotency_key,fingerprint,name,email,phone,total,receipt_path,fulfillment_type,fulfillment_label,fulfillment_address,pickup_location_id,delivery_date,delivery_slot_start,delivery_slot_end,delivery_zone_id,delivery_zone_name,delivery_fee,promo_code,espinal_resident)
+    values(p_key,p_fingerprint,trim(p_name),p_email,p_phone,v_total+v_delivery_fee,p_receipt_path,p_fulfillment_type,v_label,v_address,p_pickup_location_id,p_delivery_date,p_delivery_slot_start,v_slot_end,case when p_fulfillment_type='uber' then p_delivery_zone_id else null end,v_zone_name,v_delivery_fee,p_promo_code,p_promo_code <> '') returning * into v_order;
   insert into public.order_items(order_id,product_id,name,price,quantity,line_total) select v_order.id,value->>'productId',value->>'name',(value->>'price')::integer,(value->>'quantity')::integer,(value->>'lineTotal')::integer from jsonb_array_elements(v_snapshots);
   return jsonb_build_object('order',jsonb_build_object('id',v_order.id,'status',v_order.status,'total',v_order.total,'createdAt',v_order.created_at),'reused',false);
 end;
 $$;
-revoke all on function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time,text,boolean) from public,anon,authenticated;
-grant execute on function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time,text,boolean) to service_role;
+
+revoke all on function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time,uuid,text,boolean) from public,anon,authenticated;
+grant execute on function public.create_order(text,text,text,text,text,jsonb,text,text,uuid,text,date,time,uuid,text,boolean) to service_role;
 
 create or replace function public.order_snapshot(p_order_id uuid) returns jsonb language sql stable security definer set search_path = '' as $$
-  select jsonb_build_object('id',o.id,'name',o.name,'email',o.email,'phone',o.phone,'total',o.total,'status',o.status,'createdAt',o.created_at,'confirmedAt',o.confirmed_at,
-    'receiptPath',o.receipt_path,'emailStatus',coalesce(e.status,'not_sent'),'fulfillmentType',o.fulfillment_type,'fulfillmentLabel',o.fulfillment_label,
-    'promoCode',o.promo_code,'espinalResident',o.espinal_resident,'fulfillmentAddress',o.fulfillment_address,'deliveryDate',o.delivery_date,'deliverySlotStart',o.delivery_slot_start,'deliverySlotEnd',o.delivery_slot_end,
+  select jsonb_build_object('id',o.id,'name',o.name,'email',o.email,'phone',o.phone,'total',o.total,'status',o.status,'createdAt',o.created_at,'confirmedAt',o.confirmed_at,'confirmationComment',o.confirmation_comment,'rejectedAt',o.rejected_at,'rejectionReason',o.rejection_reason,
+    'receiptPath',o.receipt_path,'refundReceiptPath',o.refund_receipt_path,'emailStatus',coalesce(e.status,'not_sent'),'fulfillmentType',o.fulfillment_type,'fulfillmentLabel',o.fulfillment_label,
+    'promoCode',o.promo_code,'espinalResident',o.espinal_resident,'fulfillmentAddress',o.fulfillment_address,'deliveryDate',o.delivery_date,'deliverySlotStart',o.delivery_slot_start,'deliverySlotEnd',o.delivery_slot_end,'deliveryZoneName',o.delivery_zone_name,'deliveryFee',o.delivery_fee,'deliveryZoneId',o.delivery_zone_id,
     'items',(select coalesce(jsonb_agg(jsonb_build_object('productId',i.product_id,'name',i.name,'price',i.price,'quantity',i.quantity,'lineTotal',i.line_total) order by i.product_id),'[]'::jsonb) from public.order_items i where i.order_id=o.id))
   from public.orders o left join public.email_outbox e on e.order_id=o.id where o.id=p_order_id;
 $$;

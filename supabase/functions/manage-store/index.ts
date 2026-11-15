@@ -1,3 +1,4 @@
+import { isSeasonalTheme } from "../_shared/seasonal-theme.ts";
 import { cors, errorResponse, json, serviceClient } from "../_shared/http.ts";
 import { InputError } from "../_shared/validation.ts";
 
@@ -35,27 +36,51 @@ Deno.serve(async(request:Request)=>{
     if(!["GET","POST"].includes(request.method)) throw new InputError("Método no permitido.",405);
     const db=await authorize(request);
     if(request.method==="GET"){
-      const [settings,locations]=await Promise.all([
+      const [settings,locations,zones]=await Promise.all([
         db.from("store_settings").select("*").eq("id",1).single(),
         db.from("sales_points").select("*").order("position").order("name"),
+        db.from("delivery_zones").select("*").order("name"),
       ]);
-      if(settings.error||locations.error) throw new InputError("No se pudo cargar la configuración.",503);
-      return json({settings:settings.data,locations:locations.data,emailConfigured:Boolean(Deno.env.get("RESEND_API_KEY")&&Deno.env.get("FROM_EMAIL"))},200,headers);
+      if(settings.error||locations.error||zones.error) throw new InputError("No se pudo cargar la configuración.",503);
+      return json({settings:settings.data,locations:locations.data,zones:zones.data,emailConfigured:Boolean(Deno.env.get("RESEND_API_KEY")&&Deno.env.get("FROM_EMAIL"))},200,headers);
     }
     const body=await request.json();
+    if(body.action==="save-theme") {
+      if (!isSeasonalTheme(body.theme)) throw new InputError("Selecciona un tema de temporada válido.");
+      const {data,error}=await db.from("store_settings").update({seasonal_theme:body.theme}).eq("id",1).select().single();
+      if (error) throw new InputError("No se pudo guardar el tema. Inténtalo de nuevo.",503);
+      return json({settings:data},200,headers);
+    }
     if(body.action==="save-settings"){
+      if (body.demoCatalog !== undefined && typeof body.demoCatalog !== "boolean") throw new InputError("Revisa el modo de prueba.");
       const values={
+        ...(typeof body.demoCatalog === "boolean" ? { demo_catalog: body.demoCatalog } : {}),
         sinpe_number:clean(body.sinpeNumber,30),sinpe_recipient:clean(body.sinpeRecipient,100),
         whatsapp:clean(body.whatsapp,30),public_email:clean(body.publicEmail,254),instagram:clean(body.instagram,80),
         uber_delivery_enabled:Boolean(body.uberDeliveryEnabled),uber_disclaimer:clean(body.uberDisclaimer,300,10),
         delivery_lead_hours:Number(body.deliveryLeadHours),delivery_slot_hours:Number(body.deliverySlotHours),delivery_schedule:deliverySchedule(body.deliverySchedule),
       };
+      if (values.demo_catalog === false && (!values.sinpe_number || !values.sinpe_recipient)) throw new InputError("Completa el número y destinatario SINPE antes de desactivar el modo de prueba.");
       if(!Number.isInteger(values.delivery_lead_hours)||values.delivery_lead_hours<0||values.delivery_lead_hours>168||!Number.isInteger(values.delivery_slot_hours)||values.delivery_slot_hours<1||values.delivery_slot_hours>12) throw new InputError("Revisa la anticipación y duración de los horarios.");
       if(values.public_email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.public_email)) throw new InputError("Revisa el correo público.");
       if(values.whatsapp&&!/^\+?[0-9\s-]{8,30}$/.test(values.whatsapp)) throw new InputError("Revisa el número de WhatsApp.");
       const {data,error}=await db.from("store_settings").update(values).eq("id",1).select().single();
       if(error) throw new InputError("No se pudo guardar la configuración.",503);
       return json({settings:data},200,headers);
+    }
+    if(body.action === "save-zone") {
+      const values = { name: clean(body.name,100,2), price: Number(body.price) };
+      if (!Number.isInteger(values.price) || values.price < 0 || values.price > 1000000) throw new InputError("Revisa el precio de envío.");
+      if (body.id && !/^[0-9a-f-]{36}$/i.test(body.id)) throw new InputError("Zona inválida.");
+      const query = body.id ? db.from("delivery_zones").update(values).eq("id",body.id) : db.from("delivery_zones").insert(values);
+      const {data,error} = await query.select().single();
+      if(error) throw new InputError("No se pudo guardar la zona. Revisa que el nombre no esté repetido.",503);
+      return json({zone:data},body.id?200:201,headers);
+    }
+    if (["archive-zone","restore-zone"].includes(body.action) && /^[0-9a-f-]{36}$/i.test(body.id ?? "")) {
+      const {data,error} = await db.from("delivery_zones").update({active:body.action === "restore-zone"}).eq("id",body.id).select().single();
+      if(error) throw new InputError("No se pudo actualizar la zona.",503);
+      return json({zone:data},200,headers);
     }
     if(body.action==="save-location"){
       const values={name:clean(body.name,100,2),city:clean(body.city,100,2),address:clean(body.address,300,5),hours:clean(body.hours,200),map_url:clean(body.mapUrl,500),position:Number(body.position),active:true};

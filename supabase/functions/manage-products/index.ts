@@ -8,6 +8,7 @@ type Product = {
   name: string;
   brand: "snackyzz" | "baking-stereo";
   price: number;
+  stock: number;
   description: string;
   tag: string;
   image: string;
@@ -114,6 +115,8 @@ Deno.serve(async (request: Request) => {
     if (!["snackyzz", "baking-stereo"].includes(brand)) {
       throw new InputError("Selecciona una sección del catálogo válida.");
     }
+    const stock = form.has("stock") ? integer(form, "stock", 0, 1_000_000) : 0;
+    const expectedStock = id && form.has("expectedStock") ? integer(form, "expectedStock", 0, 1_000_000) : stock;
     let packages;
     try { packages = validatePackages(JSON.parse(String(form.get("packages") ?? "[]"))); }
     catch (error) { throw new InputError(error instanceof Error ? error.message : "Revisa los paquetes."); }
@@ -167,10 +170,10 @@ Deno.serve(async (request: Request) => {
     if (!image) throw new InputError("Selecciona una imagen del producto.");
     let result;
     if (id) {
-      result = await db.from("products").update({ ...values, image }).eq(
-        "id",
-        id,
-      ).select().single();
+      let update = db.from("products").update({ ...values, image, ...(stock !== expectedStock ? {stock} : {}) }).eq("id",id);
+      if (stock !== expectedStock) update = update.eq("stock",expectedStock);
+      result = await update.select().single();
+
     } else {
       const slug =
         name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -178,6 +181,7 @@ Deno.serve(async (request: Request) => {
         "producto";
       result = await db.from("products").insert({
         ...values,
+        stock,
         id: `${slug}-${crypto.randomUUID().slice(0, 8)}`,
         image,
         active: true,
@@ -187,6 +191,7 @@ Deno.serve(async (request: Request) => {
       if (uploadedPath) {
         await db.storage.from("product-images").remove([uploadedPath]);
       }
+      if (result.error.code === 'PGRST116') throw new InputError('El stock cambió mientras editabas. Recarga el producto antes de ajustar el inventario.',409);
       throw new InputError("No se pudo guardar el producto.", 503);
     }
     const oldPath = id && uploadedPath ? publicPath(existingImage) : "";
