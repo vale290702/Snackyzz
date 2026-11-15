@@ -204,3 +204,22 @@ Implementation references: [Supabase Edge auth](https://supabase.com/docs/guides
 [private Storage policies](https://supabase.com/docs/guides/storage/security/access-control),
 [Resend from Edge Functions](https://supabase.com/docs/guides/functions/examples/send-emails),
 [PGlite](https://pglite.dev/docs/).
+
+
+## Cookie packages and Espinal delivery
+
+Apply `202611150001_packages_espinal.sql`, then deploy `create-order`,
+`manage-products`, and `manage-orders` and publish the frontend build. The migration
+keeps existing order totals and adds package totals to new order snapshots.
+
+In Administración → Productos → Editar, set the individual cookie price and add
+packages with a quantity (2–99 cookies) and total price in whole colones. Package
+sizes must be unique per product. Cart and database choose the cheapest exact
+combination of repeatable packages and individual cookies for each flavor.
+Existing products keep their individual price until an admin configures packages.
+
+At checkout, `EspinalSnackyzz` (case insensitive) applies only to messenger
+orders with an explicit confirmation that the customer and delivery address are
+in Espinal. It waives the separately paid messenger service; it does not discount
+products. Admin order details and confirmation emails show the code. The admin
+must verify the delivery address; there is no automated geolocation check.

@@ -61,7 +61,7 @@ export function imageDimensions(bytes: Uint8Array) {
   return {width,height};
 }
 
-export async function fingerprint(fields: ReturnType<typeof validateFields>, bytes: Uint8Array) {
+export async function fingerprint(fields: ReturnType<typeof validateFields> & Record<string, unknown>, bytes: Uint8Array) {
   const receiptHash = await crypto.subtle.digest('SHA-256', bytes as BufferSource);
   const content = new TextEncoder().encode(JSON.stringify(fields) + Array.from(new Uint8Array(receiptHash), b => b.toString(16).padStart(2,'0')).join(''));
   const digest = await crypto.subtle.digest('SHA-256',content);

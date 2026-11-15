@@ -33,3 +33,15 @@ test("admin configuration exposes store and pickup controls plus email diagnosis
   assert.match(html, /Nuevo punto/);
   assert.match(html, /RESEND_API_KEY/);
 });
+
+test('delivery checkout offers the Espinal code and residence confirmation', () => {
+  const html = checkout();
+  assert.match(html, /name="promoCode"/);
+  assert.match(html, /name="espinalResident"/);
+  assert.match(html, /únicamente para personas que viven en Espinal/);
+});
+test('free delivery replaces the separate delivery charge notice', () => {
+  const html = checkout({fulfillment:{type:'uber',promoCode:'EspinalSnackyzz',espinalResident:true}});
+  assert.match(html, /Envío gratis/);
+  assert.doesNotMatch(html, /corre por cuenta del cliente y se paga por separado/);
+});

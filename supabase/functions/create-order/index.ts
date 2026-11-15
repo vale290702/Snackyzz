@@ -1,3 +1,4 @@
+import { validatePromotion } from "../_shared/commerce.js";
 import { boundedForm, cors, errorResponse, json, serviceClient } from '../_shared/http.ts';
 import { InputError, MAX_BYTES, fingerprint, validateFields } from '../_shared/validation.ts';
 import { normalizeReceipt } from '../_shared/receipt.ts';
@@ -19,12 +20,16 @@ Deno.serve(async (request: Request) => {
     const deliverySlotStart = String(form.get('deliverySlotStart') ?? '');
     if (!['pickup','uber'].includes(fulfillmentType)) throw new InputError('Selecciona retiro o entrega por Uber.');
     if (deliveryAddress.length > 300) throw new InputError('La dirección es demasiado larga.');
+    let promoCode;
+    const espinalResident = form.get('espinalResident') === 'true';
+    try { promoCode = validatePromotion(form.get('promoCode'), fulfillmentType, espinalResident); }
+    catch (error) { throw new InputError(error instanceof Error ? error.message : 'Revisa el código.'); }
     const receipt = form.get('receipt');
     if (!(receipt instanceof File) || !receipt.size) throw new InputError('Adjunta una imagen del comprobante SINPE.');
     if (receipt.size > MAX_BYTES) throw new InputError('El comprobante debe pesar como máximo 5 MB.');
     const original = new Uint8Array(await receipt.arrayBuffer());
     if (fulfillmentType === 'uber' && (!/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate) || !/^\d{2}:\d{2}$/.test(deliverySlotStart))) throw new InputError('Selecciona la fecha y el horario de entrega.');
-    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart},original);
+    const hash = await fingerprint({...fields,fulfillmentType,pickupLocationId,deliveryAddress,deliveryDate,deliverySlotStart,promoCode,espinalResident},original);
     const bytes = await normalizeReceipt(original);
     const db = serviceClient();
     const path = `${crypto.randomUUID()}.jpg`;
@@ -34,6 +39,7 @@ Deno.serve(async (request: Request) => {
       p_key:key,p_fingerprint:hash,p_name:fields.name,p_email:fields.email,p_phone:fields.phone,
       p_items:fields.items,p_receipt_path:path,
       p_fulfillment_type:fulfillmentType,p_pickup_location_id:pickupLocationId,p_delivery_address:deliveryAddress,
+      p_promo_code:promoCode,p_espinal_resident:espinalResident,
       p_delivery_date:deliveryDate || null,p_delivery_slot_start:deliverySlotStart || null,
     });
     if (error) {

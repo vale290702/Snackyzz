@@ -1,3 +1,4 @@
+import { productTotal } from "../../supabase/functions/_shared/commerce.js";
 const STORAGE_KEY = "snackyzz-cart";
 const money = new Intl.NumberFormat("es-CR", {
   style: "currency",
@@ -47,7 +48,7 @@ export function createCartStore({ storage, products = [] } = {}) {
       .map((product) => ({
         product,
         quantity: getQuantity(product.id),
-        total: product.price * getQuantity(product.id),
+        total: productTotal(product, getQuantity(product.id)),
       }));
   const getTotal = () => getLines().reduce((sum, line) => sum + line.total, 0);
   return {

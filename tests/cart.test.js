@@ -69,3 +69,15 @@ test("storage failures do not prevent shopping", () => {
   assert.doesNotThrow(() => cart.changeQuantity("a", 1));
   assert.equal(cart.getTotal(), 2500);
 });
+
+test("packages repeat, combine optimally, and leave singles at the unit price", () => {
+  const cart = createCartStore({ products: [{id:"vanilla",price:1000,packages:[{quantity:3,price:2000},{quantity:5,price:3500}]}], storage:storage("{}") });
+  cart.changeQuantity("vanilla", 3);
+  assert.equal(cart.getTotal(), 2000);
+  cart.changeQuantity("vanilla", 1);
+  assert.equal(cart.getTotal(), 3000);
+  cart.changeQuantity("vanilla", 2);
+  assert.equal(cart.getTotal(), 4000);
+  cart.changeQuantity("vanilla", -4);
+  assert.equal(cart.getTotal(), 2000);
+});

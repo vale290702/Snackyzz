@@ -36,7 +36,7 @@ const location = { id:"00000000-0000-0000-0000-000000000010", name:"Tienda Centr
 const settings = { id:1,demo_catalog:true,sinpe_number:"",sinpe_recipient:"",whatsapp:"+506 8888 8888",public_email:"Snackyzz.cookies@gmail.com",instagram:"Snackyzz.cookies",uber_delivery_enabled:true,uber_disclaimer:"El costo del servicio de mensajería por Uber corre por cuenta del cliente y se paga por separado." };
 async function mockSupabase(
   page,
-  { orderFailure = false, emailFailure = false } = {},
+  { orderFailure = false, emailFailure = false, catalogProducts = products } = {},
 ) {
   const calls = [];
   await page.route("https://*.supabase.co/**", async (route) => {
@@ -49,7 +49,7 @@ async function mockSupabase(
         contentType: "application/json",
         body: JSON.stringify(body),
       });
-    if (path === "/rest/v1/products") return reply(products);
+    if (path === "/rest/v1/products") return reply(catalogProducts);
     if (path === "/rest/v1/sales_points") return reply([location]);
     if (path === "/rest/v1/store_settings")
       return reply(settings);
@@ -300,7 +300,11 @@ test("admin creates and archives database products", async ({ page }) => {
   await page.getByRole("button", { name: /Nuevo producto/ }).click();
   await page.getByLabel("Nombre").fill("Caramel Dream");
   await page.getByLabel("Sección del catálogo").selectOption("baking-stereo");
-  await page.getByLabel("Precio (₡)").fill("3100");
+  await page.getByLabel("Precio por cookie (₡)").fill("3100");
+  await page.getByRole("button", {name:"Agregar paquete"}).click();
+  await page.getByLabel("Cantidad de cookies").fill("3");
+  await page.getByLabel("Precio del paquete (₡)").fill("8000");
+  await capture(page, "admin-packages");
   await page.getByLabel("Posición").fill("4");
   await page.getByLabel("Etiqueta corta").fill("Edición dulce");
   await page.getByLabel("Descripción").fill("Cookie suave con caramelo.");
@@ -312,6 +316,7 @@ test("admin creates and archives database products", async ({ page }) => {
     .getByRole("button", { name: "Archivar" })
     .click();
   expect(calls.find((call) => call.kind === "product-save").body).toMatch(/name="brand"\r\n\r\nbaking-stereo/);
+  expect(calls.find((call) => call.kind === "product-save").body).toContain('[{"quantity":3,"price":8000}]');
   expect(
     calls.some(
       (call) => call.kind === "product-action" && call.action === "archive",
@@ -364,4 +369,31 @@ test('separate cookie collections share quantities and checkout', async ({ page 
   await capture(page, 'snackyzz-collection');
   await page.getByRole('link', { name: 'Comprar', exact: true }).click();
   await expect(page.locator('.cart-brand')).toContainText(['Snackyzz · Selladas', 'Baking Stereo · Recién horneadas']);
+});
+
+
+test('cookie packages update totals and Espinal free delivery requires residence confirmation', async ({ page }) => {
+  await mockSupabase(page, {catalogProducts:products.map((product,index) => index === 0 ? {...product,price:1000,packages:[{quantity:3,price:2000}]} : product)});
+  await page.goto('/#shop');
+  await expect(page.locator('.product-card').first()).toContainText('3 cookies por');
+  for (let i=0;i<3;i++) await page.locator('.product-card [data-product="choco-cloud"][data-qty="1"]').click();
+  await expect(page.locator('.cart-total')).toContainText(/₡2[\s.,]000/);
+  await page.getByRole('link',{name:'Comprar',exact:true}).click();
+  await page.getByRole('radio',{name:/Enviar con mensajero/}).check();
+  await page.getByLabel('Código de envío gratis').fill('EspinalSnackyzz');
+  await page.getByRole('button',{name:'Aplicar código'}).click();
+  await expect(page.locator('#promo-feedback')).toContainText('Confirma tu residencia');
+  await page.getByRole('checkbox',{name:/Confirmo que vivo en Espinal/}).check();
+  await expect(page.locator('.uber-notice')).toContainText('Envío gratis a Espinal');
+  await expect(page.locator('.uber-notice')).not.toContainText('se paga por separado');
+  await page.getByLabel('Código de envío gratis').fill('other');
+  await expect(page.locator('.uber-notice')).toContainText('se paga por separado');
+  await page.getByLabel('Código de envío gratis').fill('EspinalSnackyzz');
+  await expect(page.locator('.uber-notice')).toContainText('Envío gratis a Espinal');
+  await capture(page,'espinal-checkout');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('checkbox',{name:/Confirmo que vivo en Espinal/}).uncheck();
+  await expect(page.locator('.uber-notice')).toContainText('se paga por separado');
+  await page.getByRole('radio',{name:/Retiro/}).check();
+  await expect(page.getByLabel('Código de envío gratis')).toHaveCount(0);
 });

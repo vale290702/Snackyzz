@@ -3,7 +3,7 @@ import { InputError } from '../_shared/validation.ts';
 import { sendConfirmation, type MailPayload } from '../_shared/mail.ts';
 
 type Order = {id:string;name:string;email:string;total:number;receiptPath:string;
-  items:{name:string;quantity:number;price:number}[];[key:string]:unknown};
+  items:{name:string;quantity:number;price:number;lineTotal?:number}[];[key:string]:unknown};
 async function withReceipt(db: ServiceClient,order: Order) {
   const {data,error} = await db.storage.from('receipts').createSignedUrl(order.receiptPath,600);
   if (error) throw new InputError('No se pudo abrir el comprobante. Vuelve a cargar las órdenes.',503);
@@ -20,7 +20,7 @@ async function deliver(db: ServiceClient,claim: {order:Order;claimToken:string;p
   } else {
     const payload = claim.payload ?? {from,to:[order.email],
       subject:`Snackyzz · Orden ${order.id.slice(0,8)} confirmada`,
-      text:`Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${i.quantity*i.price}`).join('\n')}\n\nTotal: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
+      text:`Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${(i.lineTotal ?? i.quantity*i.price)}`).join('\n')}\n\n${order.promoCode ? `Envío gratis a Espinal · ${order.promoCode}\n` : ""}Total: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
     };
     // Freeze identical payload before contacting Resend; retries retain the same
     // provider key AND body, even when sender settings change between attempts.

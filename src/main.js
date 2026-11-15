@@ -1,3 +1,4 @@
+import { validatePackages, validatePromotion } from "../supabase/functions/_shared/commerce.js";
 import "./styles.css";
 import { productBrandLabel } from "./lib/collections.js";
 import { products as previewProducts } from "./data/products.js";
@@ -11,13 +12,14 @@ import {
   renderFooter,
   icon,
   quantityControl,
+  renderPackagePrices,
 } from "./components/ui.js";
 import { renderHome } from "./pages/home.js";
 import { renderShop } from "./pages/shop.js";
 import { renderSales } from "./pages/sales.js";
 import { renderAbout } from "./pages/about.js";
 import { renderCheckout, renderSuccess } from "./pages/checkout.js";
-import { createAdminController, renderAdmin } from "./pages/admin.js";
+import { createAdminController, renderAdmin, renderPackageRow } from "./pages/admin.js";
 
 const app = document.querySelector("#app");
 const dialog = document.querySelector("#product-dialog");
@@ -139,7 +141,7 @@ function renderProductDialog(id) {
   const p = state.products.find((p) => p.id === id);
   if (!p) return;
   state.detailId = id;
-  dialog.innerHTML = `<div class="dialog-layout"><button class="icon-button dialog-close" data-close-dialog aria-label="Cerrar detalles">${icon("close")}</button><img class="dialog-photo" src="${e(safeImage(p.image))}" alt="${e(p.name)}, imagen de referencia" width="640" height="640"><div class="dialog-copy"><h2 id="dialog-title">${e(p.name)}</h2><p class="product-brand">${e(productBrandLabel(p))}</p><p>${e(p.description)}</p><p class="dialog-price">${new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(p.price)}</p><div id="dialog-quantity">${quantityControl(p, cart.getQuantity(id))}</div><button class="button button-dark wide" data-dialog-add="${e(id)}">Agregar al carrito ${icon("plus")}</button><a href="#shop" class="button button-outline wide" data-close-dialog>Ver mi carrito ${icon("bag")}</a>${state.demoCatalog ? '<p class="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p>' : ""}</div></div>`;
+  dialog.innerHTML = `<div class="dialog-layout"><button class="icon-button dialog-close" data-close-dialog aria-label="Cerrar detalles">${icon("close")}</button><img class="dialog-photo" src="${e(safeImage(p.image))}" alt="${e(p.name)}, imagen de referencia" width="640" height="640"><div class="dialog-copy"><h2 id="dialog-title">${e(p.name)}</h2><p class="product-brand">${e(productBrandLabel(p))}</p><p>${e(p.description)}</p><p class="dialog-price">${new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(p.price)}</p>${renderPackagePrices(p)}<div id="dialog-quantity">${quantityControl(p, cart.getQuantity(id))}</div><button class="button button-dark wide" data-dialog-add="${e(id)}">Agregar al carrito ${icon("plus")}</button><a href="#shop" class="button button-outline wide" data-close-dialog>Ver mi carrito ${icon("bag")}</a>${state.demoCatalog ? '<p class="demo-notice">Producto e imagen de referencia. Consulta ingredientes y alérgenos antes de comprar.</p>' : ""}</div></div>`;
   if (!dialog.open) dialog.showModal();
 }
 function quantityChanged(button) {
@@ -179,6 +181,22 @@ document.addEventListener("click", async (event) => {
   ) {
     event.preventDefault();
     notify("Estamos registrando tu pedido. Espera un momento.");
+    return;
+  }
+  if (target.matches("[data-add-package]")) {
+    const rows = document.querySelector("#package-rows");
+    if (rows.children.length < 20) rows.insertAdjacentHTML("beforeend", renderPackageRow());
+    else notify("Puedes agregar hasta 20 paquetes por producto.");
+    return;
+  }
+  if (target.matches("[data-remove-package]")) { target.closest(".package-row").remove(); return; }
+  if (target.matches("[data-apply-promo]")) {
+    const feedback = document.querySelector("#promo-feedback");
+    try {
+      const code = validatePromotion(state.fulfillment.promoCode, state.fulfillment.type, state.fulfillment.espinalResident);
+      if (!code) { feedback.textContent = "Escribe un código para aplicarlo."; return; }
+      renderPage();
+    } catch (error) { feedback.textContent = error.message; }
     return;
   }
   if (target.matches("[data-menu]")) {
@@ -307,6 +325,15 @@ document.addEventListener("input", (event) => {
     state.draft[event.target.name] = event.target.value;
     state.idempotencyKey = "";
   }
+  if (event.target.name === "promoCode") {
+    state.fulfillment.promoCode = event.target.value;
+    state.idempotencyKey = "";
+    let freeDelivery = false;
+    try { freeDelivery = Boolean(validatePromotion(state.fulfillment.promoCode, state.fulfillment.type, state.fulfillment.espinalResident)); } catch { /* Show validation errors when applying the code. */ }
+    document.querySelector("#promo-feedback").textContent = freeDelivery ? "Envío gratis · EspinalSnackyzz aplicado." : "";
+    document.querySelector(".uber-notice p").textContent = freeDelivery ? "Envío gratis a Espinal. No debes pagar el servicio de mensajería." : state.delivery.disclaimer;
+
+  }
   if (event.target.id === "order-search") {
     admin.state.search = event.target.value;
     renderPage();
@@ -323,7 +350,15 @@ document.addEventListener("input", (event) => {
   }
 });
 document.addEventListener("change", async (event) => {
+  if (event.target.name === "espinalResident") {
+    state.fulfillment.espinalResident = event.target.checked;
+    state.idempotencyKey = "";
+    renderPage();
+    return;
+  }
   if (event.target.name === "fulfillmentType") {
+    state.fulfillment.promoCode = "";
+    state.fulfillment.espinalResident = false;
     state.fulfillment.type = event.target.value;
     state.idempotencyKey = "";
     renderPage();
@@ -393,7 +428,13 @@ document.addEventListener("submit", async (event) => {
   }
   if (event.target.matches("#product-form")) {
     event.preventDefault();
-    await admin.saveProduct(new FormData(event.target));
+    const form = new FormData(event.target);
+    try {
+      const quantities = form.getAll("packageQuantity");
+      const prices = form.getAll("packagePrice");
+      form.set("packages", JSON.stringify(validatePackages(quantities.map((quantity, index) => ({quantity:Number(quantity),price:Number(prices[index])})))));
+    } catch (error) { notify(error.message); return; }
+    await admin.saveProduct(form);
     await loadCatalog();
     return;
   }
@@ -432,7 +473,12 @@ document.addEventListener("submit", async (event) => {
     renderPage();
     return;
   }
+  let promoCode;
+  try { promoCode = validatePromotion(state.fulfillment.promoCode, state.fulfillment.type, state.fulfillment.espinalResident); }
+  catch (error) { state.checkoutError = error.message; renderPage(); return; }
   const body = new FormData();
+  body.set("promoCode", promoCode);
+  body.set("espinalResident", String(state.fulfillment.espinalResident === true));
   for (const [key, value] of Object.entries(state.draft))
     body.set(key, value.trim());
   body.set(
