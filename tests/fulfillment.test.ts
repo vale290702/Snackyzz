@@ -118,3 +118,10 @@ test('checkout explains Espinal eligibility and waives the fee in the total', ()
   assert.match(html,/Envío gratis a Espinal/);
   assert.match(html,/name="espinalResident"/);
 });
+
+test('checkout never advertises the promotion or residence confirmation before entry', () => {
+  const html = checkout();
+  assert.match(html, /Código promocional/);
+  assert.doesNotMatch(html, /EspinalSnackyzz/);
+  assert.doesNotMatch(html, /name="espinalResident"/);
+});
