@@ -54,6 +54,8 @@ export function Checkout({
     method,
     fulfillment.deliveryZoneId || "",
     delivery.zones,
+    fulfillment.promoCode,
+    fulfillment.espinalResident,
   );
   const dates = deliveryDates(delivery.schedule);
   const slots = fulfillment?.deliveryDate
@@ -338,6 +340,13 @@ export function Checkout({
                       </select>
                     </div>
                   </div>
+                  <div className="field">
+                    <label htmlFor="promo-code">Código de envío gratis</label>
+                    <input id="promo-code" name="promoCode" maxLength={60} value={fulfillment.promoCode || ""} placeholder="EspinalSnackyzz" onChange={event => actions.checkoutChange("promoCode", event.target.value)} aria-describedby="espinal-help" />
+                    <small id="espinal-help">Envío gratis únicamente para personas que viven en Espinal con el código EspinalSnackyzz.</small>
+                  </div>
+                  <label className="check-field"><input type="checkbox" name="espinalResident" checked={fulfillment.espinalResident === true} onChange={event => actions.checkoutChange("espinalResident", String(event.target.checked))} />Confirmo que vivo en Espinal y que el pedido se entrega en Espinal.</label>
+                  <p role="status">{fulfillment.promoCode?.trim().toLowerCase() === "espinalsnackyzz" && fulfillment.espinalResident ? "Envío gratis · EspinalSnackyzz aplicado." : ""}</p>
                   <div className="uber-notice">
                     <Icon name="pin" />
                     <p>
@@ -345,8 +354,7 @@ export function Checkout({
                       <br />
                       {DELIVERY_POLICY_NOTICE}
                       <br />
-                      El envío se calcula según tu zona y se incluye en el total
-                      a pagar.
+                      {fulfillment.promoCode?.trim().toLowerCase() === "espinalsnackyzz" && fulfillment.espinalResident ? "Envío gratis a Espinal." : "El envío se calcula según tu zona y se incluye en el total a pagar."}
                     </p>
                   </div>
                   <div className="delivery-terms">

@@ -472,10 +472,12 @@ function ProductForm({
   product?: Product;
   controller: AdminController;
 }) {
+  const [packages, setPackages] = useState(product?.packages || []);
   const item = product ?? {
     id: "",
     name: "",
     price: "",
+    packages: [],
     stock: 0,
     description: "",
     tag: "",
@@ -506,6 +508,7 @@ function ProductForm({
           <Icon name="close" />
         </button>
       </div>
+      <input type="hidden" name="packages" value={JSON.stringify(packages)} />
       <input type="hidden" name="id" value={item.id} />
       <input type="hidden" name="existingImage" value={item.image} />
       <div className="field">
@@ -565,6 +568,14 @@ function ProductForm({
           />
         </div>
       </div>
+      <fieldset className="package-editor"><legend>Paquetes de cookies</legend><p>Define la cantidad de cookies y el precio total de cada paquete. Las cookies restantes usan el precio individual.</p>
+        {packages.map((pack, index) => <div className="package-row" key={index}>
+          <label>Cantidad de cookies<input type="number" min="2" max="99" step="1" required value={pack.quantity || ""} onChange={event => setPackages(packages.map((value, i) => i === index ? { ...value, quantity: Number(event.target.value) } : value))} /></label>
+          <label>Precio del paquete (₡)<input type="number" min="1" max="1000000" step="1" required value={pack.price || ""} onChange={event => setPackages(packages.map((value, i) => i === index ? { ...value, price: Number(event.target.value) } : value))} /></label>
+          <button type="button" className="text-button danger" onClick={() => setPackages(packages.filter((_, i) => i !== index))}>Eliminar paquete</button>
+        </div>)}
+        <button type="button" className="button button-outline" disabled={packages.length >= 20} onClick={() => setPackages([...packages, {quantity:0, price:0}])}>Agregar paquete</button>
+      </fieldset>
       <div className="field">
         <label htmlFor="product-tag">Etiqueta corta</label>
         <input
@@ -1258,11 +1269,12 @@ function OrderDetail({
           )}
         </div>
       )}
+      {o.promoCode && <p className="notice"><strong>Envío gratis · {o.promoCode}</strong><br />El cliente confirmó que vive en Espinal. Verifica la dirección antes de confirmar.</p>}
       <div className="order-items">
         {o.items.map((item, index) => (
           <div key={index}>
             <span>{`${item.quantity} × ${item.name}`}</span>
-            <strong>{formatMoney(item.price * item.quantity)}</strong>
+            <strong>{formatMoney(item.lineTotal ?? item.price * item.quantity)}</strong>
           </div>
         ))}
       </div>

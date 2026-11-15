@@ -1,4 +1,5 @@
 'use client';
+import { validatePromotion } from '../../supabase/functions/_shared/commerce';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { seasonalCampaigns } from './seasonal/seasonal-campaigns';
@@ -11,7 +12,7 @@ import { configured, supabase } from '../lib/supabase';
 import { getRouteFromHash, navigateTo, type Route } from '../lib/router';
 import { safeImage } from '../lib/html';
 import { productBrandLabel, hasBakingStereoProducts } from '../lib/collections';
-import { Nav, Footer, Icon, QuantityControl, Cart } from './store/ui';
+import { Nav, Footer, Icon, QuantityControl, PackagePrices, Cart } from './store/ui';
 import { StoreActionsProvider } from './store/actions';
 import { Home } from '../features/pages/home';
 import { Shop } from '../features/pages/shop';
@@ -225,7 +226,12 @@ export default function AppShell() {
     if (data.fulfillment.type === 'uber' && !data.fulfillment.deliveryTermsAccepted) { patch({ checkoutError: DELIVERY_TERMS_ERROR }); return; }
     if (!data.receipt) { patch({ checkoutError: 'Adjunta tu comprobante SINPE para continuar.' }); return; }
     if (!data.catalogReady) { patch({ checkoutError: 'No pudimos cargar la tienda. Reintenta la conexión antes de enviar tu pedido.' }); return; }
+    let promoCode;
+    try { promoCode = validatePromotion(data.fulfillment.promoCode, data.fulfillment.type, data.fulfillment.espinalResident); }
+    catch (error) { patch({ checkoutError: error instanceof Error ? error.message : 'Revisa el código.' }); return; }
     const body = new FormData();
+    body.set('promoCode', promoCode);
+    body.set('espinalResident', String(data.fulfillment.espinalResident === true));
     for (const [key, value] of Object.entries(data.draft)) body.set(key, value.trim());
     body.set('items', JSON.stringify(cartRef.current.getLines().map(({ product, quantity }) => ({ productId: product.id, quantity }))));
     body.set('receipt', data.receipt);
@@ -264,7 +270,7 @@ export default function AppShell() {
       if (name === 'name' || name === 'email' || name === 'phone') patch({ draft: { ...data.draft, [name]: value }, idempotencyKey: '' });
       else {
         const key = name === 'fulfillmentType' ? 'type' : name;
-        patch({ fulfillment: { ...data.fulfillment, [key]: key === 'deliveryTermsAccepted' ? value === 'true' : value, ...(key === 'type' && value !== data.fulfillment.type ? { deliveryTermsAccepted: false } : {}), ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
+        patch({ fulfillment: { ...data.fulfillment, [key]: (key === 'deliveryTermsAccepted' || key === 'espinalResident') ? value === 'true' : value, ...(key === 'type' && value !== data.fulfillment.type ? { deliveryTermsAccepted: false, promoCode: '', espinalResident: false } : {}), ...(key === 'deliveryDate' ? { deliverySlotStart: '' } : {}) }, idempotencyKey: '' });
       }
     },
     receiptChange,
@@ -315,7 +321,7 @@ export default function AppShell() {
       if (event.target !== event.currentTarget) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog();
-    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" disabled={cart.getQuantity(product.id) >= Math.min(99, product.stock ?? 0)} data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>{(product.stock ?? 0) > 0 ? "Agregar al carrito" : "Agotado"} <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
+    }}>{product ? <div className="dialog-layout"><button className="icon-button dialog-close" data-close-dialog="" aria-label="Cerrar detalles" onClick={closeDialog}><Icon name="close" /></button><img className="dialog-photo" src={safeImage(product.image)} alt={product.name} width="640" height="640" /><div className="dialog-copy"><h2 id="dialog-title">{product.name}</h2><p className="product-brand">{productBrandLabel(product)}</p><p>{product.description}</p><p className="dialog-price">{new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(product.price)}</p><PackagePrices product={product} /><div id="dialog-quantity"><QuantityControl product={product} quantity={cart.getQuantity(product.id)} /></div><button className="button button-dark wide" disabled={cart.getQuantity(product.id) >= Math.min(99, product.stock ?? 0)} data-dialog-add={product.id} onClick={() => changeQuantity(product.id, 1)}>{(product.stock ?? 0) > 0 ? "Agregar al carrito" : "Agotado"} <Icon name="plus" /></button><button type="button" className="button button-outline wide" onClick={() => { closeDialog(); requestAnimationFrame(() => openCart(dialogTrigger.current)); }}>Ver mi carrito <Icon name="bag" /></button></div></div> : null}</dialog>
     <div id="toast" className={`toast ${showCartBubble ? 'toast-with-bubble' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
   </SeasonalSurface></StoreActionsProvider>;
 }

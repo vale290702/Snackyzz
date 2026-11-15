@@ -20,3 +20,9 @@ describe("delivery quote", () => {
   it("does not quote unavailable zones", () =>
     expect(deliveryQuote(2500, "uber", "b", zones).zone).toBeUndefined());
 });
+
+it("Espinal code waives delivery only after residence confirmation", () => {
+  expect(deliveryQuote(2000,"uber","a",zones,"EspinalSnackyzz",true).total).toBe(2000);
+  expect(deliveryQuote(2000,"uber","a",zones,"EspinalSnackyzz",false).total).toBe(4000);
+  expect(deliveryQuote(2000,"uber","a",zones,"invalid",true).total).toBe(4000);
+});

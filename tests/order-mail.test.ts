@@ -66,3 +66,13 @@ test('new order alert has a separate stable provider key', async () => {
   expect(providerKey).toBe(`snackyzz-new-order-${order.id}`);
   expect(result.status).toBe('sent');
 });
+
+test('package totals and Espinal code appear in customer and admin emails', () => {
+  const packed = {...order,status:'confirmed',total:2000,promoCode:'EspinalSnackyzz',items:[{name:'Vanilla',quantity:3,price:1000,lineTotal:2000}]};
+  const customer = orderMailPayload(packed,'orders@example.com');
+  expect(customer.text).toContain('₡2000');
+  expect(customer.text).not.toContain('₡3000');
+  expect(customer.text).toContain('EspinalSnackyzz');
+  const admin = newOrderMailPayload(packed,'orders@example.com',['owner@example.com']);
+  expect(admin.text).toContain('EspinalSnackyzz');
+});

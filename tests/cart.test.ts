@@ -77,3 +77,14 @@ test("cart respects stock and removes unavailable stored products", () => {
   cart.changeQuantity('b',1);
   assert.equal(cart.getCount(),2);
 });
+
+test("packages repeat while preserving stock limits", () => {
+  const cart = createCartStore({products:[{...products[0],id:"vanilla",price:1000,stock:6,packages:[{quantity:3,price:2000}]}],storage:storage("{}")});
+  cart.changeQuantity("vanilla",3);
+  assert.equal(cart.getTotal(),2000);
+  cart.changeQuantity("vanilla",1);
+  assert.equal(cart.getTotal(),3000);
+  cart.changeQuantity("vanilla",99);
+  assert.equal(cart.getCount(),6);
+  assert.equal(cart.getTotal(),4000);
+});

@@ -1,5 +1,5 @@
 export type MailPayload = {from?:string; to:string[]; subject:string; text:string; html?:string; attachments?:{filename:string;content:string;content_type:string;content_id:string}[]};
-export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; confirmationComment?:string; items:{name:string;quantity:number;price:number}[] };
+export type OrderMail = { id:string; name:string; email:string; total:number; status:string; rejectionReason?:string; confirmationComment?:string;promoCode?:string; items:{name:string;quantity:number;price:number;lineTotal?:number}[] };
 export type NewOrderMail = OrderMail & {createdAt?:string;phone?:string;fulfillmentType?:string;fulfillmentLabel?:string;fulfillmentAddress?:string;
   deliveryDate?:string|null;deliverySlotStart?:string|null;deliverySlotEnd?:string|null;deliveryZoneName?:string;deliveryFee?:number};
 const colones = new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',maximumFractionDigits:0});
@@ -26,8 +26,9 @@ export function newOrderMailPayload(order: NewOrderMail, from: string, recipient
     ...(order.phone ? [`Teléfono: ${order.phone}`] : []),
     '',
     'Productos:',
-    ...order.items.map(item => `${item.quantity} × ${item.name} — ${colones.format(item.quantity * item.price)}`),
+    ...order.items.map(item => `${item.quantity} × ${item.name} — ${colones.format((item.lineTotal ?? item.quantity * item.price))}`),
     ...(order.fulfillmentType === 'uber' ? [`Envío: ${order.deliveryFee ? colones.format(order.deliveryFee) : 'gratis'}`] : []),
+    ...(order.promoCode ? [`Envío gratis a Espinal · ${order.promoCode}`] : []),
     `Total: ${colones.format(order.total)}`,
     '',
     `Entrega: ${order.fulfillmentLabel ?? 'Sin especificar'}`,
@@ -46,7 +47,7 @@ export function orderMailPayload(order: OrderMail, from: string, refundImage?: s
     subject:`Snackyzz · Orden ${order.id.slice(0,8)} ${rejected ? 'rechazada' : 'confirmada'}`,
     text: rejected
       ? `Hola ${order.name},\n\nTu orden no pudo ser aceptada.\n\nMotivo del rechazo:\n${order.rejectionReason}\n\nOrden: ${order.id}\n\nSi tienes alguna consulta sobre tu pedido o pago, escríbenos a Snackyzz.cookies@gmail.com.\n\nSnackyzz`
-      : `Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${i.quantity*i.price}`).join('\n')}\n\nTotal: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
+      : `Hola ${order.name},\n\nRevisamos tu comprobante SINPE y confirmamos tu orden.\n\n${order.items.map(i => `${i.quantity} × ${i.name} — ₡${(i.lineTotal ?? i.quantity*i.price)}`).join('\n')}\n\n${order.promoCode ? `Envío gratis a Espinal · ${order.promoCode}\n` : ""}Total: ₡${order.total}\nOrden: ${order.id}\n\nGracias por elegir Snackyzz.\nSnackyzz.cookies@gmail.com`,
   };
   if (!rejected && order.confirmationComment?.trim()) payload.text += `\n\nComentario de Snackyzz:\n${order.confirmationComment.trim()}`;
   if (rejected && refundImage) {

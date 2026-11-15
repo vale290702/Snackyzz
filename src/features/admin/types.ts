@@ -39,6 +39,7 @@ export interface Order {
   total: number;
   deliveryZoneName?: string;
   deliveryFee?: number;
+  promoCode?: string;
   createdAt: string;
   confirmedAt?: string;
   confirmationComment?: string;
@@ -52,7 +53,7 @@ export interface Order {
   deliveryDate?: string;
   deliverySlotStart?: string;
   deliverySlotEnd?: string;
-  items: { name: string; price: number; quantity: number }[];
+  items: { name: string; price: number; quantity: number; lineTotal?: number }[];
 }
 export interface AdminState {
   formRevision?: number;

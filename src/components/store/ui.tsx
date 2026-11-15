@@ -285,6 +285,7 @@ export function ProductCard({
       </div>
       <p className="product-brand">{productBrandLabel(product)}</p>
       <p>{product.description}</p>
+      <PackagePrices product={product} />
       <div className="product-purchase">
         {qty ? (
           <QuantityControl product={product} quantity={qty} />
@@ -324,6 +325,8 @@ export function Cart({
     fulfillment?.type || "pickup",
     fulfillment?.deliveryZoneId || "",
     zones,
+    fulfillment?.promoCode,
+    fulfillment?.espinalResident,
   );
   const actions = useStoreActions();
   return (
@@ -351,7 +354,7 @@ export function Cart({
                     {productBrandLabel(product)}
                   </small>
                   {checkout ? (
-                    <span>{`${quantity} × ${formatMoney(product.price)}`}</span>
+                    <span>{`${quantity} cookies`}</span>
                   ) : (
                     <QuantityControl product={product} quantity={quantity} />
                   )}
@@ -444,4 +447,9 @@ export function Cart({
       )}
     </aside>
   );
+}
+
+export function PackagePrices({ product }: { product: Product }) {
+  if (!product.packages?.length) return null;
+  return <p className="package-prices">{product.packages.map(pack => `${pack.quantity} cookies por ${formatMoney(pack.price)}`).join(" · ")}<br /><small>El mejor precio se aplica automáticamente en el carrito.</small></p>;
 }

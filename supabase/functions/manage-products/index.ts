@@ -1,3 +1,4 @@
+import { validatePackages } from "../_shared/commerce.js";
 import { cors, errorResponse, json, serviceClient } from "../_shared/http.ts";
 import { InputError, MAX_BYTES } from "../_shared/validation.ts";
 import { normalizeReceipt } from "../_shared/receipt.ts";
@@ -116,7 +117,11 @@ Deno.serve(async (request: Request) => {
     }
     const stock = form.has("stock") ? integer(form, "stock", 0, 1_000_000) : 0;
     const expectedStock = id && form.has("expectedStock") ? integer(form, "expectedStock", 0, 1_000_000) : stock;
+    let packages;
+    try { packages = validatePackages(JSON.parse(String(form.get("packages") ?? "[]"))); }
+    catch (error) { throw new InputError(error instanceof Error ? error.message : "Revisa los paquetes."); }
     const values = {
+      packages,
       brand,
       name,
       price: integer(form, "price", 1, 1_000_000),

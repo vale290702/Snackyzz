@@ -95,11 +95,12 @@ async function mockSupabase(
     rejectFailure = false,
     confirmFailure = false,
     stockOverrides = {},
+    packageOverrides = {},
     seasonalTheme = "original",
     themeSaveFailure = false,
   } = {},
 ) {
-  const products = catalogProducts.map((product,index) => ({...product,active:true,position:index+1,...(product.id in stockOverrides ? {stock:stockOverrides[product.id]} : {})}));
+  const products = catalogProducts.map((product,index) => ({...product,packages:packageOverrides[product.id] || [],active:true,position:index+1,...(product.id in stockOverrides ? {stock:stockOverrides[product.id]} : {})}));
   const calls = [];
   let managedOrder = {...order};
   let storeSettings = {...settings,seasonal_theme:seasonalTheme};
@@ -559,6 +560,10 @@ test("admin creates and archives database products", async ({ page }) => {
   await page.getByLabel("Nombre").fill("Caramel Dream");
   await page.getByLabel("Sección del catálogo").selectOption("baking-stereo");
   await page.getByLabel("Precio (₡)").fill("3100");
+  await page.getByRole("button",{name:"Agregar paquete"}).click();
+  await page.getByLabel("Cantidad de cookies").fill("3");
+  await page.getByLabel("Precio del paquete (₡)").fill("8000");
+  await capture(page,"admin-packages");
   await page.getByLabel("Posición").fill("4");
   await page.getByLabel("Etiqueta corta").fill("Edición dulce");
   await page.getByLabel("Descripción").fill("Cookie suave con caramelo.");
@@ -569,6 +574,7 @@ test("admin creates and archives database products", async ({ page }) => {
     .locator('.admin-product-row:has-text("Caramel Dream")')
     .getByRole("button", { name: "Archivar" })
     .click();
+  expect(calls.find((call) => call.kind === "product-save").body).toContain('[{"quantity":3,"price":8000}]');
   expect(calls.find((call) => call.kind === "product-save").body).toMatch(
     /name="brand"\r\n\r\nbaking-stereo/,
   );
@@ -1327,4 +1333,23 @@ test("initial catalog failure offers retry without revealing the default theme",
   fail = false;
   await page.getByRole("button", { name: "Reintentar", exact: true }).click();
   await expect(page.locator('.season-shell[data-season="christmas"] .hero')).toBeVisible();
+});
+
+
+test('cookie packages and Espinal delivery discount update the checkout total', async ({page}) => {
+  await mockSupabase(page,{packageOverrides:{'choco-cloud':[{quantity:3,price:5000}]}});
+  await page.goto('/#shop');
+  await expect(page.locator('.product-card').first()).toContainText('3 cookies por');
+  for(let i=0;i<3;i++) await page.locator('.product-card [data-product="choco-cloud"][data-qty="1"]').click();
+  await goToCheckout(page);
+  await page.getByRole('radio',{name:/Enviar con mensajero/}).check();
+  await page.getByLabel('Zona',{exact:true}).selectOption(zones[0].id);
+  await expect(page.locator('.checkout-layout .cart-column .cart-total').last()).toContainText(/7[\s.,]000/);
+  await page.getByLabel('Código de envío gratis').fill('EspinalSnackyzz');
+  await expect(page.locator('.checkout-layout .cart-column .cart-total').last()).toContainText(/7[\s.,]000/);
+  await page.getByRole('checkbox',{name:/Confirmo que vivo en Espinal/}).check();
+  await expect(page.locator('.checkout-layout .cart-column .cart-total').last()).toContainText(/5[\s.,]000/);
+  await capture(page,'espinal-checkout');
+  await page.getByLabel('Código de envío gratis').fill('other');
+  await expect(page.locator('.checkout-layout .cart-column .cart-total').last()).toContainText(/7[\s.,]000/);
 });

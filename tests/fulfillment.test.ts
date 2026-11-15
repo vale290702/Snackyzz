@@ -111,3 +111,10 @@ test('delivery shows the estimate and requires an unchecked Paqueticos acceptanc
   assert.doesNotMatch(pickup, /id="delivery-terms"/);
   assert.doesNotMatch(pickup, /El plazo estimado de entrega/);
 });
+
+test('checkout explains Espinal eligibility and waives the fee in the total', () => {
+  const html = checkout({delivery:{zones:[{id:'espinal',name:'Espinal',price:2000,active:true}]},fulfillment:{type:'uber',deliveryZoneId:'espinal',promoCode:'EspinalSnackyzz',espinalResident:true}});
+  assert.match(html,/únicamente para personas que viven en Espinal/);
+  assert.match(html,/Envío gratis a Espinal/);
+  assert.match(html,/name="espinalResident"/);
+});

@@ -211,6 +211,42 @@ Deno.test(
         (await db.query("select * from public.order_items")).rows.length === 1,
         "Failed orders leave no partial rows",
       );
+      // Apply the full upgrade path, preserving the existing order above.
+      for (const file of ["202609090002_fulfillment_settings.sql", "202609130001_messenger_schedule.sql", "202609230001_product_brands.sql", "202610110001_archive_sample_products.sql", "202610110002_delivery_zones.sql", "202610110003_order_rejection.sql", "202610110004_refund_receipt.sql", "202610110005_inventory.sql", "202610170001_confirmation_comment.sql", "202610180001_seasonal_themes.sql", "202611150001_packages_espinal.sql"]) {
+        await db.exec(await Deno.readTextFile(new URL(`../migrations/${file}`, import.meta.url)));
+      }
+      await db.exec(`update public.products set active=true,stock=99,price=1000, packages='[{"quantity":3,"price":2000},{"quantity":5,"price":3500}]' where id='choco-cloud'`);
+      await rejected(() => db.exec(`update public.products set packages='[{"quantity":3,"price":0}]' where id='choco-cloud'`), "Database rejects invalid package prices");
+      await rejected(() => db.exec(`update public.products set packages='[{"quantity":3,"price":100},{"quantity":3,"price":200}]' where id='choco-cloud'`), "Database rejects duplicate package sizes");
+      await rejected(() => db.exec(`update public.products set packages='[{"price":100}]' where id='choco-cloud'`), "Database rejects missing quantities");
+      const pickup = (await db.query<{id:string}>("select id from public.sales_points limit 1")).rows[0].id;
+      const zoneId = crypto.randomUUID();
+      await db.query("insert into public.delivery_zones(id,name,price,active) values($1,'Espinal',2000,true)",[zoneId]);
+      const packageOrder = async (quantity:number, key:string, code = '', resident = false, method = 'pickup') => {
+        const receiptPath = `${crypto.randomUUID()}.jpg`;
+        await db.query("insert into storage.objects(bucket_id,name) values('receipts',$1)",[receiptPath]);
+        return (await db.query<{value:{order:{id:string;total:number}}}>(`select public.create_order(
+          $1,$2,'Ana Ejemplo','ana@example.test','',$3::jsonb,
+          $8,$4,$5::uuid,'Espinal, frente a la plaza',
+          (now() at time zone 'America/Costa_Rica')::date+2,'09:00'::time,$9::uuid,$6,$7) value`,
+          [key,'b'.repeat(64),JSON.stringify([{productId:'choco-cloud',quantity,price:1,lineTotal:1}]),method,pickup,code,resident,receiptPath,zoneId])).rows[0].value;
+      };
+      const packed = await packageOrder(6, 'package-order-6');
+      assert(packed.order.total === 4000, "Server selects the best package combination ignoring client prices");
+      const snapshot = (await db.query<{value:{items:{lineTotal:number}[]}}>("select public.order_snapshot($1) value", [packed.order.id])).rows[0].value;
+      assert(snapshot.items[0].lineTotal === 4000, "Package totals survive order snapshots");
+      assert((await packageOrder(4,'package-order-4')).order.total === 3000, "Server prices leftover singles");
+      await rejected(() => packageOrder(3,'promo-pickup','EspinalSnackyzz',true), "Promotion cannot apply to pickup");
+      await db.exec(`update public.store_settings set delivery_lead_hours=0,delivery_schedule='{"sun":{"enabled":true,"start":"09:00","end":"18:00"},"mon":{"enabled":true,"start":"09:00","end":"18:00"},"tue":{"enabled":true,"start":"09:00","end":"18:00"},"wed":{"enabled":true,"start":"09:00","end":"18:00"},"thu":{"enabled":true,"start":"09:00","end":"18:00"},"fri":{"enabled":true,"start":"09:00","end":"18:00"},"sat":{"enabled":true,"start":"09:00","end":"18:00"}}'`);
+      await rejected(() => packageOrder(3,'promo-unconfirmed','EspinalSnackyzz',false,'uber'), "Promotion requires residence confirmation on the server");
+      await rejected(() => packageOrder(3,'promo-invalid','invalid',true,'uber'), "Unknown codes reject on the server");
+      const free = await packageOrder(3,'promo-valid',' espinalsnackyzz ',true,'uber');
+      assert(free.order.total === 2000, 'Espinal waives the zone fee but retains package subtotal');
+      assert((await packageOrder(3,'paid-delivery','',false,'uber')).order.total === 4000, 'Non-promotional delivery retains the zone fee');
+      const savedPromo = (await db.query<{value:{promoCode:string;espinalResident:boolean}}>("select public.order_snapshot($1) value",[free.order.id])).rows[0].value;
+      assert(savedPromo.promoCode === 'EspinalSnackyzz' && savedPromo.espinalResident, "Free delivery is stored in the admin snapshot");
+      const oldItems = (await db.query<{line_total:number;price:number;quantity:number}>("select * from public.order_items where order_id=$1",[first.order.id])).rows;
+      assert(oldItems[0].line_total === oldItems[0].price*oldItems[0].quantity, "Existing order totals preserved by upgrade");
     } finally {
       await db.close();
     }

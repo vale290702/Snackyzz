@@ -3187,3 +3187,19 @@ small#receipt-help {
   background: #fafaf9;
   color: #44403c;
 }
+
+.package-editor { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
+.package-editor legend { font-weight: 800; }
+.package-editor > p { font-size: .875rem; margin: 8px 0 16px; }
+.package-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 16px; }
+.package-row label { display: grid; gap: 8px; font-size: .875rem; font-weight: 600; min-width: 0; }
+.package-row input { width: 100%; min-width: 0; }
+.package-row button { min-height: 44px; }
+.package-prices { font-weight: 600; }
+.package-prices small { font-weight: 400; }
+#promo-feedback:empty { display: none; }
+#promo-feedback { font-weight: 600; margin: 16px 0; }
+@media (max-width: 600px) {
+  .package-row { grid-template-columns: 1fr 1fr; }
+  .package-row button { grid-column: 1 / -1; justify-self: start; }
+}

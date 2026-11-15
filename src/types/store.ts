@@ -3,6 +3,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  packages?: { quantity: number; price: number }[];
   stock?: number;
   image: string;
   accent: string;
@@ -35,6 +36,8 @@ export interface Contact {
   whatsapp?: string;
 }
 export interface Fulfillment {
+  promoCode?: string;
+  espinalResident?: boolean;
   type: string;
   pickupLocationId: string;
   deliveryZoneId?: string;
@@ -47,6 +50,7 @@ export interface DeliveryZone {
   id: string;
   name: string;
   price: number;
+  packages?: { quantity: number; price: number }[];
   active: boolean;
 }
 export interface Delivery {

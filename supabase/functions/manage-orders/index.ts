@@ -5,7 +5,7 @@ import { InputError } from '../_shared/validation.ts';
 import { sendConfirmation, orderMailPayload, type MailPayload } from '../_shared/mail.ts';
 
 type Order = {id:string;name:string;email:string;total:number;receiptPath:string;status:string;rejectionReason?:string;confirmationComment?:string;refundReceiptPath?:string;
-  items:{name:string;quantity:number;price:number}[];[key:string]:unknown};
+  items:{name:string;quantity:number;price:number;lineTotal?:number}[];[key:string]:unknown};
 async function withReceipt(db: ServiceClient,order: Order) {
   const {data,error} = await db.storage.from('receipts').createSignedUrl(order.receiptPath,600);
   if (error) throw new InputError('No se pudo abrir el comprobante. Vuelve a cargar las órdenes.',503);
